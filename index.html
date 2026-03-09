@@ -459,7 +459,12 @@ async function fetchCubsFromChain(ownerAddress) {
           params: {
             ownerAddress,
             page, limit: 1000,
-            displayOptions: { showFungible: false, showNativeBalance: false }
+            displayOptions: { showFungible: false,
+              showNativeBalance: false,
+              showUnverifiedCollections: true,
+              showCollectionMetadata: true,
+              showGrandTotal: true
+            }
           }
         })
       });
