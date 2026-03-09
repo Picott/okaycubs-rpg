@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OkayCubs RPG — Geological Chronicles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --obsidian: #07080f;
+      --deep:     #0d0f1a;
+      --stratum:  #12151f;
+      --gold:     #d4af37;
+      --gold2:    #f5e06e;
+      --silver:   #b8bcc8;
+      --quartz:   #e8eaf0;
+      --magma:    #c0392b;
+      --lava:     #e67e22;
+      --crystal:  #f1c40f;
+      --jade:     #2ecc71;
+      --sapphire: #3498db;
+      --amethyst: #9b59b6;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      background: var(--obsidian);
+      color: var(--quartz);
+      font-family: 'Crimson Pro', serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* === BACKGROUND === */
+    .bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse at 20% 0%, #1a0f3c22 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 100%, #3c0f0f22 0%, transparent 60%),
+                  linear-gradient(180deg, #07080f 0%, #0a0b12 50%, #0d0508 100%);
+      pointer-events: none;
+    }
+
+    .strata {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: repeating-linear-gradient(
+        180deg, transparent 0, transparent 59px,
+        rgba(212,175,55,0.03) 59px, rgba(212,175,55,0.03) 60px
+      );
+    }
+
+    /* particles */
+    .pt { position:fixed; border-radius:50%; pointer-events:none; z-index:1;
+          background:var(--gold); opacity:0; animation: floatUp linear infinite; }
+    @keyframes floatUp {
+      0%   { opacity:0; transform:translateY(100vh) scale(0.5); }
+      15%  { opacity:0.5; }
+      85%  { opacity:0.2; }
+      100% { opacity:0; transform:translateY(-5vh) scale(1); }
+    }
+
+    /* === LAYOUT === */
+    .app { position:relative; z-index:2; max-width:1080px; margin:0 auto; padding:0 20px 80px; }
+
+    /* === HEADER === */
+    header { text-align:center; padding:48px 0 28px; }
+
+    .eyebrow {
+      font-family:'Cinzel', serif; font-size:10px; letter-spacing:7px;
+      color:var(--gold); opacity:.65; text-transform:uppercase; margin-bottom:14px;
+    }
+
+    h1 {
+      font-family:'Cinzel Decorative', serif;
+      font-size: clamp(26px,6vw,54px); font-weight:900; line-height:1.1;
+      background: linear-gradient(135deg, #c8922a 0%, #d4af37 30%, #f5e06e 55%, #d4af37 75%, #c8922a 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      filter: drop-shadow(0 0 28px rgba(212,175,55,0.35));
+    }
+
+    .subtitle {
+      font-family:'Cinzel', serif; font-size:12px; letter-spacing:4px;
+      color:var(--silver); opacity:.5; margin-top:10px;
+    }
+
+    .rule { width:180px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent);
+            margin:18px auto; opacity:.4; }
+
+    /* ERA BADGES */
+    .eras { display:flex; justify-content:center; gap:7px; flex-wrap:wrap; margin:16px 0 36px; }
+    .era {
+      font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; padding:4px 12px;
+      border:1px solid; border-radius:1px; text-transform:uppercase; transition:all .3s;
+    }
+    .era.on  { opacity:1; }
+    .era.off { opacity:.22; cursor:default; }
+    .era-h { border-color:#9b59b6; color:#9b59b6; }
+    .era-a { border-color:#3498db; color:#3498db; }
+    .era-p { border-color:#1abc9c; color:#1abc9c; }
+    .era-l { border-color:#2ecc71; color:#2ecc71; }
+    .era-m { border-color:#f39c12; color:#f39c12; }
+    .era-c { border-color:#e74c3c; color:#e74c3c; }
+
+    /* === WALLET / LOAD === */
+    .wallet-zone { text-align:center; margin:24px 0 10px; }
+
+    .btn-main {
+      font-family:'Cinzel',serif; font-size:12px; letter-spacing:3px; text-transform:uppercase;
+      padding:14px 36px; background:transparent; border:1px solid var(--gold);
+      color:var(--gold); cursor:pointer; position:relative; overflow:hidden; transition:all .3s;
+    }
+    .btn-main::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.2));
+      transform:translateX(-100%); transition:transform .3s;
+    }
+    .btn-main:hover::before { transform:translateX(0); }
+    .btn-main:hover { box-shadow:0 0 24px rgba(212,175,55,.25); }
+    .btn-main.ok { border-color:var(--jade); color:var(--jade); }
+    .btn-main:disabled { opacity:.35; cursor:not-allowed; }
+
+    .wallet-addr {
+      font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px;
+      color:var(--silver); opacity:.45; margin-top:8px;
+    }
+
+    /* STATUS BAR */
+    .status-bar {
+      text-align:center; font-family:'Cinzel',serif; font-size:11px; letter-spacing:2px;
+      padding:10px 20px; border:1px solid rgba(212,175,55,.15); display:inline-block;
+      color:var(--lava); margin:10px auto 28px; position:relative; left:50%; transform:translateX(-50%);
+    }
+    .status-bar.good { color:var(--jade); border-color:rgba(46,204,113,.2); }
+    .status-bar.bad  { color:var(--magma); border-color:rgba(192,57,43,.2); }
+
+    /* === LOADER === */
+    .loader {
+      display:none; flex-direction:column; align-items:center; gap:16px; padding:40px 0;
+    }
+    .loader.show { display:flex; }
+    .spinner {
+      width:40px; height:40px; border:2px solid rgba(212,175,55,.1);
+      border-top-color:var(--gold); border-radius:50%; animation:spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .loader-text { font-family:'Cinzel',serif; font-size:11px; letter-spacing:3px; color:var(--gold); opacity:.6; }
+
+    /* === SECTION TITLE === */
+    .sec-title {
+      font-family:'Cinzel',serif; font-size:11px; letter-spacing:5px; color:var(--gold);
+      text-transform:uppercase; opacity:.55; text-align:center; margin:40px 0 18px;
+    }
+
+    /* === CUBS GRID === */
+    .cubs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px; margin:16px 0; }
+
+    .cub-card {
+      background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,.05));
+      border:1px solid rgba(212,175,55,.12); padding:18px; cursor:pointer;
+      transition:all .3s; position:relative; overflow:hidden;
+    }
+    .cub-card::after {
+      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      background:linear-gradient(90deg,transparent,var(--gold),transparent);
+      opacity:0; transition:opacity .3s;
+    }
+    .cub-card:hover { border-color:rgba(212,175,55,.35); transform:translateY(-3px);
+                      box-shadow:0 10px 28px rgba(0,0,0,.5),0 0 18px rgba(212,175,55,.08); }
+    .cub-card:hover::after { opacity:1; }
+    .cub-card.selected { border-color:var(--gold); box-shadow:0 0 28px rgba(212,175,55,.18); }
+    .cub-card.selected::after { opacity:1; }
+
+    /* avatar */
+    .cub-img-wrap { width:80px; height:80px; margin:0 auto 12px; position:relative; }
+    .cub-img { width:100%; height:100%; border-radius:50%; object-fit:cover; border:2px solid rgba(212,175,55,.25); }
+    .cub-placeholder {
+      width:100%; height:100%; border-radius:50%; background:rgba(0,0,0,.4);
+      border:2px solid rgba(212,175,55,.25); display:flex; align-items:center;
+      justify-content:center; font-size:32px;
+    }
+    .rarity-ring {
+      position:absolute; inset:-4px; border-radius:50%; border:2px solid transparent;
+      animation:ringRotate 4s linear infinite;
+    }
+    @keyframes ringRotate { to { transform:rotate(360deg); } }
+    .r-legendary .rarity-ring { border-color:var(--crystal); box-shadow:0 0 8px #f1c40f55; }
+    .r-epic      .rarity-ring { border-color:var(--amethyst); box-shadow:0 0 8px #9b59b655; }
+    .r-rare      .rarity-ring { border-color:var(--sapphire); box-shadow:0 0 8px #3498db55; }
+    .r-common    .rarity-ring { border-color:#444; }
+
+    .cub-name  { font-family:'Cinzel',serif; font-size:13px; font-weight:600; text-align:center; color:var(--quartz); margin-bottom:3px; }
+    .cub-class { font-family:'Cinzel',serif; font-size:9px; letter-spacing:3px; text-align:center; color:var(--gold); opacity:.65; text-transform:uppercase; margin-bottom:12px; }
+
+    /* stat bars */
+    .stat-row { display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+    .stat-lbl { font-family:'Cinzel',serif; font-size:8px; letter-spacing:1px; color:var(--silver); opacity:.45; width:26px; text-transform:uppercase; }
+    .stat-bg { flex:1; height:3px; background:rgba(255,255,255,.05); border-radius:2px; overflow:hidden; }
+    .stat-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+    .s-atk .stat-fill { background:linear-gradient(90deg,#8b1a1a,#e74c3c); }
+    .s-def .stat-fill { background:linear-gradient(90deg,#1a4a8b,#3498db); }
+    .s-spd .stat-fill { background:linear-gradient(90deg,#1a6b3a,#2ecc71); }
+    .s-lck .stat-fill { background:linear-gradient(90deg,#5b1a8b,#9b59b6); }
+    .stat-num { font-family:'Cinzel',serif; font-size:9px; color:var(--silver); width:22px; text-align:right; }
+
+    /* === TRAIT PANEL === */
+    .trait-panel {
+      display:none; background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.04));
+      border:1px solid rgba(212,175,55,.13); padding:22px; margin:18px 0;
+    }
+    .trait-panel.show { display:block; animation:fadeUp .4s ease; }
+    .trait-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:9px; margin-top:14px; }
+    .trait-item { background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.05); padding:11px; text-align:center; transition:border-color .3s; }
+    .trait-item:hover { border-color:rgba(212,175,55,.25); }
+    .t-type { font-family:'Cinzel',serif; font-size:8px; letter-spacing:2px; color:var(--gold); opacity:.6; text-transform:uppercase; margin-bottom:3px; }
+    .t-val  { font-family:'Crimson Pro',serif; font-size:13px; color:var(--quartz); }
+
+    /* === BATTLE ARENA === */
+    .arena { background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.035)); border:1px solid rgba(212,175,55,.18); padding:28px; }
+    .arena-title { font-family:'Cinzel Decorative',serif; font-size:17px; text-align:center; color:var(--gold); margin-bottom:4px; }
+    .arena-sub { font-family:'Cinzel',serif; font-size:9px; letter-spacing:4px; text-align:center; color:var(--silver); opacity:.35; text-transform:uppercase; margin-bottom:26px; }
+
+    .battle-field { display:grid; grid-template-columns:1fr 60px 1fr; gap:16px; align-items:center; }
+
+    .fighter { background:rgba(0,0,0,.3); border:1px solid rgba(212,175,55,.08); padding:18px; text-align:center; min-height:190px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .fighter.player { border-color:rgba(46,204,113,.2); }
+    .fighter.enemy  { border-color:rgba(231,76,60,.2); }
+
+    .vs { font-family:'Cinzel Decorative',serif; font-size:24px; color:var(--gold); opacity:.4; text-align:center; }
+
+    .f-avatar { font-size:38px; margin-bottom:8px; }
+    .f-name   { font-family:'Cinzel',serif; font-size:12px; font-weight:600; margin-bottom:3px; }
+    .f-class  { font-family:'Cinzel',serif; font-size:8px; letter-spacing:3px; opacity:.45; text-transform:uppercase; margin-bottom:10px; }
+
+    .hp-wrap { width:100%; margin-bottom:6px; }
+    .hp-lbl  { font-family:'Cinzel',serif; font-size:8px; letter-spacing:2px; opacity:.4; margin-bottom:3px; text-align:left; }
+    .hp-bg   { height:7px; background:rgba(255,255,255,.05); border-radius:3px; overflow:hidden; }
+    .hp-fill { height:100%; border-radius:3px; transition:width .5s ease; }
+    .player .hp-fill { background:linear-gradient(90deg,#1a6b3a,#2ecc71); }
+    .enemy  .hp-fill { background:linear-gradient(90deg,#8b1a1a,#e74c3c); }
+    .hp-txt  { font-family:'Cinzel',serif; font-size:9px; text-align:right; opacity:.5; margin-top:2px; }
+
+    .empty-slot { font-family:'Crimson Pro',serif; font-style:italic; font-size:13px; color:var(--silver); opacity:.28; }
+
+    /* battle controls */
+    .btns { display:flex; gap:9px; justify-content:center; margin-top:22px; flex-wrap:wrap; }
+    .battle-btn {
+      font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+      padding:11px 22px; border:1px solid; background:transparent; cursor:pointer; transition:all .3s;
+    }
+    .battle-btn:disabled { opacity:.25; cursor:not-allowed; }
+    .bb-atk { border-color:var(--magma); color:var(--magma); }
+    .bb-atk:hover:not(:disabled) { background:rgba(192,57,43,.12); box-shadow:0 0 18px rgba(192,57,43,.25); }
+    .bb-def { border-color:var(--sapphire); color:var(--sapphire); }
+    .bb-def:hover:not(:disabled) { background:rgba(52,152,219,.12); box-shadow:0 0 18px rgba(52,152,219,.25); }
+    .bb-spc { border-color:var(--crystal); color:var(--crystal); }
+    .bb-spc:hover:not(:disabled) { background:rgba(241,196,15,.12); box-shadow:0 0 18px rgba(241,196,15,.25); }
+
+    /* battle log */
+    .log {
+      background:rgba(0,0,0,.45); border:1px solid rgba(212,175,55,.08); border-top:none;
+      padding:14px 18px; max-height:110px; overflow-y:auto;
+    }
+    .log-line { font-family:'Crimson Pro',serif; font-size:13px; line-height:1.55; padding:1px 0; opacity:.65;
+                border-bottom:1px solid rgba(255,255,255,.03); }
+    .log-line:last-child { border-bottom:none; opacity:1; }
+    .lp { color:var(--jade); }
+    .le { color:#e74c3c; }
+    .ls { color:var(--gold); font-style:italic; }
+
+    /* === WORLD MAP === */
+    .map-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:11px; }
+    .zone { border:1px solid; padding:18px 14px; text-align:center; position:relative; overflow:hidden; cursor:pointer; transition:all .3s; }
+    .zone.unlocked:hover { transform:translateY(-2px); }
+    .zone.locked { opacity:.22; cursor:not-allowed; }
+    .zone::before { content:''; position:absolute; inset:0; opacity:.04; }
+    .z-h { border-color:rgba(155,89,182,.35); } .z-h::before { background:#9b59b6; }
+    .z-a { border-color:rgba(52,152,219,.35); } .z-a::before { background:#3498db; }
+    .z-p { border-color:rgba(26,188,156,.35); } .z-p::before { background:#1abc9c; }
+    .z-l { border-color:rgba(46,204,113,.35); } .z-l::before { background:#2ecc71; }
+    .z-m { border-color:rgba(243,156,18,.35); } .z-m::before { background:#f39c12; }
+    .z-c { border-color:rgba(231,76,60,.35); }  .z-c::before { background:#e74c3c; }
+    .z-icon { font-size:26px; margin-bottom:7px; display:block; }
+    .z-name { font-family:'Cinzel',serif; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:3px; }
+    .z-desc { font-family:'Crimson Pro',serif; font-size:11px; font-style:italic; opacity:.45; line-height:1.35; }
+    .z-lvl  { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; margin-top:7px; opacity:.5; }
+
+    /* animations */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes shake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+    @keyframes flash  { 0%,100%{opacity:1} 50%{opacity:.15} }
+    .anim-shake { animation:shake .4s ease; }
+    .anim-flash { animation:flash .3s ease; }
+
+    ::-webkit-scrollbar { width:3px; }
+    ::-webkit-scrollbar-track { background:rgba(0,0,0,.3); }
+    ::-webkit-scrollbar-thumb { background:rgba(212,175,55,.25); border-radius:2px; }
+
+    @media(max-width:620px) {
+      .battle-field { grid-template-columns:1fr; }
+      .map-grid { grid-template-columns:repeat(2,1fr); }
+      .vs { display:none; }
+    }
+  </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="strata"></div>
+<div id="pts"></div>
+
+<div class="app">
+
+  <header>
+    <div class="eyebrow">⛏ Geological Chronicles · Phase II</div>
+    <h1>OkayCubs RPG</h1>
+    <div class="subtitle">Forged in the Strata of Time</div>
+    <div class="rule"></div>
+    <div class="eras">
+      <span class="era era-h on">Hadean</span>
+      <span class="era era-a on">Archean</span>
+      <span class="era era-p off">Proterozoic</span>
+      <span class="era era-l off">Paleozoic</span>
+      <span class="era era-m off">Mesozoic</span>
+      <span class="era era-c off">Cenozoic</span>
+    </div>
+  </header>
+
+  <!-- WALLET -->
+  <div class="wallet-zone">
+    <button class="btn-main" id="walletBtn" onclick="connectWallet()">⬡ Connect Phantom Wallet</button>
+    <div class="wallet-addr" id="walletAddr"></div>
+  </div>
+  <div class="status-bar" id="statusBar">✦ Demo Mode — real Cubs load after connecting wallet ✦</div>
+
+  <!-- LOADER -->
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <div class="loader-text">Scanning the strata for your Cubs...</div>
+  </div>
+
+  <!-- CUBS -->
+  <div class="sec-title" id="cubsTitle">✦ Your Cubs ✦</div>
+  <div class="cubs-grid" id="cubsGrid"></div>
+
+  <!-- TRAIT PANEL -->
+  <div class="trait-panel" id="traitPanel">
+    <div class="sec-title" style="margin-top:0">✦ Trait Analysis ✦</div>
+    <div class="trait-grid" id="traitGrid"></div>
+  </div>
+
+  <!-- BATTLE -->
+  <div style="margin-top:48px">
+    <div class="sec-title">✦ Battle Arena — Hadean Depths ✦</div>
+    <div class="arena">
+      <div class="arena-title">Hadean Crucible</div>
+      <div class="arena-sub">Where primordial fire tests the worthy</div>
+      <div class="battle-field">
+        <div class="fighter player" id="playerSlot"><div class="empty-slot">Select a Cub<br/>to enter battle</div></div>
+        <div class="vs">VS</div>
+        <div class="fighter enemy"  id="enemySlot"><div class="empty-slot">Awaiting<br/>challenger...</div></div>
+      </div>
+      <div class="btns">
+        <button class="battle-btn bb-atk" id="btnA" onclick="act('atk')" disabled>⚔ Strike</button>
+        <button class="battle-btn bb-def" id="btnD" onclick="act('def')" disabled>🛡 Fortify</button>
+        <button class="battle-btn bb-spc" id="btnS" onclick="act('spc')" disabled>✦ Geo-Burst</button>
+      </div>
+    </div>
+    <div class="log" id="log"><div class="log-line ls">⛏ Enter the Hadean Crucible to begin your chronicle...</div></div>
+  </div>
+
+  <!-- WORLD MAP -->
+  <div style="margin-top:48px">
+    <div class="sec-title">✦ Geological World Map ✦</div>
+    <div class="map-grid">
+      <div class="zone z-h unlocked">
+        <span class="z-icon">🌋</span>
+        <div class="z-name" style="color:#9b59b6">Hadean</div>
+        <div class="z-desc">Primordial fire. The world is born in chaos.</div>
+        <div class="z-lvl">LVL 1–5 · Unlocked</div>
+      </div>
+      <div class="zone z-a unlocked">
+        <span class="z-icon">🪨</span>
+        <div class="z-name" style="color:#3498db">Archean</div>
+        <div class="z-desc">Ancient crust. First life stirs in the deep.</div>
+        <div class="z-lvl">LVL 6–15 · Unlocked</div>
+      </div>
+      <div class="zone z-p locked">
+        <span class="z-icon">🔒</span>
+        <div class="z-name" style="color:#1abc9c">Proterozoic</div>
+        <div class="z-desc">Oxygen rises. The great oxidation event.</div>
+        <div class="z-lvl">LVL 16–30 · Locked</div>
+      </div>
+      <div class="zone z-l locked">
+        <span class="z-icon">🔒</span>
+        <div class="z-name" style="color:#2ecc71">Paleozoic</div>
+        <div class="z-desc">Life explodes across the ancient seas.</div>
+        <div class="z-lvl">LVL 31–50 · Locked</div>
+      </div>
+      <div class="zone z-m locked">
+        <span class="z-icon">🔒</span>
+        <div class="z-name" style="color:#f39c12">Mesozoic</div>
+        <div class="z-desc">Age of giants. Titans rule the earth.</div>
+        <div class="z-lvl">LVL 51–75 · Locked</div>
+      </div>
+      <div class="zone z-c locked">
+        <span class="z-icon">🔒</span>
+        <div class="z-name" style="color:#e74c3c">Cenozoic</div>
+        <div class="z-desc">The modern age. The final reckoning.</div>
+        <div class="z-lvl">LVL 76–100 · Locked</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────
+const HELIUS_KEY   = 'd11ad3bf-816c-4a95-87ac-053f78d12995';
+const HELIUS_RPC   = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
+const OKAY_CUBS_COLLECTION = 'okay_cubs'; // slug — used for display
+// We'll filter NFTs whose name contains "Cub" or collection matches
+const WALLET_DEMO  = 'Gnb1p4ZiZJGMDwL3eJakD7Y4w2SKQC9q4bXzS7qXxTow';
+
+// ─────────────────────────────────────────
+// GAME STATE
+// ─────────────────────────────────────────
+const G = {
+  connected: false, wallet: null, cubs: [],
+  selected: null, pHP: 100, pMaxHP: 100,
+  eHP: 80, eMaxHP: 80, active: false,
+  enemy: null, defending: false
+};
+
+const ENEMIES = [
+  { name:'Igneous Wraith',  emoji:'👹', cls:'Lava Spawn',   hp:80,  atk:22, def:10 },
+  { name:'Obsidian Golem',  emoji:'🗿', cls:'Stone Titan',  hp:120, atk:18, def:25 },
+  { name:'Fossil Revenant', emoji:'💀', cls:'Ancient Dead', hp:65,  atk:28, def:8  },
+  { name:'Crystal Basilisk',emoji:'🦎', cls:'Gem Crawler',  hp:90,  atk:20, def:15 },
+];
+
+const GEO_BURSTS = ['Seismic Rupture','Magma Wave','Crystal Storm','Tectonic Slam','Fossil Surge','Obsidian Spike'];
+
+// ─────────────────────────────────────────
+// HELIUS — fetch real NFTs
+// ─────────────────────────────────────────
+async function fetchCubsFromChain(ownerAddress) {
+  setStatus('Scanning the strata…', '');
+  showLoader(true);
+
+  try {
+    let page = 1, all = [];
+    while (true) {
+      const res = await fetch(HELIUS_RPC, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 'get-nfts', method: 'getAssetsByOwner',
+          params: {
+            ownerAddress,
+            page, limit: 1000,
+            displayOptions: { showFungible: false, showNativeBalance: false }
+          }
+        })
+      });
+      const data = await res.json();
+      const items = data?.result?.items || [];
+      all = all.concat(items);
+      if (items.length < 1000) break;
+      page++;
+    }
+
+    // Filter OkayCubs — match by collection group or name
+    const cubs = all.filter(nft => {
+      const groups  = nft.grouping || [];
+      const inColl  = groups.some(g => g.group_value && g.group_value.toLowerCase().includes('cub'));
+      const name    = (nft.content?.metadata?.name || '').toLowerCase();
+      const nameMatch = name.includes('cub');
+      return inColl || nameMatch;
+    });
+
+    showLoader(false);
+
+    if (cubs.length === 0) {
+      // fallback: show all NFTs (maybe collection key differs)
+      const fallback = all.filter(n => {
+        const name = (n.content?.metadata?.name || '').toLowerCase();
+        return name.includes('okay') || name.includes('cub') || name.includes('bear');
+      });
+      if (fallback.length > 0) return parseCubs(fallback);
+
+      setStatus(`No OkayCubs found in this wallet — showing demo Cubs`, 'bad');
+      return getDemoCubs();
+    }
+
+    setStatus(`✦ ${cubs.length} OkayCubs loaded from chain ✦`, 'good');
+    return parseCubs(cubs);
+
+  } catch(err) {
+    showLoader(false);
+    setStatus('Chain error — showing demo Cubs', 'bad');
+    console.error(err);
+    return getDemoCubs();
+  }
+}
+
+function parseCubs(nfts) {
+  return nfts.slice(0, 50).map((nft, i) => {
+    const meta   = nft.content?.metadata || {};
+    const attrs  = meta.attributes || [];
+    const files  = nft.content?.files || [];
+    const imgUrl = files.find(f => f.mime?.startsWith('image'))?.cdn_uri
+                || files[0]?.cdn_uri
+                || nft.content?.links?.image
+                || null;
+
+    const traits = {};
+    attrs.forEach(a => { if (a.trait_type) traits[a.trait_type] = a.value; });
+
+    // Determine rarity from trait count / special traits
+    const traitCount = attrs.length;
+    const rarity = traitCount >= 8 ? 'legendary' : traitCount >= 6 ? 'epic' : traitCount >= 4 ? 'rare' : 'common';
+
+    return {
+      id:     nft.id || i,
+      name:   meta.name || `Cub #${i}`,
+      image:  imgUrl,
+      rarity,
+      class:  deriveClass(traits),
+      traits
+    };
+  });
+}
+
+function deriveClass(traits) {
+  const classes = {
+    'Volcanic':'Magma Warden', 'Fire':'Ember Knight', 'Ice':'Glacial Scout',
+    'Dark':'Void Stalker', 'Light':'Quartz Sage', 'Stone':'Stratum Knight',
+    'Water':'Tidal Rogue', 'Sand':'Desert Fossil', 'Forest':'Carbonite Ranger',
+  };
+  const bg = traits['Background'] || traits['background'] || '';
+  for (const [k, v] of Object.entries(classes)) {
+    if (bg.toLowerCase().includes(k.toLowerCase())) return v;
+  }
+  const fallbacks = ['Sediment Scout','Fossil Rogue','Crystal Mage','Tectonic Guard','Magma Warden'];
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+}
+
+// ─────────────────────────────────────────
+// DEMO FALLBACK
+// ─────────────────────────────────────────
+function getDemoCubs() {
+  return [
+    { id:1, name:'Cub #0042', image:null, rarity:'legendary', class:'Magma Warden',
+      traits:{ Background:'Volcanic Rift', Eyes:'Obsidian Gaze', Fur:'Ashen Gray', Accessory:'Crystal Pickaxe', Mouth:'Ember Fangs', Era:'Hadean' } },
+    { id:2, name:'Cub #0117', image:null, rarity:'epic', class:'Stratum Knight',
+      traits:{ Background:'Deep Fault', Eyes:'Sapphire Core', Fur:'Slate Blue', Accessory:'Geode Shield', Mouth:'Iron Jaw', Era:'Archean' } },
+    { id:3, name:'Cub #0289', image:null, rarity:'rare', class:'Fossil Rogue',
+      traits:{ Background:'Amber Resin', Eyes:'Topaz Sight', Fur:'Sandstone', Accessory:'Ammonite Ring', Mouth:'Quartz Bite', Era:'Proterozoic' } },
+    { id:4, name:'Cub #0401', image:null, rarity:'common', class:'Sediment Scout',
+      traits:{ Background:'River Delta', Eyes:'Flint Gray', Fur:'Clay Brown', Accessory:'Stone Compass', Mouth:'Pebble Grin', Era:'Hadean' } },
+  ];
+}
+
+// ─────────────────────────────────────────
+// STATS FROM TRAITS
+// ─────────────────────────────────────────
+function hash(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h<<5)+h)^s.charCodeAt(i);
+  return Math.abs(h);
+}
+
+function getStats(cub) {
+  const seed = hash(Object.values(cub.traits).join('|') + cub.name);
+  const rb   = { legendary:30, epic:20, rare:10, common:0 }[cub.rarity] || 0;
+  const r    = n => Math.min(99, 30 + (seed % n) + rb);
+  return { ATK: r(40), DEF: r(35), SPD: r(38), LCK: r(30), HP: 100 + rb * 2 };
+}
+
+// ─────────────────────────────────────────
+// RENDER CUBS
+// ─────────────────────────────────────────
+function renderCubs(cubs) {
+  const grid = document.getElementById('cubsGrid');
+  grid.innerHTML = '';
+  if (!cubs.length) {
+    grid.innerHTML = '<div style="text-align:center;font-style:italic;opacity:.4;padding:30px;font-family:Crimson Pro,serif">No Cubs found.</div>';
+    return;
+  }
+  cubs.forEach(cub => {
+    const stats = getStats(cub);
+    const card  = document.createElement('div');
+    card.className = `cub-card r-${cub.rarity}`;
+    card.id = `c-${cub.id}`;
+    card.onclick = () => selectCub(cub);
+    card.innerHTML = `
+      <div class="cub-img-wrap">
+        ${cub.image
+          ? `<img class="cub-img" src="${cub.image}" alt="${cub.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : ''}
+        <div class="cub-placeholder" ${cub.image ? 'style="display:none"' : ''}>🐻</div>
+        <div class="rarity-ring"></div>
+      </div>
+      <div class="cub-name">${cub.name}</div>
+      <div class="cub-class">${cub.class}</div>
+      ${statBars(stats)}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function statBars(s) {
+  return ['ATK','DEF','SPD','LCK'].map(k => `
+    <div class="stat-row s-${k.toLowerCase()}">
+      <span class="stat-lbl">${k}</span>
+      <div class="stat-bg"><div class="stat-fill" style="width:${s[k]}%"></div></div>
+      <span class="stat-num">${s[k]}</span>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────
+// SELECT CUB → BATTLE
+// ─────────────────────────────────────────
+function selectCub(cub) {
+  G.selected = cub;
+  const stats = getStats(cub);
+  G.pHP = G.pMaxHP = stats.HP;
+
+  document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`c-${cub.id}`)?.classList.add('selected');
+
+  showTraits(cub);
+  spawnEnemy();
+  updatePlayer();
+  setBtns(true);
+  addLog(`⛏ ${cub.name} descends into the Hadean Crucible…`, 'ls');
+}
+
+function showTraits(cub) {
+  const panel = document.getElementById('traitPanel');
+  const grid  = document.getElementById('traitGrid');
+  panel.classList.add('show');
+  grid.innerHTML = Object.entries(cub.traits).map(([t,v]) =>
+    `<div class="trait-item"><div class="t-type">${t}</div><div class="t-val">${v}</div></div>`
+  ).join('');
+}
+
+function spawnEnemy() {
+  G.enemy = { ...ENEMIES[Math.floor(Math.random() * ENEMIES.length)] };
+  G.eHP = G.eMaxHP = G.enemy.hp;
+  G.active = true;
+  updateEnemy();
+}
+
+// ─────────────────────────────────────────
+// BATTLE UI
+// ─────────────────────────────────────────
+function updatePlayer() {
+  const c = G.selected, pct = Math.max(0, G.pHP / G.pMaxHP * 100);
+  document.getElementById('playerSlot').innerHTML = `
+    <div class="f-avatar">${c.image ? `<img src="${c.image}" style="width:46px;height:46px;border-radius:50%;object-fit:cover" onerror="this.outerHTML='🐻'">` : '🐻'}</div>
+    <div class="f-name">${c.name}</div>
+    <div class="f-class">${c.class}</div>
+    <div class="hp-wrap">
+      <div class="hp-lbl">HP</div>
+      <div class="hp-bg"><div class="hp-fill" style="width:${pct}%"></div></div>
+      <div class="hp-txt">${G.pHP} / ${G.pMaxHP}</div>
+    </div>
+  `;
+}
+
+function updateEnemy() {
+  const e = G.enemy, pct = Math.max(0, G.eHP / G.eMaxHP * 100);
+  document.getElementById('enemySlot').innerHTML = `
+    <div class="f-avatar">${e.emoji}</div>
+    <div class="f-name">${e.name}</div>
+    <div class="f-class">${e.cls}</div>
+    <div class="hp-wrap">
+      <div class="hp-lbl">HP</div>
+      <div class="hp-bg"><div class="hp-fill" style="width:${pct}%"></div></div>
+      <div class="hp-txt">${G.eHP} / ${G.eMaxHP}</div>
+    </div>
+  `;
+}
+
+function setBtns(on) {
+  ['btnA','btnD','btnS'].forEach(id => document.getElementById(id).disabled = !on);
+}
+
+function anim(id, cls) {
+  const el = document.getElementById(id);
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 500);
+}
+
+function addLog(msg, cls='ls') {
+  const log = document.getElementById('log');
+  const el  = document.createElement('div');
+  el.className = `log-line ${cls}`;
+  el.textContent = msg;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+  while (log.children.length > 25) log.removeChild(log.firstChild);
+}
+
+// ─────────────────────────────────────────
+// BATTLE LOGIC
+// ─────────────────────────────────────────
+function act(action) {
+  if (!G.active || !G.selected) return;
+  const stats = getStats(G.selected);
+  const cub   = G.selected;
+  G.defending = false;
+
+  if (action === 'atk') {
+    const crit = Math.random() < stats.LCK / 200;
+    let dmg    = Math.floor(stats.ATK * 0.4 + Math.random() * 15);
+    if (crit) dmg = Math.floor(dmg * 1.8);
+    G.eHP = Math.max(0, G.eHP - dmg);
+    addLog(`⚔ ${cub.name} strikes for ${dmg}${crit ? ' 💥 CRITICAL!' : ''}!`, 'lp');
+    anim('enemySlot', 'anim-shake');
+
+  } else if (action === 'def') {
+    G.defending = true;
+    addLog(`🛡 ${cub.name} fortifies — DEF +${Math.floor(stats.DEF * .5)}`, 'lp');
+
+  } else {
+    const burst = GEO_BURSTS[Math.floor(Math.random() * GEO_BURSTS.length)];
+    const dmg   = Math.floor(stats.ATK * .6 + stats.LCK * .3 + Math.random() * 20);
+    G.eHP = Math.max(0, G.eHP - dmg);
+    addLog(`✦ ${cub.name} unleashes ${burst} for ${dmg}!`, 'lp');
+    anim('enemySlot', 'anim-shake');
+  }
+
+  if (G.eHP <= 0) {
+    updateEnemy();
+    setTimeout(() => {
+      addLog(`🏆 ${G.enemy.name} returns to the strata!`, 'ls');
+      setTimeout(() => { spawnEnemy(); addLog('💀 A new challenger rises…', 'ls'); }, 1400);
+    }, 300);
+    return;
+  }
+
+  setTimeout(() => {
+    const rawDmg = Math.floor(G.enemy.atk * .6 + Math.random() * 12);
+    const red    = G.defending ? Math.floor(rawDmg * .35) : rawDmg;
+    const final  = Math.max(1, red - Math.floor(stats.DEF * .12));
+    G.pHP = Math.max(0, G.pHP - final);
+    addLog(`${G.enemy.emoji} ${G.enemy.name} retaliates for ${final}${G.defending ? ' (blocked!)' : ''}!`, 'le');
+    anim('playerSlot', 'anim-flash');
+    updatePlayer();
+    updateEnemy();
+
+    if (G.pHP <= 0) {
+      addLog(`💀 ${cub.name} has fallen… The strata claims another.`, 'ls');
+      setBtns(false);
+      G.active = false;
+      setTimeout(resetBattle, 2500);
+    }
+  }, 650);
+
+  updatePlayer();
+  updateEnemy();
+}
+
+function resetBattle() {
+  addLog('⛏ Select a Cub to re-enter the crucible…', 'ls');
+  document.getElementById('playerSlot').innerHTML = '<div class="empty-slot">Select a Cub<br/>to enter battle</div>';
+  document.getElementById('enemySlot').innerHTML  = '<div class="empty-slot">Awaiting<br/>challenger...</div>';
+  G.selected = null;
+  document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
+}
+
+// ─────────────────────────────────────────
+// WALLET CONNECT
+// ─────────────────────────────────────────
+async function connectWallet() {
+  const btn = document.getElementById('walletBtn');
+  if (window.solana?.isPhantom) {
+    try {
+      const resp = await window.solana.connect();
+      const addr = resp.publicKey.toString();
+      G.connected = true;
+      G.wallet = addr;
+      btn.textContent = '✓ Phantom Connected';
+      btn.classList.add('ok');
+      document.getElementById('walletAddr').textContent = addr.slice(0,4) + '...' + addr.slice(-4);
+      addLog(`⛏ Wallet connected: ${addr.slice(0,4)}...${addr.slice(-4)}`, 'ls');
+      const cubs = await fetchCubsFromChain(addr);
+      G.cubs = cubs;
+      renderCubs(cubs);
+    } catch(e) {
+      setStatus('Connection rejected — showing demo Cubs', 'bad');
+      loadDemo();
+    }
+  } else {
+    setStatus('Phantom not found — loading demo Cubs', 'bad');
+    loadDemo();
+  }
+}
+
+async function loadDemo() {
+  showLoader(true);
+  await new Promise(r => setTimeout(r, 800));
+  showLoader(false);
+  G.cubs = getDemoCubs();
+  renderCubs(G.cubs);
+}
+
+// ─────────────────────────────────────────
+// UI HELPERS
+// ─────────────────────────────────────────
+function setStatus(msg, type) {
+  const el = document.getElementById('statusBar');
+  el.textContent = msg;
+  el.className = `status-bar${type ? ' '+type : ''}`;
+}
+function showLoader(on) {
+  document.getElementById('loader').classList.toggle('show', on);
+}
+
+// ─────────────────────────────────────────
+// PARTICLES
+// ─────────────────────────────────────────
+(function spawnParticles() {
+  const c = document.getElementById('pts');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'pt';
+    const sz = 1 + Math.random() * 2;
+    p.style.cssText = `
+      left:${Math.random()*100}vw;
+      width:${sz}px; height:${sz}px;
+      animation-duration:${9+Math.random()*14}s;
+      animation-delay:${Math.random()*12}s;
+    `;
+    c.appendChild(p);
+  }
+})();
+
+// ─────────────────────────────────────────
+// INIT — auto-load demo on start
+// ─────────────────────────────────────────
+(async function init() {
+  G.cubs = getDemoCubs();
+  renderCubs(G.cubs);
+})();
+</script>
+</body>
+</html>
