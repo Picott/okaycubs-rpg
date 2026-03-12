@@ -494,8 +494,11 @@ async function fetchCubsFromChain(ownerAddress) {
       });
       if (fallback.length > 0) return parseCubs(fallback);
 
-      setStatus(`No OkayCubs found in this wallet — showing demo Cubs`, 'bad');
-      return getDemoCubs();
+      // DEBUG — mostrar todos los NFTs en pantalla
+const names = all.slice(0,20).map(n => n.content?.metadata?.name || 'sin nombre').join(' | ');
+setStatus(`🔍 NFTs encontrados: ${all.length} → Nombres: ${names}`, 'bad');
+return getDemoCubs();
+
     }
 
     setStatus(`✦ ${cubs.length} OkayCubs loaded from chain ✦`, 'good');
