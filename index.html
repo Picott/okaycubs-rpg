@@ -512,8 +512,9 @@ return nameMatch || uriMatch || collMatch || (noName && isNFT);
       if (fallback.length > 0) return parseCubs(fallback);
 
 
-setStatus(`🔍 Sin nombre: ${noNames.length} → ${debugInfo}`, 'bad');
+setStatus(`No OkayCubs found in this wallet — showing demo Cubs`, 'bad');
 return getDemoCubs();
+
 
 
 
