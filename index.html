@@ -510,8 +510,13 @@ async function fetchCubsFromChain(ownerAddress) {
       });
       if (fallback.length > 0) return parseCubs(fallback);
 
-setStatus(`No OkayCubs found in this wallet — showing demo Cubs`, 'bad');
+const noNames = all.filter(n => !n.content?.metadata?.name);
+const debugInfo = noNames.slice(0,5).map(n => 
+  `[${n.interface}] uri:${(n.content?.json_uri||'').slice(0,40)}`
+).join(' || ');
+setStatus(`🔍 Sin nombre: ${noNames.length} → ${debugInfo}`, 'bad');
 return getDemoCubs();
+
 
 
     }
