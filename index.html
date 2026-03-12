@@ -477,12 +477,28 @@ async function fetchCubsFromChain(ownerAddress) {
 
     // Filter OkayCubs — match by collection group or name
     const cubs = all.filter(nft => {
-      const groups  = nft.grouping || [];
-      const inColl  = groups.some(g => g.group_value && g.group_value.toLowerCase().includes('cub'));
-      const name    = (nft.content?.metadata?.name || '').toLowerCase();
-      const nameMatch = name.includes('cub');
-      return inColl || nameMatch;
-    });
+  const name     = (nft.content?.metadata?.name || '').toLowerCase();
+  const uri      = (nft.content?.json_uri || '').toLowerCase();
+  const groups   = nft.grouping || [];
+  const iface    = nft.interface || '';
+
+  // Nombres conocidos
+  const nameMatch = name.includes('cub') || name.includes('okay');
+  // URI apunta a metadata de OkayCubs
+  const uriMatch  = uri.includes('cub') || uri.includes('okay');
+  // Colección en grouping
+  const collMatch = groups.some(g =>
+    (g.group_value || '').toLowerCase().includes('cub') ||
+    (g.group_value || '').toLowerCase().includes('okay')
+  );
+  // Es un NFT sin nombre (sin nombre = posiblemente tus Cubs no verificados)
+  const noName = !nft.content?.metadata?.name;
+  // Solo incluir NFTs sin nombre que sean tipo NFT (no tokens fungibles)
+  const isNFT = iface === 'V1_NFT' || iface === 'ProgrammableNFT' || iface === 'MplCoreAsset';
+
+  return nameMatch || uriMatch || collMatch || (noName && isNFT);
+});
+
 
     showLoader(false);
 
@@ -494,10 +510,9 @@ async function fetchCubsFromChain(ownerAddress) {
       });
       if (fallback.length > 0) return parseCubs(fallback);
 
-      // DEBUG — mostrar todos los NFTs en pantalla
-const names = all.slice(0,20).map(n => n.content?.metadata?.name || 'sin nombre').join(' | ');
-setStatus(`🔍 NFTs encontrados: ${all.length} → Nombres: ${names}`, 'bad');
+setStatus(`No OkayCubs found in this wallet — showing demo Cubs`, 'bad');
 return getDemoCubs();
+
 
     }
 
