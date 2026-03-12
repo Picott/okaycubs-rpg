@@ -521,12 +521,8 @@ return getDemoCubs();
     }
 
     setStatus(`✦ ${cubs.length} OkayCubs loaded from chain ✦`, 'good');
-const firstCub = cubs[0];
-const files = firstCub?.content?.files || [];
-const links = firstCub?.content?.links || {};
-const uri = firstCub?.content?.json_uri || '';
-console.log('FIRST CUB:', JSON.stringify({files, links, uri}));
-alert(`URI: ${uri}\nFiles: ${JSON.stringify(files).slice(0,200)}\nLinks: ${JSON.stringify(links)}`);
+// chain data loaded
+
 return parseCubs(cubs);
 
   } catch(err) {
