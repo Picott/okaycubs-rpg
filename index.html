@@ -494,9 +494,10 @@ async function fetchCubsFromChain(ownerAddress) {
   // Es un NFT sin nombre (sin nombre = posiblemente tus Cubs no verificados)
   const noName = !nft.content?.metadata?.name;
   // Solo incluir NFTs sin nombre que sean tipo NFT (no tokens fungibles)
-  const isNFT = iface === 'V1_NFT' || iface === 'ProgrammableNFT' || iface === 'MplCoreAsset';
+  const isNFT = iface === 'V1_NFT' || iface === 'ProgrammableNFT' || iface === 'MplCoreAsset' || iface === 'Custom';
 
-  return nameMatch || uriMatch || collMatch || (noName && isNFT);
+return nameMatch || uriMatch || collMatch || (noName && isNFT);
+
 });
 
 
