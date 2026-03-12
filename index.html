@@ -543,10 +543,14 @@ function parseCubs(nfts) {
     const meta   = nft.content?.metadata || {};
     const attrs  = meta.attributes || [];
     const files  = nft.content?.files || [];
-    const imgUrl = files.find(f => f.mime?.startsWith('image'))?.cdn_uri
-                || files[0]?.cdn_uri
-                || nft.content?.links?.image
-                || null;
+    const imgFile = files.find(f => f.mime?.startsWith('image'));
+const imgUrl = imgFile?.cdn_uri
+            || imgFile?.uri
+            || nft.content?.links?.image
+            || files[0]?.cdn_uri
+            || files[0]?.uri
+            || null;
+
 
     const traits = {};
     attrs.forEach(a => { if (a.trait_type) traits[a.trait_type] = a.value; });
