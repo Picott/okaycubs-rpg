@@ -640,12 +640,19 @@ function getStats(cub) {
 // ─────────────────────────────────────────
 // LAZY IMAGE LOADER — fetch off-chain metadata when Helius has no image
 // ─────────────────────────────────────────
+function toHttpUrl(url) {
+  if (!url) return null;
+  if (url.startsWith('ipfs://')) return 'https://ipfs.io/ipfs/' + url.slice(7);
+  if (url.startsWith('ar://'))   return 'https://arweave.net/' + url.slice(5);
+  return url;
+}
+
 async function loadCubImage(imgEl, jsonUri) {
   if (!jsonUri) return;
   try {
-    const res  = await fetch(jsonUri);
+    const res  = await fetch(toHttpUrl(jsonUri));
     const meta = await res.json();
-    const url  = meta.image || meta.image_url || '';
+    const url  = toHttpUrl(meta.image || meta.image_url || '');
     if (url) {
       imgEl.src = url;
       imgEl.style.display = '';
