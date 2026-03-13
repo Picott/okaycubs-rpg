@@ -836,11 +836,12 @@ async function connectWallet() {
       G.cubs = cubs;
       renderCubs(cubs);
     } catch(e) {
-      setStatus('Connection rejected — showing demo Cubs', 'bad');
+      setStatus(`Wallet error: ${e?.message || e?.code || JSON.stringify(e)}`, 'bad');
+      console.error('Wallet connect error:', e);
       loadDemo();
     }
   } else {
-    setStatus('Phantom not found — loading demo Cubs', 'bad');
+    setStatus(`Phantom not detected (window.solana = ${typeof window.solana}) — loading demo`, 'bad');
     loadDemo();
   }
 }
