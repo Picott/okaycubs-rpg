@@ -559,13 +559,13 @@ function parseCubs(nfts) {
     const attrs  = meta.attributes || [];
     const files  = nft.content?.files || [];
     const imgFile = files.find(f => f.mime?.startsWith('image'));
-const imgUrl = imgFile?.cdn_uri
+    const imgUrl = imgFile?.cdn_uri
             || imgFile?.uri
             || nft.content?.links?.image
             || files[0]?.cdn_uri
             || files[0]?.uri
             || null;
-
+    const jsonUri = nft.content?.json_uri || null;
 
     const traits = {};
     attrs.forEach(a => { if (a.trait_type) traits[a.trait_type] = a.value; });
@@ -576,10 +576,11 @@ const imgUrl = imgFile?.cdn_uri
 
     return {
       id:     nft.id || i,
-      name:   meta.name || `Cub #${i}`,
-      image:  imgUrl,
+      name:    meta.name || `Cub #${i}`,
+      image:   imgUrl,
+      jsonUri: jsonUri,
       rarity,
-      class:  deriveClass(traits),
+      class:   deriveClass(traits),
       traits
     };
   });
@@ -632,6 +633,23 @@ function getStats(cub) {
 }
 
 // ─────────────────────────────────────────
+// LAZY IMAGE LOADER — fetch off-chain metadata when Helius has no image
+// ─────────────────────────────────────────
+async function loadCubImage(imgEl, jsonUri) {
+  if (!jsonUri) return;
+  try {
+    const res  = await fetch(jsonUri);
+    const meta = await res.json();
+    const url  = meta.image || meta.image_url || '';
+    if (url) {
+      imgEl.src = url;
+      imgEl.style.display = '';
+      imgEl.nextElementSibling.style.display = 'none';
+    }
+  } catch(e) { /* leave placeholder */ }
+}
+
+// ─────────────────────────────────────────
 // RENDER CUBS
 // ─────────────────────────────────────────
 function renderCubs(cubs) {
@@ -649,9 +667,9 @@ function renderCubs(cubs) {
     card.onclick = () => selectCub(cub);
     card.innerHTML = `
       <div class="cub-img-wrap">
-        ${cub.image
-          ? `<img class="cub-img" src="${cub.image}" alt="${cub.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-          : ''}
+        <img class="cub-img" src="${cub.image || ''}" alt="${cub.name}"
+          ${!cub.image ? 'style="display:none"' : ''}
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';loadCubImage(this,'${cub.jsonUri || ''}')">
         <div class="cub-placeholder" ${cub.image ? 'style="display:none"' : ''}>🐻</div>
         <div class="rarity-ring"></div>
       </div>
