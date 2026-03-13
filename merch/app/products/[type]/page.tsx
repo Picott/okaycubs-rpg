@@ -61,9 +61,11 @@ function ProductPageInner() {
       .catch(() => {});
   }, []);
 
-  // Generate mockup when cub + variant are ready
+  // Generate mockup when cub + variant are ready — async create then poll
   useEffect(() => {
     if (!selectedCub?.image || !variant) return;
+
+    let cancelled = false;
     setLoadingMockup(true);
     setMockupUrl('');
 
@@ -71,14 +73,37 @@ function ProductPageInner() {
       ? window.location.origin + selectedCub.image
       : selectedCub.image;
 
-    fetch('/api/printful/mockup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
-    })
-      .then(r => r.json())
-      .then(d => { if (d.mockupUrl) setMockupUrl(d.mockupUrl); })
-      .finally(() => setLoadingMockup(false));
+    (async () => {
+      try {
+        // Step 1: create task (fast, < 2s)
+        const createRes = await fetch('/api/printful/mockup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
+        });
+        const { taskKey } = await createRes.json();
+        if (!taskKey || cancelled) return;
+
+        // Step 2: poll every 2s until done (max 60s)
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 2000));
+          if (cancelled) return;
+
+          const pollRes = await fetch(`/api/printful/mockup?task_key=${taskKey}`);
+          const data = await pollRes.json();
+
+          if (data.status === 'completed') {
+            if (!cancelled && data.mockupUrl) setMockupUrl(data.mockupUrl);
+            return;
+          }
+          if (data.status === 'failed') return;
+        }
+      } finally {
+        if (!cancelled) setLoadingMockup(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [selectedCub, variant?.printfulVariantId]);
 
   if (!product) {

@@ -1,48 +1,10 @@
 const PRINTFUL_API = 'https://api.printful.com';
-const KEY = process.env.PRINTFUL_API_KEY!;
 
 function headers() {
   return {
-    Authorization: `Bearer ${KEY}`,
+    Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
     'Content-Type': 'application/json',
   };
-}
-
-export async function generateMockup(
-  productId: number,
-  variantId: number,
-  placement: string,
-  imageUrl: string
-): Promise<string | null> {
-  // Step 1: create mockup generation task
-  const task = await fetch(`${PRINTFUL_API}/mockup-generator/create-task/${productId}`, {
-    method: 'POST',
-    headers: headers(),
-    body: JSON.stringify({
-      variant_ids: [variantId],
-      files: [{ placement, image_url: imageUrl, position: { area_width: 1800, area_height: 2400, width: 1800, height: 1800, top: 300, left: 0 } }],
-    }),
-  });
-
-  const taskData = await task.json();
-  const taskKey = taskData?.result?.task_key;
-  if (!taskKey) return null;
-
-  // Step 2: poll until done (max ~15s)
-  for (let i = 0; i < 10; i++) {
-    await new Promise(r => setTimeout(r, 1500));
-    const result = await fetch(
-      `${PRINTFUL_API}/mockup-generator/task?task_key=${taskKey}`,
-      { headers: headers() }
-    );
-    const data = await result.json();
-    if (data?.result?.status === 'completed') {
-      return data?.result?.mockups?.[0]?.mockup_url ?? null;
-    }
-    if (data?.result?.status === 'failed') return null;
-  }
-
-  return null;
 }
 
 export interface PrintfulOrderItem {
