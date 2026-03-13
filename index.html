@@ -532,7 +532,7 @@ return nameMatch || uriMatch || collMatch;
         const imgFile = files.find(f => f.mime?.startsWith('image'));
         const sampleUrl = imgFile?.cdn_uri || imgFile?.uri || first.content?.links?.image || files[0]?.uri || 'none';
         const sampleUri = first.content?.json_uri || 'none';
-        setStatus(`${realNFTs.length} NFTs — img: ${sampleUrl.slice(0,60)} | json: ${sampleUri.slice(0,60)}`, 'bad');
+        setStatus(`✦ ${realNFTs.length} NFTs loaded — loading images…`, '');
         return parseCubs(realNFTs);
       }
 
@@ -654,9 +654,16 @@ async function loadCubImage(imgEl, jsonUri) {
     const meta = await res.json();
     const url  = toHttpUrl(meta.image || meta.image_url || '');
     if (url) {
+      // Remove onerror so it doesn't fight us; add one that shows placeholder on final failure
+      imgEl.onerror = () => {
+        imgEl.style.display = 'none';
+        imgEl.nextElementSibling.style.display = 'flex';
+      };
+      imgEl.onload = () => {
+        imgEl.style.display = '';
+        imgEl.nextElementSibling.style.display = 'none';
+      };
       imgEl.src = url;
-      imgEl.style.display = '';
-      imgEl.nextElementSibling.style.display = 'none';
     }
   } catch(e) { /* leave placeholder */ }
 }
@@ -677,11 +684,13 @@ function renderCubs(cubs) {
     card.className = `cub-card r-${cub.rarity}`;
     card.id = `c-${cub.id}`;
     card.onclick = () => selectCub(cub);
+    const hasDirectImg = !!cub.image;
     card.innerHTML = `
       <div class="cub-img-wrap">
         <img class="cub-img" src="${cub.image || ''}" alt="${cub.name}"
+          style="${hasDirectImg ? '' : 'display:none'}"
           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <div class="cub-placeholder" style="display:none">🐻</div>
+        <div class="cub-placeholder" style="${hasDirectImg ? 'display:none' : 'display:flex'}">🐻</div>
         <div class="rarity-ring"></div>
       </div>
       <div class="cub-name">${cub.name}</div>
@@ -690,14 +699,9 @@ function renderCubs(cubs) {
     `;
     grid.appendChild(card);
 
-    // If no image from Helius, fetch it from off-chain metadata
-    if (!cub.image && cub.jsonUri) {
-      const imgEl = card.querySelector('.cub-img');
-      loadCubImage(imgEl, cub.jsonUri);
-    } else if (!cub.image) {
-      const imgEl = card.querySelector('.cub-img');
-      imgEl.style.display = 'none';
-      card.querySelector('.cub-placeholder').style.display = 'flex';
+    // If no direct image from Helius, fetch from off-chain metadata
+    if (!hasDirectImg && cub.jsonUri) {
+      loadCubImage(card.querySelector('.cub-img'), cub.jsonUri);
     }
   });
 }
