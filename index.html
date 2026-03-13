@@ -514,16 +514,24 @@ return nameMatch || uriMatch || collMatch;
     });
 
     if (cubs.length === 0) {
-      const sample = all.slice(0, 3).map(n => `"${n.content?.metadata?.name || n.interface || '?'}"`).join(', ');
-      setStatus(`${all.length} NFTs found — 0 Cubs. Sample: ${sample || 'empty wallet'}`, 'bad');
-      // fallback: show all NFTs (maybe collection key differs)
-      const fallback = all.filter(n => {
-        const name = (n.content?.metadata?.name || '').toLowerCase();
-        return name.includes('okay') || name.includes('cub') || name.includes('bear');
+      // Filter out obvious junk (fungible airdrops with emoji names)
+      const realNFTs = all.filter(n => {
+        const iface = n.interface || '';
+        const name  = n.content?.metadata?.name || '';
+        const isNFTType = iface === 'V1_NFT' || iface === 'ProgrammableNFT' ||
+                          iface === 'MplCoreAsset' || iface === 'Custom';
+        const hasImage = !!(n.content?.links?.image ||
+                           (n.content?.files || []).find(f => f.mime?.startsWith('image')));
+        const isJunk   = name.startsWith('🎁') || name.toLowerCase().includes('airdrop');
+        return isNFTType && hasImage && !isJunk;
       });
-      if (fallback.length > 0) return parseCubs(fallback);
 
-setStatus(`No OkayCubs found (${all.length} NFTs scanned). Sample: ${sample || 'empty wallet'}`, 'bad');
+      if (realNFTs.length > 0) {
+        setStatus(`No Cubs name-matched — showing ${realNFTs.length} real NFTs from wallet`, 'bad');
+        return parseCubs(realNFTs);
+      }
+
+setStatus(`No OkayCubs found (${all.length} NFTs scanned) — showing demo Cubs`, 'bad');
 return getDemoCubs();
 
 
