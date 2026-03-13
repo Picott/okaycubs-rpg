@@ -502,7 +502,20 @@ return nameMatch || uriMatch || collMatch;
 
     showLoader(false);
 
+    // Debug: show what Helius returned
+    const debugNames = all.slice(0, 5).map(n => n.content?.metadata?.name || n.interface || '?').join(' | ');
+    console.log(`[DEBUG] Total NFTs: ${all.length} | First 5: ${debugNames}`);
+    all.forEach(n => {
+      const nm = n.content?.metadata?.name || '';
+      const uri = n.content?.json_uri || '';
+      const groups = n.grouping || [];
+      const collNames = groups.map(g => g.collection_metadata?.name || g.group_value || '').join(',');
+      console.log(`NFT: "${nm}" | iface: ${n.interface} | uri: ${uri} | coll: ${collNames}`);
+    });
+
     if (cubs.length === 0) {
+      const sample = all.slice(0, 3).map(n => `"${n.content?.metadata?.name || n.interface || '?'}"`).join(', ');
+      setStatus(`${all.length} NFTs found — 0 Cubs. Sample: ${sample || 'empty wallet'}`, 'bad');
       // fallback: show all NFTs (maybe collection key differs)
       const fallback = all.filter(n => {
         const name = (n.content?.metadata?.name || '').toLowerCase();
@@ -510,8 +523,7 @@ return nameMatch || uriMatch || collMatch;
       });
       if (fallback.length > 0) return parseCubs(fallback);
 
-
-setStatus(`No OkayCubs found in this wallet — showing demo Cubs`, 'bad');
+setStatus(`No OkayCubs found (${all.length} NFTs scanned). Sample: ${sample || 'empty wallet'}`, 'bad');
 return getDemoCubs();
 
 
