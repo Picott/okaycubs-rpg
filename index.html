@@ -527,7 +527,12 @@ return nameMatch || uriMatch || collMatch;
       });
 
       if (realNFTs.length > 0) {
-        setStatus(`No Cubs name-matched — showing ${realNFTs.length} real NFTs from wallet`, 'bad');
+        const first = realNFTs[0];
+        const files = first.content?.files || [];
+        const imgFile = files.find(f => f.mime?.startsWith('image'));
+        const sampleUrl = imgFile?.cdn_uri || imgFile?.uri || first.content?.links?.image || files[0]?.uri || 'none';
+        const sampleUri = first.content?.json_uri || 'none';
+        setStatus(`${realNFTs.length} NFTs — img: ${sampleUrl.slice(0,60)} | json: ${sampleUri.slice(0,60)}`, 'bad');
         return parseCubs(realNFTs);
       }
 
