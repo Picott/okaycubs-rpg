@@ -530,9 +530,7 @@ return nameMatch || uriMatch || collMatch;
         const first = realNFTs[0];
         const files = first.content?.files || [];
         const imgFile = files.find(f => f.mime?.startsWith('image'));
-        const sampleUrl = imgFile?.cdn_uri || imgFile?.uri || first.content?.links?.image || files[0]?.uri || 'none';
-        const sampleUri = first.content?.json_uri || 'none';
-        setStatus(`✦ ${realNFTs.length} NFTs loaded — loading images…`, '');
+        setStatus(`✦ ${realNFTs.length} NFTs loaded from chain ✦`, 'good');
         return parseCubs(realNFTs);
       }
 
