@@ -486,17 +486,16 @@ async function fetchCubsFromChain(ownerAddress) {
   const nameMatch = name.includes('cub') || name.includes('okay');
   // URI apunta a metadata de OkayCubs
   const uriMatch  = uri.includes('cub') || uri.includes('okay');
-  // Colección en grouping
-  const collMatch = groups.some(g =>
-    (g.group_value || '').toLowerCase().includes('cub') ||
-    (g.group_value || '').toLowerCase().includes('okay')
-  );
-  // Es un NFT sin nombre (sin nombre = posiblemente tus Cubs no verificados)
-  const noName = !nft.content?.metadata?.name;
-  // Solo incluir NFTs sin nombre que sean tipo NFT (no tokens fungibles)
-  const isNFT = iface === 'V1_NFT' || iface === 'ProgrammableNFT' || iface === 'MplCoreAsset' || iface === 'Custom';
+  // Colección en grouping — group_value es una dirección base58 (no legible),
+  // pero con showCollectionMetadata:true Helius devuelve collection_metadata.name
+  const collMatch = groups.some(g => {
+    const collName = (g.collection_metadata?.name || '').toLowerCase();
+    const symbol   = (g.collection_metadata?.symbol || '').toLowerCase();
+    return collName.includes('cub') || collName.includes('okay') ||
+           symbol.includes('cub')   || symbol.includes('okay');
+  });
 
-return nameMatch || uriMatch || collMatch || (noName && isNFT);
+return nameMatch || uriMatch || collMatch;
 
 });
 
