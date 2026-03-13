@@ -668,9 +668,8 @@ function renderCubs(cubs) {
     card.innerHTML = `
       <div class="cub-img-wrap">
         <img class="cub-img" src="${cub.image || ''}" alt="${cub.name}"
-          ${!cub.image ? 'style="display:none"' : ''}
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';loadCubImage(this,'${cub.jsonUri || ''}')">
-        <div class="cub-placeholder" ${cub.image ? 'style="display:none"' : ''}>🐻</div>
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="cub-placeholder" style="display:none">🐻</div>
         <div class="rarity-ring"></div>
       </div>
       <div class="cub-name">${cub.name}</div>
@@ -678,6 +677,16 @@ function renderCubs(cubs) {
       ${statBars(stats)}
     `;
     grid.appendChild(card);
+
+    // If no image from Helius, fetch it from off-chain metadata
+    if (!cub.image && cub.jsonUri) {
+      const imgEl = card.querySelector('.cub-img');
+      loadCubImage(imgEl, cub.jsonUri);
+    } else if (!cub.image) {
+      const imgEl = card.querySelector('.cub-img');
+      imgEl.style.display = 'none';
+      card.querySelector('.cub-placeholder').style.display = 'flex';
+    }
   });
 }
 
