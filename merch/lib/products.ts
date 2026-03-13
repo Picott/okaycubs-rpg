@@ -82,7 +82,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
 };
 
 export const UNIQUE_COLORS = (type: ProductType) =>
-  [...new Map(PRODUCTS[type].variants.map(v => [v.color, v])).values()];
+  Array.from(new Map(PRODUCTS[type].variants.map(v => [v.color, v])).values());
 
 export const SIZES = (type: ProductType, color: string) =>
   PRODUCTS[type].variants.filter(v => v.color === color && v.size).map(v => v.size!);
