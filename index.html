@@ -564,12 +564,12 @@ function parseCubs(nfts) {
     const attrs  = meta.attributes || [];
     const files  = nft.content?.files || [];
     const imgFile = files.find(f => f.mime?.startsWith('image'));
-    const imgUrl = imgFile?.cdn_uri
-            || imgFile?.uri
+    const rawUrl = imgFile?.cdn_uri || imgFile?.uri
             || nft.content?.links?.image
-            || files[0]?.cdn_uri
-            || files[0]?.uri
-            || null;
+            || files[0]?.cdn_uri || files[0]?.uri || null;
+    // Helius CDN sometimes wraps URLs as "...cdn-cgi/image//https://..." — detect and discard
+    const isBrokenCdn = rawUrl && rawUrl.includes('cdn-cgi/image//');
+    const imgUrl  = isBrokenCdn ? null : rawUrl;
     const jsonUri = nft.content?.json_uri || null;
 
     const traits = {};
