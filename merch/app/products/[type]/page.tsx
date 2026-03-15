@@ -30,6 +30,7 @@ function ProductPageInner() {
   const [selectedSize, setSize]     = useState<string>('');
   const [mockupUrl, setMockupUrl]   = useState<string>('');
   const [loadingMockup, setLoadingMockup] = useState(false);
+  const [mockupFailed, setMockupFailed] = useState(false);
   const [paying, setPaying]         = useState(false);
   const [solPrice, setSolPrice]     = useState<number>(0);
   const [qrUrl, setQrUrl]           = useState<string>('');
@@ -68,6 +69,7 @@ function ProductPageInner() {
     let cancelled = false;
     setLoadingMockup(true);
     setMockupUrl('');
+    setMockupFailed(false);
 
     const absImage = selectedCub.image.startsWith('/')
       ? window.location.origin + selectedCub.image
@@ -81,8 +83,12 @@ function ProductPageInner() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
         });
-        const { taskKey } = await createRes.json();
-        if (!taskKey || cancelled) return;
+        const createData = await createRes.json();
+        const { taskKey } = createData;
+        if (!taskKey || cancelled) {
+          if (!cancelled) setMockupFailed(true);
+          return;
+        }
 
         // Step 2: poll every 2s until done (max 60s)
         for (let i = 0; i < 30; i++) {
@@ -96,8 +102,15 @@ function ProductPageInner() {
             if (!cancelled && data.mockupUrl) setMockupUrl(data.mockupUrl);
             return;
           }
-          if (data.status === 'failed') return;
+          if (data.status === 'failed') {
+            if (!cancelled) setMockupFailed(true);
+            return;
+          }
         }
+        // timed out
+        if (!cancelled) setMockupFailed(true);
+      } catch {
+        if (!cancelled) setMockupFailed(true);
       } finally {
         if (!cancelled) setLoadingMockup(false);
       }
@@ -184,6 +197,23 @@ function ProductPageInner() {
               </div>
             ) : mockupUrl ? (
               <Image src={mockupUrl} alt="Product mockup" width={400} height={400} className="w-full object-contain" />
+            ) : mockupFailed && selectedCub?.image ? (
+              // Fallback: show cub image on a product-colored background
+              <div className="relative w-full flex flex-col items-center justify-center py-8 gap-4">
+                <div
+                  className="relative w-48 h-48 rounded-lg flex items-center justify-center overflow-hidden"
+                  style={{ background: selectedColor ? (UNIQUE_COLORS(type).find(c => c.color === selectedColor)?.colorHex ?? '#1a1a1a') : '#1a1a1a' }}
+                >
+                  <Image src={selectedCub.image} alt={selectedCub.name} width={120} height={120} className="object-contain rounded-full" />
+                </div>
+                <div className="font-cinzel text-[9px] tracking-[2px] text-gold opacity-40 uppercase text-center">
+                  Preview — mockup requires Printful API key + deployed URL
+                </div>
+              </div>
+            ) : selectedCub?.image && variant ? (
+              <div className="text-center py-12 opacity-40">
+                <div className="font-cinzel text-[10px] tracking-[3px] text-gold uppercase">Preparing preview…</div>
+              </div>
             ) : selectedCub?.image ? (
               <div className="text-center py-12 opacity-40">
                 <div className="font-cinzel text-[10px] tracking-[3px] text-gold uppercase">Select a color to preview</div>
