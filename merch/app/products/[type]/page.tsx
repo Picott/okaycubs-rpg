@@ -86,6 +86,7 @@ function ProductPageInner() {
         const createData = await createRes.json();
         const { taskKey } = createData;
         if (!taskKey || cancelled) {
+          console.error('[mockup] Printful error:', createData);
           if (!cancelled) setMockupFailed(true);
           return;
         }

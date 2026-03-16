@@ -484,8 +484,9 @@ async function fetchCubsFromChain(ownerAddress) {
 
   // Nombres conocidos
   const nameMatch = name.includes('cub') || name.includes('okay');
-  // URI apunta a metadata de OkayCubs
-  const uriMatch  = uri.includes('cub') || uri.includes('okay');
+  // URI apunta a metadata de OkayCubs (incluyendo el CID de Pinata conocido para esta colección)
+  const uriMatch  = uri.includes('cub') || uri.includes('okay') ||
+                    uri.includes('testlaunchmynft');
   // Colección en grouping — group_value es una dirección base58 (no legible),
   // pero con showCollectionMetadata:true Helius devuelve collection_metadata.name
   const collMatch = groups.some(g => {
@@ -657,18 +658,31 @@ function toHttpUrl(url) {
   // Re-route any ipfs.io / cloudflare-ipfs URLs through our preferred gateway
   const knownGw = url.match(/https?:\/\/(?:ipfs\.io|cloudflare-ipfs\.com|gateway\.ipfs\.io)\/ipfs\/(.+)/);
   if (knownGw) return IPFS_GATEWAYS[0] + knownGw[1];
+  // Only return absolute HTTP(S) URLs — reject relative paths like "35.png"
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
   return url;
 }
 
 async function loadCubImage(imgEl, jsonUri) {
   if (!jsonUri) return;
   try {
-    const res  = await fetch(toHttpUrl(jsonUri));
+    const fetchUrl = toHttpUrl(jsonUri);
+    if (!fetchUrl) return;
+    const res  = await fetch(fetchUrl);
     const meta = await res.json();
     const rawImg = meta.image || meta.image_url || '';
     if (!rawImg) return;
 
-    const url = toHttpUrl(rawImg);
+    // Resolve relative image paths (e.g. "35.png") against the JSON's base directory
+    let url;
+    if (rawImg.startsWith('ipfs://') || rawImg.startsWith('ar://') ||
+        rawImg.startsWith('http://') || rawImg.startsWith('https://')) {
+      url = toHttpUrl(rawImg);
+    } else {
+      // Relative path — prepend the JSON's directory URL
+      const jsonDir = fetchUrl.replace(/\/[^/]*$/, '/');
+      url = jsonDir + rawImg;
+    }
     if (!url) return;
 
     // Try each gateway in order until one loads
