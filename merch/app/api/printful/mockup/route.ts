@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
   }
 
+  // Proxy IPFS / external images through our own domain so Printful can reliably download them
+  const baseUrl = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  const printfulImageUrl = imageUrl.startsWith(baseUrl)
+    ? imageUrl
+    : `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+
   const res = await fetch(`${PRINTFUL_API}/mockup-generator/create-task/${product.printfulProductId}`, {
     method: 'POST',
     headers: headers(),
@@ -34,14 +40,14 @@ export async function POST(req: NextRequest) {
       variant_ids: [variantId],
       files: [{
         placement: product.printPlacement,
-        image_url: imageUrl,
+        image_url: printfulImageUrl,
         position: { area_width: 1800, area_height: 2400, width: 1800, height: 1800, top: 300, left: 0 },
       }],
     }),
   });
 
   const data = await res.json();
-  console.error('[Printful POST]', res.status, JSON.stringify(data));
+  console.log('[Printful POST]', res.status, JSON.stringify(data));
   const taskKey = data?.result?.task_key;
 
   if (!taskKey) {
