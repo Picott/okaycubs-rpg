@@ -41,10 +41,11 @@ export async function POST(req: NextRequest) {
   });
 
   const data = await res.json();
+  console.error('[Printful POST]', res.status, JSON.stringify(data));
   const taskKey = data?.result?.task_key;
 
   if (!taskKey) {
-    return NextResponse.json({ error: 'Failed to create mockup task', detail: data }, { status: 502 });
+    return NextResponse.json({ error: 'Failed to create mockup task', printfulStatus: res.status, detail: data }, { status: 502 });
   }
 
   return NextResponse.json({ taskKey });
