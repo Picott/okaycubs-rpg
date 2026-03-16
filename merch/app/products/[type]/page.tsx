@@ -190,29 +190,27 @@ function ProductPageInner() {
         <div className="space-y-5">
           {/* Mockup / placeholder */}
           <div className="card-border p-2 flex items-center justify-center" style={{ minHeight: 340 }}>
-            {loadingMockup ? (
-              <div className="text-center py-16">
-                <div className="w-10 h-10 border-2 border-gold/20 border-t-gold rounded-full animate-spin mx-auto mb-3" />
-                <div className="font-cinzel text-[10px] tracking-[3px] text-gold opacity-50">Generating mockup…</div>
-              </div>
-            ) : mockupUrl ? (
+            {mockupUrl ? (
               <Image src={mockupUrl} alt="Product mockup" width={400} height={400} className="w-full object-contain" />
-            ) : mockupFailed && selectedCub?.image ? (
-              // Fallback: show cub image on a product-colored background
+            ) : selectedCub?.image && selectedColor ? (
+              // Immediate preview: cub on product colour, upgraded to Printful mockup when ready
               <div className="relative w-full flex flex-col items-center justify-center py-8 gap-4">
                 <div
                   className="relative w-48 h-48 rounded-lg flex items-center justify-center overflow-hidden"
-                  style={{ background: selectedColor ? (UNIQUE_COLORS(type).find(c => c.color === selectedColor)?.colorHex ?? '#1a1a1a') : '#1a1a1a' }}
+                  style={{ background: UNIQUE_COLORS(type).find(c => c.color === selectedColor)?.colorHex ?? '#1a1a1a' }}
                 >
                   <Image src={selectedCub.image} alt={selectedCub.name} width={120} height={120} className="object-contain rounded-full" />
+                  {loadingMockup && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <div className="w-7 h-7 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+                    </div>
+                  )}
                 </div>
-                <div className="font-cinzel text-[9px] tracking-[2px] text-gold opacity-40 uppercase text-center">
-                  Preview — mockup requires Printful API key + deployed URL
-                </div>
-              </div>
-            ) : selectedCub?.image && variant ? (
-              <div className="text-center py-12 opacity-40">
-                <div className="font-cinzel text-[10px] tracking-[3px] text-gold uppercase">Preparing preview…</div>
+                {!loadingMockup && !mockupFailed && (
+                  <div className="font-cinzel text-[9px] tracking-[2px] text-gold opacity-40 uppercase text-center">
+                    Generating mockup…
+                  </div>
+                )}
               </div>
             ) : selectedCub?.image ? (
               <div className="text-center py-12 opacity-40">
