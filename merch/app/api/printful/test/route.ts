@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// GET /api/printful/test — checks API key + product IDs without creating anything
-// Visit this URL in your browser to see the exact Printful error.
-export async function GET() {
+// GET /api/printful/test?secret=<DIAGNOSTIC_SECRET> — dev/ops diagnostic only
+// Set DIAGNOSTIC_SECRET in your environment; never expose this URL publicly.
+export async function GET(req: NextRequest) {
+  const secret = process.env.DIAGNOSTIC_SECRET;
+  if (!secret || req.nextUrl.searchParams.get('secret') !== secret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const apiKey = process.env.PRINTFUL_API_KEY;
-
   if (!apiKey) {
     return NextResponse.json({ error: 'PRINTFUL_API_KEY env var is not set' }, { status: 503 });
   }
@@ -28,8 +32,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    apiKeyPrefix: apiKey.slice(0, 8) + '…',
-    store: { status: storeRes.status, data: storeData },
+    store: { status: storeRes.status, name: storeData?.result?.name },
     products: productResults,
   });
 }
