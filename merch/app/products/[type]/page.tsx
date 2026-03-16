@@ -12,8 +12,9 @@ interface Cub {
   number: number;
 }
 
-async function fetchCubs(): Promise<Cub[]> {
-  const res = await fetch('/api/cubs');
+async function fetchCubs(wallet?: string | null): Promise<Cub[]> {
+  const url = wallet ? `/api/cubs?wallet=${encodeURIComponent(wallet)}` : '/api/cubs';
+  const res = await fetch(url);
   if (!res.ok) return [];
   return res.json();
 }
@@ -40,9 +41,11 @@ function ProductPageInner() {
   const sizes    = selectedColor ? SIZES(type, selectedColor) : [];
   const variant  = selectedColor ? getVariant(type, selectedColor, selectedSize || undefined) : null;
 
-  // Load cubs
+  // Load cubs — wallet comes from ?wallet= param or localStorage
   useEffect(() => {
-    fetchCubs().then(data => {
+    const walletParam = searchParams.get('wallet');
+    const wallet = walletParam || (typeof window !== 'undefined' ? localStorage.getItem('okaycubs_wallet') : null);
+    fetchCubs(wallet).then(data => {
       setCubs(data);
       const preselect = searchParams.get('cub');
       if (preselect) {
@@ -71,9 +74,9 @@ function ProductPageInner() {
     setMockupUrl('');
     setMockupFailed(false);
 
-    const absImage = selectedCub.image.startsWith('/')
-      ? window.location.origin + selectedCub.image
-      : selectedCub.image;
+    const absImage = selectedCub.image.startsWith('http')
+      ? selectedCub.image
+      : window.location.origin + selectedCub.image;
 
     (async () => {
       try {
@@ -143,7 +146,9 @@ function ProductPageInner() {
           productType: type,
           variantId: variant!.printfulVariantId,
           cubId: selectedCub!.id,
-          cubImage: selectedCub!.image ? window.location.origin + selectedCub!.image : '',
+          cubImage: selectedCub!.image
+            ? (selectedCub!.image.startsWith('http') ? selectedCub!.image : window.location.origin + selectedCub!.image)
+            : '',
           mockupUrl,
         }),
       });
@@ -261,7 +266,7 @@ function ProductPageInner() {
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden border border-gold/20 mx-auto mb-1 relative">
                       {cub.image ? (
-                        <Image src={cub.image} alt={cub.name} fill className="object-cover" />
+                        <Image src={cub.image} alt={cub.name} fill className="object-cover" unoptimized />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl bg-black/40">🐻</div>
                       )}
