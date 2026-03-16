@@ -649,11 +649,11 @@ function toHttpUrl(url) {
   if (!url) return null;
   if (url.startsWith('ipfs://')) return IPFS_GATEWAYS[0] + url.slice(7);
   if (url.startsWith('ar://'))   return 'https://arweave.net/' + url.slice(5);
-  // Strip Helius CDN wrapping (https://...cdn-cgi/image/https://ipfs.io/ipfs/...)
-  // then re-route through our preferred gateway
-  const cdnIpfs = url.match(/cdn-cgi\/image\/https?:\/\/[^/]+\/ipfs\/(.+)/);
+  // Strip Helius CDN wrapping. Helius sometimes uses a double-slash:
+  // cdn-cgi/image//https://... — so use \/+ (one or more slashes).
+  const cdnIpfs = url.match(/cdn-cgi\/image\/+https?:\/\/[^/]+\/ipfs\/(.+)/);
   if (cdnIpfs) return IPFS_GATEWAYS[0] + cdnIpfs[1];
-  const cdnOther = url.match(/cdn-cgi\/image\/(https?:\/\/.+)/);
+  const cdnOther = url.match(/cdn-cgi\/image\/+(https?:\/\/.+)/);
   if (cdnOther) return cdnOther[1];
   // Re-route any ipfs.io / cloudflare-ipfs URLs through our preferred gateway
   const knownGw = url.match(/https?:\/\/(?:ipfs\.io|cloudflare-ipfs\.com|gateway\.ipfs\.io)\/ipfs\/(.+)/);
