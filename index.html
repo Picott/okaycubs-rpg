@@ -638,13 +638,25 @@ function getStats(cub) {
 // ─────────────────────────────────────────
 // LAZY IMAGE LOADER — fetch off-chain metadata when Helius has no image
 // ─────────────────────────────────────────
+const IPFS_GATEWAYS = [
+  'https://nftstorage.link/ipfs/',
+  'https://dweb.link/ipfs/',
+  'https://ipfs.io/ipfs/',
+];
+
 function toHttpUrl(url) {
   if (!url) return null;
-  if (url.startsWith('ipfs://')) return 'https://cloudflare-ipfs.com/ipfs/' + url.slice(7);
+  if (url.startsWith('ipfs://')) return IPFS_GATEWAYS[0] + url.slice(7);
   if (url.startsWith('ar://'))   return 'https://arweave.net/' + url.slice(5);
-  // Also fix Helius CDN IPFS wrapping (https://...cdn-cgi/image/https://ipfs.io/ipfs/...)
-  const cdnIpfs = url.match(/cdn-cgi\/image\/(https?:\/\/.+)/);
-  if (cdnIpfs) return cdnIpfs[1];
+  // Strip Helius CDN wrapping (https://...cdn-cgi/image/https://ipfs.io/ipfs/...)
+  // then re-route through our preferred gateway
+  const cdnIpfs = url.match(/cdn-cgi\/image\/https?:\/\/[^/]+\/ipfs\/(.+)/);
+  if (cdnIpfs) return IPFS_GATEWAYS[0] + cdnIpfs[1];
+  const cdnOther = url.match(/cdn-cgi\/image\/(https?:\/\/.+)/);
+  if (cdnOther) return cdnOther[1];
+  // Re-route any ipfs.io / cloudflare-ipfs URLs through our preferred gateway
+  const knownGw = url.match(/https?:\/\/(?:ipfs\.io|cloudflare-ipfs\.com|gateway\.ipfs\.io)\/ipfs\/(.+)/);
+  if (knownGw) return IPFS_GATEWAYS[0] + knownGw[1];
   return url;
 }
 
@@ -653,19 +665,31 @@ async function loadCubImage(imgEl, jsonUri) {
   try {
     const res  = await fetch(toHttpUrl(jsonUri));
     const meta = await res.json();
-    const url  = toHttpUrl(meta.image || meta.image_url || '');
-    if (url) {
-      // Remove onerror so it doesn't fight us; add one that shows placeholder on final failure
-      imgEl.onerror = () => {
+    const rawImg = meta.image || meta.image_url || '';
+    if (!rawImg) return;
+
+    const url = toHttpUrl(rawImg);
+    if (!url) return;
+
+    // Try each gateway in order until one loads
+    const ipfsCid = rawImg.startsWith('ipfs://') ? rawImg.slice(7) : null;
+
+    imgEl.onload = () => {
+      imgEl.style.display = '';
+      imgEl.nextElementSibling.style.display = 'none';
+    };
+
+    let gwIndex = 0;
+    imgEl.onerror = () => {
+      gwIndex++;
+      if (ipfsCid && gwIndex < IPFS_GATEWAYS.length) {
+        imgEl.src = IPFS_GATEWAYS[gwIndex] + ipfsCid;
+      } else {
         imgEl.style.display = 'none';
         imgEl.nextElementSibling.style.display = 'flex';
-      };
-      imgEl.onload = () => {
-        imgEl.style.display = '';
-        imgEl.nextElementSibling.style.display = 'none';
-      };
-      imgEl.src = url;
-    }
+      }
+    };
+    imgEl.src = url;
   } catch(e) { /* leave placeholder */ }
 }
 
