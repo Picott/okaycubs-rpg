@@ -192,27 +192,30 @@ function ProductPageInner() {
           <div className="card-border p-2 flex items-center justify-center" style={{ minHeight: 340 }}>
             {mockupUrl ? (
               <Image src={mockupUrl} alt="Product mockup" width={400} height={400} className="w-full object-contain" />
-            ) : selectedCub?.image && selectedColor ? (
-              // Immediate preview: cub on product colour, upgraded to Printful mockup when ready
-              <div className="relative w-full flex flex-col items-center justify-center py-8 gap-4">
-                <div
-                  className="relative w-48 h-48 rounded-lg flex items-center justify-center overflow-hidden"
-                  style={{ background: UNIQUE_COLORS(type).find(c => c.color === selectedColor)?.colorHex ?? '#1a1a1a' }}
-                >
-                  <Image src={selectedCub.image} alt={selectedCub.name} width={120} height={120} className="object-contain rounded-full" />
-                  {loadingMockup && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <div className="w-7 h-7 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
-                    </div>
-                  )}
-                </div>
-                {!loadingMockup && !mockupFailed && (
-                  <div className="font-cinzel text-[9px] tracking-[2px] text-gold opacity-40 uppercase text-center">
-                    Generating mockup…
+            ) : selectedCub?.image && selectedColor ? (() => {
+              const colorHex = UNIQUE_COLORS(type).find(c => c.color === selectedColor)?.colorHex ?? '#1a1a1a';
+              return (
+                <div className="relative w-full flex flex-col items-center justify-center gap-4" style={{ minHeight: 320 }}>
+                  {/* Ambient glow behind the swatch */}
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 45%, ${colorHex}55 0%, transparent 68%)` }} />
+                  {/* Colour swatch with cub */}
+                  <div
+                    className="relative flex items-center justify-center rounded-2xl overflow-hidden"
+                    style={{ width: 230, height: 230, background: colorHex, boxShadow: `0 8px 40px ${colorHex}88, 0 0 0 1px ${colorHex}33` }}
+                  >
+                    <Image src={selectedCub.image} alt={selectedCub.name} width={190} height={190} className="object-contain rounded-full" />
+                    {loadingMockup && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+                        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ) : selectedCub?.image ? (
+                  <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 uppercase text-center">
+                    {loadingMockup ? 'Generating mockup…' : selectedCub.name}
+                  </div>
+                </div>
+              );
+            })() : selectedCub?.image ? (
               <div className="text-center py-12 opacity-40">
                 <div className="font-cinzel text-[10px] tracking-[3px] text-gold uppercase">Select a color to preview</div>
               </div>
