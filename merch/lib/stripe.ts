@@ -9,6 +9,8 @@ export async function createCheckoutSession(params: {
   imageUrl: string;
   amountCents: number;
   cubId: string;
+  cubImage: string;
+  productType: string;
   variantId: number;
   successUrl: string;
   cancelUrl: string;
@@ -30,8 +32,10 @@ export async function createCheckoutSession(params: {
       },
     ],
     metadata: {
-      cubId: params.cubId,
-      variantId: String(params.variantId),
+      cubId:       params.cubId,
+      cubImage:    params.cubImage,
+      productType: params.productType,
+      variantId:   String(params.variantId),
     },
     shipping_address_collection: { allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'ES', 'MX'] },
     success_url: params.successUrl,

@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
       files: [{
         placement: product.printPlacement,
         image_url: printfulImageUrl,
-        position: { area_width: 1800, area_height: 2400, width: 1800, height: 1800, top: 300, left: 0 },
       }],
     }),
   });
@@ -51,6 +50,21 @@ export async function POST(req: NextRequest) {
   const taskKey = data?.result?.task_key;
 
   if (!taskKey) {
+    // Propagate 429 with retry-after so the client can back off
+    if (res.status === 429) {
+      const retryAfter = res.headers.get('retry-after') ?? '60';
+      return NextResponse.json(
+        { error: 'rate_limited', retryAfter: parseInt(retryAfter) },
+        { status: 429 },
+      );
+    }
+    // 400 = bad product/variant config — not retriable
+    if (res.status === 400) {
+      return NextResponse.json(
+        { error: 'bad_config', detail: data?.result ?? data },
+        { status: 400 },
+      );
+    }
     return NextResponse.json({ error: 'Failed to create mockup task', printfulStatus: res.status, detail: data }, { status: 502 });
   }
 

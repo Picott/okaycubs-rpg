@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
       imageUrl:     mockupUrl || cubImage || `${origin}/logo.png`,
       amountCents:  product.basePrice,
       cubId,
+      cubImage:     cubImage || '',
+      productType,
       variantId,
       successUrl:   `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl:    `${origin}/products/${productType}`,

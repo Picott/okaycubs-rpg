@@ -94,7 +94,24 @@ function ProductPageInner() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
         });
-        const createData = await createRes.json() as { taskKey?: string; error?: string; detail?: { result?: string } };
+        const createData = await createRes.json() as { taskKey?: string; error?: string; retryAfter?: number; detail?: unknown };
+
+        // 400 = bad product config — don't retry, just bail
+        if (createRes.status === 400) {
+          console.error('[mockup] Bad config (variant/product mismatch):', JSON.stringify(createData));
+          if (!cancelled) setMockupFailed(true);
+          return;
+        }
+
+        // 429 = rate limited — wait retryAfter seconds then abandon (user can reselect)
+        if (createRes.status === 429) {
+          const wait = (createData.retryAfter ?? 60) * 1000;
+          console.warn(`[mockup] Rate limited — backing off ${wait / 1000}s`);
+          await new Promise(r => setTimeout(r, wait));
+          if (!cancelled) setMockupFailed(true);
+          return;
+        }
+
         const { taskKey } = createData;
         if (!taskKey || cancelled) {
           console.error('[mockup] Printful error:', JSON.stringify(createData));
@@ -229,7 +246,7 @@ function ProductPageInner() {
                     )}
                   </div>
                   <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 uppercase text-center">
-                    {loadingMockup ? 'Generating mockup…' : selectedCub.name}
+                    {loadingMockup ? 'Generating mockup…' : mockupFailed ? 'Preview unavailable — image above is a preview' : selectedCub.name}
                   </div>
                 </div>
               );
