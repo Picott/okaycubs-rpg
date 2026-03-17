@@ -23,6 +23,8 @@ export interface Product {
 
 export const PRODUCTS: Record<ProductType, Product> = {
   hoodie: {
+    // Cotton Heritage M2580 I Unisex Premium Pullover Hoodie — catalog product 380
+    // Variant IDs verified via /api/printful/catalog
     type: 'hoodie',
     name: 'OkayCubs Hoodie',
     description: 'Unisex pullover fleece hoodie with your Cub printed on the front.',
@@ -30,18 +32,18 @@ export const PRODUCTS: Record<ProductType, Product> = {
     printfulProductId: 380,
     printPlacement: 'front',
     variants: [
-      { size: 'S',  color: 'Black',     colorHex: '#1a1a1a', printfulVariantId: 13535 },
-      { size: 'M',  color: 'Black',     colorHex: '#1a1a1a', printfulVariantId: 13536 },
-      { size: 'L',  color: 'Black',     colorHex: '#1a1a1a', printfulVariantId: 13537 },
-      { size: 'XL', color: 'Black',     colorHex: '#1a1a1a', printfulVariantId: 13538 },
-      { size: 'S',  color: 'Navy',      colorHex: '#1b2a4a', printfulVariantId: 13555 },
-      { size: 'M',  color: 'Navy',      colorHex: '#1b2a4a', printfulVariantId: 13556 },
-      { size: 'L',  color: 'Navy',      colorHex: '#1b2a4a', printfulVariantId: 13557 },
-      { size: 'XL', color: 'Navy',      colorHex: '#1b2a4a', printfulVariantId: 13558 },
-      { size: 'S',  color: 'Vintage White', colorHex: '#ede8df', printfulVariantId: 13575 },
-      { size: 'M',  color: 'Vintage White', colorHex: '#ede8df', printfulVariantId: 13576 },
-      { size: 'L',  color: 'Vintage White', colorHex: '#ede8df', printfulVariantId: 13577 },
-      { size: 'XL', color: 'Vintage White', colorHex: '#ede8df', printfulVariantId: 13578 },
+      { size: 'S',  color: 'Black',          colorHex: '#1a1a1a', printfulVariantId: 10779 },
+      { size: 'M',  color: 'Black',          colorHex: '#1a1a1a', printfulVariantId: 10780 },
+      { size: 'L',  color: 'Black',          colorHex: '#1a1a1a', printfulVariantId: 10781 },
+      { size: 'XL', color: 'Black',          colorHex: '#1a1a1a', printfulVariantId: 10782 },
+      { size: 'S',  color: 'Navy',           colorHex: '#1b2a4a', printfulVariantId: 11491 },
+      { size: 'M',  color: 'Navy',           colorHex: '#1b2a4a', printfulVariantId: 11492 },
+      { size: 'L',  color: 'Navy',           colorHex: '#1b2a4a', printfulVariantId: 11493 },
+      { size: 'XL', color: 'Navy',           colorHex: '#1b2a4a', printfulVariantId: 11494 },
+      { size: 'S',  color: 'Vintage White',  colorHex: '#ede8df', printfulVariantId: 24975 },
+      { size: 'M',  color: 'Vintage White',  colorHex: '#ede8df', printfulVariantId: 24976 },
+      { size: 'L',  color: 'Vintage White',  colorHex: '#ede8df', printfulVariantId: 24977 },
+      { size: 'XL', color: 'Vintage White',  colorHex: '#ede8df', printfulVariantId: 24978 },
     ],
   },
 

@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/printful/catalog
 // Returns the real variant IDs for the products we want to sell.
 // Open this URL in your browser to find the correct IDs to put in products.ts
 // No secret needed — the API key stays server-side.
-export async function GET() {
+export async function GET(req: NextRequest) {
   const apiKey = process.env.PRINTFUL_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'PRINTFUL_API_KEY not set' }, { status: 503 });
@@ -12,8 +12,11 @@ export async function GET() {
 
   const hdrs = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
 
-  // Fetch catalog info for the three product IDs currently configured
-  const productIds = [380, 447, 74];
+  // Accept ?ids=74,380,447 to probe arbitrary product IDs, default to current config
+  const idsParam = req.nextUrl?.searchParams?.get('ids');
+  const productIds = idsParam
+    ? idsParam.split(',').map(Number).filter(Boolean)
+    : [380, 447, 74];
   const results: Record<number, unknown> = {};
 
   for (const pid of productIds) {
