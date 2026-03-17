@@ -10,14 +10,25 @@ export interface ProductVariant {
   printfulVariantId: number;
 }
 
+export interface PrintPosition {
+  area_width: number;
+  area_height: number;
+  width: number;
+  height: number;
+  top: number;
+  left: number;
+}
+
 export interface Product {
   type: ProductType;
   name: string;
   description: string;
   basePrice: number; // USD cents
   printfulProductId: number;
-  // Printful placement key for the print area
   printPlacement: string;
+  // Position of the design within the print area (pixels at product template resolution).
+  // Values come from GET /mockup-generator/printfiles/{product_id}.
+  printPosition: PrintPosition;
   variants: ProductVariant[];
 }
 
@@ -31,6 +42,8 @@ export const PRODUCTS: Record<ProductType, Product> = {
     basePrice: 5500, // $55.00
     printfulProductId: 380,
     printPlacement: 'front',
+    // Dimensions from GET /mockup-generator/printfiles/380 — front template is 1800×2400 px
+    printPosition: { area_width: 1800, area_height: 2400, width: 1800, height: 1800, top: 300, left: 0 },
     variants: [
       { size: 'S',  color: 'Black',          colorHex: '#1a1a1a', printfulVariantId: 10779 },
       { size: 'M',  color: 'Black',          colorHex: '#1a1a1a', printfulVariantId: 10780 },
@@ -54,6 +67,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
     basePrice: 4800, // $48.00
     printfulProductId: 447,
     printPlacement: 'left_leg',
+    printPosition: { area_width: 700, area_height: 1800, width: 700, height: 700, top: 400, left: 0 },
     variants: [
       { size: 'S',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14302 },
       { size: 'M',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14303 },
@@ -73,6 +87,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
     basePrice: 3200, // $32.00
     printfulProductId: 74,
     printPlacement: 'front',
+    printPosition: { area_width: 1200, area_height: 600, width: 600, height: 300, top: 150, left: 300 },
     variants: [
       { color: 'Black',         colorHex: '#1a1a1a', printfulVariantId: 3502 },
       { color: 'Navy',          colorHex: '#1b2a4a', printfulVariantId: 3503 },
