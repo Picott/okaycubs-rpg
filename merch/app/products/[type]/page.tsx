@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import { PRODUCTS, ProductType, UNIQUE_COLORS, SIZES, getVariant } from '@/lib/products';
 
@@ -32,6 +32,7 @@ function ProductPageInner() {
   const [mockupUrl, setMockupUrl]   = useState<string>('');
   const [loadingMockup, setLoadingMockup] = useState(false);
   const [mockupFailed, setMockupFailed] = useState(false);
+  const mockupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [paying, setPaying]         = useState(false);
   const [solPrice, setSolPrice]     = useState<number>(0);
   const [qrUrl, setQrUrl]           = useState<string>('');
@@ -65,31 +66,38 @@ function ProductPageInner() {
       .catch(() => {});
   }, []);
 
-  // Generate mockup when cub + variant are ready — async create then poll
+  // Generate mockup when cub + variant are ready — debounced to avoid 429s
   useEffect(() => {
     if (!selectedCub?.image || !variant) return;
 
-    let cancelled = false;
-    setLoadingMockup(true);
+    // Cancel any in-flight debounce timer
+    if (mockupDebounce.current) clearTimeout(mockupDebounce.current);
+
     setMockupUrl('');
     setMockupFailed(false);
 
-    const absImage = selectedCub.image.startsWith('http')
-      ? selectedCub.image
-      : window.location.origin + selectedCub.image;
+    let cancelled = false;
+
+    // Debounce: wait 600ms after the last change before calling Printful
+    mockupDebounce.current = setTimeout(() => {
+      setLoadingMockup(true);
+
+      const absImage = selectedCub.image.startsWith('http')
+        ? selectedCub.image
+        : window.location.origin + selectedCub.image;
 
     (async () => {
       try {
-        // Step 1: create task (fast, < 2s)
+        // Step 1: create task
         const createRes = await fetch('/api/printful/mockup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
         });
-        const createData = await createRes.json();
+        const createData = await createRes.json() as { taskKey?: string; error?: string; detail?: { result?: string } };
         const { taskKey } = createData;
         if (!taskKey || cancelled) {
-          console.error('[mockup] Printful error:', createData);
+          console.error('[mockup] Printful error:', JSON.stringify(createData));
           if (!cancelled) setMockupFailed(true);
           return;
         }
@@ -100,7 +108,7 @@ function ProductPageInner() {
           if (cancelled) return;
 
           const pollRes = await fetch(`/api/printful/mockup?task_key=${taskKey}`);
-          const data = await pollRes.json();
+          const data = await pollRes.json() as { status: string; mockupUrl?: string };
 
           if (data.status === 'completed') {
             if (!cancelled && data.mockupUrl) setMockupUrl(data.mockupUrl);
@@ -119,8 +127,12 @@ function ProductPageInner() {
         if (!cancelled) setLoadingMockup(false);
       }
     })();
+    }, 600); // debounce: only fire after 600ms of no changes
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (mockupDebounce.current) clearTimeout(mockupDebounce.current);
+    };
   }, [selectedCub, variant?.printfulVariantId]);
 
   if (!product) {
