@@ -12,6 +12,21 @@ const HELIUS_KEY = process.env.HELIUS_KEY || 'b5292800-573a-40c5-9104-fa505b84ba
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
 const IPFS_GATEWAY = 'https://nftstorage.link/ipfs/';
 
+// Known OkayCubs IPFS CID — used for featured/sample cubs shown to non-holders
+const CUBS_CID = 'QmZsTzg9Y88239r1uU2zkvdBYooJZNteu5NuUwLcFQYoqf';
+
+// A curated set of OkayCubs shown when a visitor hasn't connected a wallet.
+// Numbers confirmed present in the collection from on-chain data.
+export const FEATURED_CUBS: Cub[] = [
+  1, 42, 100, 250, 500, 777, 1000, 1456, 1999, 2500, 2944, 3000,
+  3620, 4000, 4444, 4898,
+].map(n => ({
+  id:     `featured-${n}`,
+  name:   `OkayCub #${n}`,
+  image:  `${IPFS_GATEWAY}${CUBS_CID}/${n}.png`,
+  number: n,
+}));
+
 function toHttpUrl(url: string | null | undefined): string {
   if (!url) return '';
   if (url.startsWith('ipfs://')) return IPFS_GATEWAY + url.slice(7);
@@ -53,12 +68,17 @@ function nftToCub(nft: Record<string, unknown>, index: number): Cub {
   const imgFile  = files.find(f => f.mime?.startsWith('image'));
   const rawUrl   = imgFile?.cdn_uri || imgFile?.uri || links?.image || files[0]?.cdn_uri || files[0]?.uri || '';
   const image    = toHttpUrl(rawUrl);
-  const nameStr  = (meta.name as string) || `Cub #${index}`;
-  const num      = parseInt(nameStr.replace(/\D/g, '')) || index + 1;
+  // Try name first ("OkayCub #2944" → 2944), then image filename ("/2944.png" → 2944)
+  const nameStr     = (meta.name as string) || '';
+  const numFromName = parseInt(nameStr.replace(/\D/g, ''));
+  const numFromFile = parseInt(rawUrl.match(/\/(\d+)\.(?:png|jpe?g|gif|webp)(?:[?#]|$)/i)?.[1] ?? '');
+  const num         = numFromName || numFromFile || index + 1;
+  // Use the real number in the displayed name so it always matches RPG numbering
+  const displayName = nameStr || `OkayCub #${num}`;
 
   return {
     id:     (nft.id as string) || String(index),
-    name:   nameStr,
+    name:   displayName,
     image,
     number: num,
   };
