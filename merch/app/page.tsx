@@ -196,14 +196,21 @@ export default function HomePage() {
             ))}
           </div>
         ) : !wallet ? (
-          <div className="text-center py-12 card-border">
-            <div className="text-4xl mb-4">🐻</div>
-            <div className="font-cinzel text-[11px] tracking-[3px] text-gold opacity-60 uppercase mb-2">
-              Connect wallet to see your Cubs
+          <div className="text-center py-12 card-border space-y-4">
+            <div className="text-4xl">🐻</div>
+            <div className="font-cinzel text-[11px] tracking-[3px] text-gold opacity-60 uppercase">
+              Don&apos;t own an OkayCub yet?
             </div>
-            <div className="font-crimson text-[14px] text-silver opacity-40 italic">
-              Or connect Phantom above to load your OkayCubs from chain
+            <div className="font-crimson text-[14px] text-silver opacity-50 italic">
+              Connect your Phantom wallet above to use your own Cubs,<br />
+              or pick any featured Cub from our collection below.
             </div>
+            <button
+              onClick={loadAllCubs}
+              className="font-cinzel text-[10px] tracking-[3px] uppercase px-7 py-2.5 border border-gold/50 text-gold/70 hover:border-gold hover:text-gold transition-all"
+            >
+              ✦ Browse Featured Cubs ✦
+            </button>
           </div>
         ) : (
           <div className="text-center py-12 card-border">
