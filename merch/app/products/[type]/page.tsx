@@ -229,7 +229,7 @@ function ProductPageInner() {
                     )}
                   </div>
                   <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 uppercase text-center">
-                    {loadingMockup ? 'Generating mockup…' : selectedCub.name}
+                    {loadingMockup ? 'Generating mockup…' : mockupFailed ? 'Preview unavailable — image above is a preview' : selectedCub.name}
                   </div>
                 </div>
               );

@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
       files: [{
         placement: product.printPlacement,
         image_url: printfulImageUrl,
-        position: { area_width: 1800, area_height: 2400, width: 1800, height: 1800, top: 300, left: 0 },
       }],
     }),
   });

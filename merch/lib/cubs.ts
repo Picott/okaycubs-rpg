@@ -18,8 +18,12 @@ const CUBS_CID = 'QmZsTzg9Y88239r1uU2zkvdBYooJZNteu5NuUwLcFQYoqf';
 // A curated set of OkayCubs shown when a visitor hasn't connected a wallet.
 // Numbers confirmed present in the collection from on-chain data.
 export const FEATURED_CUBS: Cub[] = [
-  1, 42, 100, 250, 500, 777, 1000, 1456, 1999, 2500, 2944, 3000,
-  3620, 4000, 4444, 4898,
+    1,   42,  100,  150,  200,  250,  300,  350,  400,  450,
+  500,  550,  600,  650,  700,  777,  800,  900, 1000, 1100,
+ 1200, 1300, 1400, 1456, 1500, 1600, 1700, 1800, 1900, 1999,
+ 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 2944,
+ 3000, 3100, 3200, 3300, 3400, 3500, 3620, 3700, 3800, 3900,
+ 4000, 4100, 4200, 4300, 4400, 4444, 4500, 4600, 4700, 4898,
 ].map(n => ({
   id:     `featured-${n}`,
   name:   `OkayCub #${n}`,
@@ -150,13 +154,13 @@ export async function getAllOkayCubs(page = 1, limit = 50): Promise<Cub[]> {
     return items.map(nftToCub);
   }
 
-  // Fallback: search by name
+  // Fallback: search by name — OkayCubs use "OkayCub" (no space)
   const res = await fetch(HELIUS_RPC, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       jsonrpc: '2.0', id: 'search', method: 'searchAssets',
-      params: { tokenType: 'nonFungible', name: 'Okay Cub', page, limit },
+      params: { tokenType: 'nonFungible', name: 'OkayCub', page, limit },
     }),
   });
   const data = await res.json() as { result?: { items?: Record<string, unknown>[] } };
