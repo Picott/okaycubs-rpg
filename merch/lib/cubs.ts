@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { getCubsForWalletTensor } from './tensor';
 
 export interface Cub {
   id: string;
@@ -90,6 +91,11 @@ function nftToCub(nft: Record<string, unknown>, index: number): Cub {
 
 // Fetch cubs owned by a specific wallet
 export async function getCubsForWallet(walletAddress: string): Promise<Cub[]> {
+  // Try Tensor first — richer metadata, no pagination needed
+  const tensorCubs = await getCubsForWalletTensor(walletAddress);
+  if (tensorCubs && tensorCubs.length > 0) return tensorCubs;
+
+  // Fall back to Helius DAS API
   let page = 1;
   const all: Record<string, unknown>[] = [];
 
