@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>OkayCubs RPG — Geological Chronicles</title>
+  <title>OkayCubs: The Honey Chronicles</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
   <style>
     :root {
@@ -448,9 +448,9 @@
 <div class="app">
 
   <header>
-    <div class="eyebrow">⛏ Geological Chronicles · Phase II</div>
-    <h1>OkayCubs RPG</h1>
-    <div class="subtitle">Forged in the Strata of Time</div>
+    <div class="eyebrow">🍯 The Honey Chronicles · Across Time</div>
+    <h1>OkayCubs</h1>
+    <div class="subtitle">In Search of the Golden Drop</div>
     <div class="rule"></div>
     <div class="nav-links">
       <a href="/" class="nav-link">🛍 Merch Store</a>
@@ -469,16 +469,16 @@
 
   <!-- CHRONICLE -->
   <div class="chronicle" id="chronicle">
-    <div class="chronicle-era">Geological Chronicles · Phase II</div>
-    <h2 class="chronicle-title">The Age of Strata Begins</h2>
+    <div class="chronicle-era">The Honey Chronicles · Across Time</div>
+    <h2 class="chronicle-title">In Search of the Golden Drop</h2>
     <div class="chronicle-body">
-      In the beginning, there was only fire.<br><br>
-      When the Earth was young — 4.5 billion years of pressure, heat, and time — creatures stirred in the cooling magma. These were the <strong style="color:var(--gold2)">OkayCubs</strong>: geological guardians bound to the strata of time, each one forged in a different era of Earth's long memory.<br><br>
-      A <em>Magma Warden</em> born of the Hadean Crucible. A <em>Glacial Scout</em> frozen in Proterozoic ice. A <em>Quartz Hydra</em> crystallized in the Mesozoic skies. Each Cub carries the mark of their era — inscribed in trait and rarity, stone and fire.<br><br>
-      Your journey begins in the <strong style="color:var(--gold2)">Hadean Era</strong> — the planet's first breath. Survive the primordial crucible, accumulate victories, and the ancient eras shall open before you one by one.<br><br>
-      <em>The strata remember everything. What will they remember of you?</em>
+      The <strong style="color:var(--gold2)">Okay Bears</strong> left without looking back. They disappeared into the depths of the metaverse and never returned. For a long time, the <strong style="color:var(--gold2)">OkayCubs</strong> waited.<br><br>
+      But the Cubs learned. They organized. And they discovered something the Bears never found: that moving through space is also moving through time.<br><br>
+      Now they travel — era by era — in search of <strong style="color:var(--gold2)">La Miel</strong>. The primordial honey that existed in every age of the Earth. Each era holds its own honey, each with unique properties. Each one guarded by those who will not give it up without a fight.<br><br>
+      Your journey begins in the <strong style="color:var(--gold2)">Hadean Era</strong> — where <em>Magma Honey</em> burns at the core of the world. Defeat its guardians, claim the honey, and travel forward through time.<br><br>
+      <em>The Bears may return someday. When they do — you'll be ready.</em>
     </div>
-    <button class="chronicle-dismiss" onclick="dismissChronicle()">Begin the Chronicle →</button>
+    <button class="chronicle-dismiss" onclick="dismissChronicle()">Begin the Search →</button>
   </div>
 
   <!-- WALLET -->
@@ -513,9 +513,9 @@
 
   <!-- BATTLE -->
   <div style="margin-top:48px">
-    <div class="sec-title" id="arenaTitle">✦ Battle Arena — Hadean Depths ✦</div>
+    <div class="sec-title" id="arenaTitle">✦ The Hunt — Magma Honey ✦</div>
     <div class="arena" id="arenaBox">
-      <div class="arena-title" id="arenaName">Hadean Crucible <span class="era-badge" id="arenaBadge" style="color:#9b59b6">Hadean</span></div>
+      <div class="arena-title" id="arenaName">Magma Honey Hunt <span class="era-badge" id="arenaBadge" style="color:#9b59b6">Hadean</span></div>
       <div class="arena-sub" id="arenaSub">Where primordial fire separates stone from legend</div>
       <div class="battle-field">
         <div class="fighter player" id="playerSlot"><div class="empty-slot">Select a Cub<br/>to enter battle</div></div>
@@ -525,55 +525,55 @@
       <div class="btns">
         <button class="battle-btn bb-atk" id="btnA" onclick="act('atk')" disabled>⚔ Strike</button>
         <button class="battle-btn bb-def" id="btnD" onclick="act('def')" disabled>🛡 Fortify</button>
-        <button class="battle-btn bb-spc" id="btnS" onclick="act('spc')" disabled>✦ Geo-Burst</button>
+        <button class="battle-btn bb-spc" id="btnS" onclick="act('spc')" disabled>🍯 Honey Burst</button>
       </div>
     </div>
-    <div class="log" id="log"><div class="log-line ls">⛏ Enter the Hadean Crucible to begin your chronicle...</div></div>
+    <div class="log" id="log"><div class="log-line ls">🍯 Select a Cub to begin the hunt for Magma Honey...</div></div>
   </div>
 
   <!-- WORLD MAP -->
   <div style="margin-top:48px">
-    <div class="sec-title">✦ Geological World Map ✦</div>
+    <div class="sec-title">✦ The Honey Chronicles Map ✦</div>
     <div class="map-grid" id="worldMap">
       <div class="zone z-h unlocked era-active" id="zone-hadean" onclick="selectEra('hadean')">
         <span class="z-icon">🌋</span>
         <div class="z-name" style="color:#9b59b6">Hadean</div>
-        <div class="z-desc">Primordial fire. Magma Wardens and Ember Knights forge their legend in the planet's first breath. Igneous Wraiths patrol the caldera walls.</div>
+        <div class="z-desc">The oldest fire. <strong>Magma Honey</strong> pools in the planet's molten core — raw power, destruction, pure heat. Its guardians have burned here since before the first rock cooled.</div>
         <div class="z-lvl" id="zlvl-hadean">LVL 1–5 · Active</div>
         <div class="z-prog" id="zprog-hadean"></div>
       </div>
       <div class="zone z-a locked" id="zone-archean" onclick="selectEra('archean')">
         <span class="z-icon" id="zicon-archean">🔒</span>
         <div class="z-name" style="color:#3498db">Archean</div>
-        <div class="z-desc">Ancient crust hardens. Stratum Knights hold the deep faults as Obsidian Golems rise from the cooling mantle. First life stirs in dark hydrothermal vents.</div>
+        <div class="z-desc">The crust solidifies. <strong>Stone Honey</strong> crystallizes inside the deep faults — hardness, defense, unyielding endurance. The golems that guard it have never moved, never yielded.</div>
         <div class="z-lvl" id="zlvl-archean">LVL 6–15 · Locked</div>
         <div class="z-prog" id="zprog-archean">5 wins to unlock</div>
       </div>
       <div class="zone z-p locked" id="zone-proterozoic" onclick="selectEra('proterozoic')">
         <span class="z-icon" id="zicon-proterozoic">🔒</span>
         <div class="z-name" style="color:#1abc9c">Proterozoic</div>
-        <div class="z-desc">Oxygen poisons the sky. Glacial Scouts navigate toxic ice shelves while Amber Lurkers crystallise the first organisms in resin tombs. The Great Oxidation awaits.</div>
+        <div class="z-desc">The first oceans breathe. <strong>Tide Honey</strong> flows through the primordial seas — regeneration, life, healing in every drop. The frost guardians froze it long ago and will not thaw.</div>
         <div class="z-lvl" id="zlvl-proterozoic">LVL 16–30 · Locked</div>
         <div class="z-prog" id="zprog-proterozoic">15 wins to unlock</div>
       </div>
       <div class="zone z-l locked" id="zone-paleozoic" onclick="selectEra('paleozoic')">
         <span class="z-icon" id="zicon-paleozoic">🔒</span>
         <div class="z-name" style="color:#2ecc71">Paleozoic</div>
-        <div class="z-desc">Life erupts across the ancient seas. Tidal Rogues command the primordial ocean and Desert Fossils mark the first crawl onto land. Fossil Revenants guard the mass-extinction gates.</div>
+        <div class="z-desc">Life explodes in every direction. <strong>Bloom Honey</strong> hides in the ancient reefs — speed, venom, the rush of evolution. Every creature here is fighting to be the first to reach it.</div>
         <div class="z-lvl" id="zlvl-paleozoic">LVL 31–50 · Locked</div>
         <div class="z-prog" id="zprog-paleozoic">30 wins to unlock</div>
       </div>
       <div class="zone z-m locked" id="zone-mesozoic" onclick="selectEra('mesozoic')">
         <span class="z-icon" id="zicon-mesozoic">🔒</span>
         <div class="z-name" style="color:#f39c12">Mesozoic</div>
-        <div class="z-desc">Quartz Hydras soar above pangaea. Carbonite Rangers track the megafauna and Void Stalkers haunt the K-Pg boundary. The age of giants ends in fire from the sky.</div>
+        <div class="z-desc">The age of giants. <strong>Titan Honey</strong> runs through the veins of the megafauna — brute force, overwhelming power. The largest guardians in history stand between you and the drop.</div>
         <div class="z-lvl" id="zlvl-mesozoic">LVL 51–75 · Locked</div>
         <div class="z-prog" id="zprog-mesozoic">50 wins to unlock</div>
       </div>
       <div class="zone z-c locked" id="zone-cenozoic" onclick="selectEra('cenozoic')">
         <span class="z-icon" id="zicon-cenozoic">🔒</span>
         <div class="z-name" style="color:#e74c3c">Cenozoic</div>
-        <div class="z-desc">The final age. Quartz Sages interpret the ice cores. Seismic Specters haunt the fault lines of civilisation. Only the most legendary Cubs reach the terminal stratum.</div>
+        <div class="z-desc">The modern era — and the last honey. <strong>Frost Honey</strong> bends time itself — control, precision, the power to stop a moment. Only the most legendary Cubs reach this drop.</div>
         <div class="z-lvl" id="zlvl-cenozoic">LVL 76–100 · Locked</div>
         <div class="z-prog" id="zprog-cenozoic">75 wins to unlock</div>
       </div>
@@ -611,57 +611,57 @@ const G = {
 const ERA_UNLOCK = { hadean:0, archean:5, proterozoic:15, paleozoic:30, mesozoic:50, cenozoic:75 };
 
 const ERA_META = {
-  hadean:      { title:'Hadean Crucible',        sub:'Where primordial fire separates stone from legend',           badge:'Hadean',      color:'#9b59b6', arenaTitle:'✦ Battle Arena — Hadean Depths ✦' },
-  archean:     { title:'Archean Deep Faults',    sub:'Ancient crust cracks — the first titans stir below',          badge:'Archean',     color:'#3498db', arenaTitle:'✦ Battle Arena — Archean Rifts ✦' },
-  proterozoic: { title:'Proterozoic Ice Shelf',  sub:'Oxygen poisons the sky — the great oxidation begins',         badge:'Proterozoic', color:'#1abc9c', arenaTitle:'✦ Battle Arena — Proterozoic Frost ✦' },
-  paleozoic:   { title:'Paleozoic Tidal Gates',  sub:'Life erupts across the ancient seas and crawls to land',      badge:'Paleozoic',   color:'#2ecc71', arenaTitle:'✦ Battle Arena — Paleozoic Shores ✦' },
-  mesozoic:    { title:'Mesozoic Pangaea',        sub:'The age of giants — K-Pg boundary looms on the horizon',     badge:'Mesozoic',    color:'#f39c12', arenaTitle:'✦ Battle Arena — Mesozoic Skies ✦' },
-  cenozoic:    { title:'Terminal Stratum',        sub:'The final age — only the most legendary Cubs survive',        badge:'Cenozoic',    color:'#e74c3c', arenaTitle:'✦ Battle Arena — Cenozoic Terminus ✦' },
+  hadean:      { title:'Magma Honey — Hadean',    sub:'Defeat the fire guardians and claim the honey of destruction', badge:'Hadean',      color:'#9b59b6', arenaTitle:'✦ The Hunt — Magma Honey ✦' },
+  archean:     { title:'Stone Honey — Archean',  sub:'Break through the stone guardians and claim the honey of endurance', badge:'Archean', color:'#3498db', arenaTitle:'✦ The Hunt — Stone Honey ✦' },
+  proterozoic: { title:'Tide Honey — Proterozoic', sub:'Overcome the frost guardians and claim the honey of regeneration', badge:'Proterozoic', color:'#1abc9c', arenaTitle:'✦ The Hunt — Tide Honey ✦' },
+  paleozoic:   { title:'Bloom Honey — Paleozoic', sub:'Outrun the reef guardians and claim the honey of speed',     badge:'Paleozoic',   color:'#2ecc71', arenaTitle:'✦ The Hunt — Bloom Honey ✦' },
+  mesozoic:    { title:'Titan Honey — Mesozoic',  sub:'Overpower the giant guardians and claim the honey of force', badge:'Mesozoic',    color:'#f39c12', arenaTitle:'✦ The Hunt — Titan Honey ✦' },
+  cenozoic:    { title:'Frost Honey — Cenozoic',  sub:'The final drop. Defeat the last guardians. Claim the honey of time.', badge:'Cenozoic', color:'#e74c3c', arenaTitle:'✦ The Hunt — Frost Honey ✦' },
 };
 
 // Era-specific enemy pools (scale in difficulty)
 const ERA_ENEMIES = {
   hadean: [
-    { name:'Igneous Wraith',   emoji:'👹', cls:'Lava Spawn',      hp:80,  atk:22, def:10, xp:10 },
-    { name:'Fossil Revenant',  emoji:'💀', cls:'Ancient Dead',    hp:65,  atk:28, def:8,  xp:12 },
-    { name:'Magma Titan',      emoji:'🌋', cls:'Caldera Born',    hp:140, atk:25, def:18, xp:18 },
-    { name:'Seismic Specter',  emoji:'👻', cls:'Fault Walker',    hp:55,  atk:32, def:5,  xp:15 },
-    { name:'Amber Lurker',     emoji:'🫙', cls:'Resin Trapped',   hp:75,  atk:19, def:22, xp:12 },
+    { name:'Magma Keeper',     emoji:'🌋', cls:'Magma Honey Guardian', hp:80,  atk:22, def:10, xp:10 },
+    { name:'Ember Sentinel',   emoji:'🔥', cls:'Magma Honey Guardian', hp:65,  atk:28, def:8,  xp:12 },
+    { name:'Caldera Warden',   emoji:'👹', cls:'Magma Honey Guardian', hp:140, atk:25, def:18, xp:18 },
+    { name:'Lava Specter',     emoji:'👻', cls:'Magma Honey Guardian', hp:55,  atk:32, def:5,  xp:15 },
+    { name:'Cinder Golem',     emoji:'🗿', cls:'Magma Honey Guardian', hp:75,  atk:19, def:22, xp:12 },
   ],
   archean: [
-    { name:'Obsidian Golem',   emoji:'🗿', cls:'Stone Titan',     hp:160, atk:30, def:35, xp:22 },
-    { name:'Crystal Basilisk', emoji:'🦎', cls:'Gem Crawler',     hp:130, atk:33, def:22, xp:24 },
-    { name:'Tectonic Shade',   emoji:'🌑', cls:'Layer Wraith',    hp:95,  atk:44, def:10, xp:28 },
-    { name:'Stratum Worm',     emoji:'🪱', cls:'Deep Burrower',   hp:115, atk:38, def:18, xp:26 },
-    { name:'Fault Golem',      emoji:'⛰', cls:'Crust Titan',     hp:180, atk:28, def:40, xp:30 },
+    { name:'Stone Warden',     emoji:'🗿', cls:'Stone Honey Guardian', hp:160, atk:30, def:35, xp:22 },
+    { name:'Fault Titan',      emoji:'⛰', cls:'Stone Honey Guardian', hp:130, atk:33, def:22, xp:24 },
+    { name:'Crust Shade',      emoji:'🌑', cls:'Stone Honey Guardian', hp:95,  atk:44, def:10, xp:28 },
+    { name:'Obsidian Keeper',  emoji:'🦎', cls:'Stone Honey Guardian', hp:115, atk:38, def:18, xp:26 },
+    { name:'Deep Rock Elder',  emoji:'🪨', cls:'Stone Honey Guardian', hp:180, atk:28, def:40, xp:30 },
   ],
   proterozoic: [
-    { name:'Glacial Titan',    emoji:'🧊', cls:'Frost Colossus',  hp:200, atk:35, def:42, xp:32 },
-    { name:'Oxidation Wraith', emoji:'🌫', cls:'Toxic Specter',   hp:110, atk:48, def:12, xp:36 },
-    { name:'Amber Colossus',   emoji:'🫙', cls:'Resin Giant',     hp:170, atk:32, def:38, xp:34 },
-    { name:'Ice Basilisk',     emoji:'❄', cls:'Crystal Crawler', hp:155, atk:38, def:30, xp:35 },
-    { name:'Cyanobacteria Rex',emoji:'🦠', cls:'Ancient Life',    hp:90,  atk:55, def:8,  xp:40 },
+    { name:'Tide Keeper',      emoji:'🌊', cls:'Tide Honey Guardian',  hp:200, atk:35, def:42, xp:32 },
+    { name:'Frost Sentinel',   emoji:'🧊', cls:'Tide Honey Guardian',  hp:110, atk:48, def:12, xp:36 },
+    { name:'Current Warden',   emoji:'🌫', cls:'Tide Honey Guardian',  hp:170, atk:32, def:38, xp:34 },
+    { name:'Ice Colossus',     emoji:'❄',  cls:'Tide Honey Guardian',  hp:155, atk:38, def:30, xp:35 },
+    { name:'Ocean Ancient',    emoji:'🦠', cls:'Tide Honey Guardian',  hp:90,  atk:55, def:8,  xp:40 },
   ],
   paleozoic: [
-    { name:'Tidal Leviathan',  emoji:'🌊', cls:'Sea Ancient',     hp:240, atk:42, def:45, xp:44 },
-    { name:'Fossil Colossus',  emoji:'🦴', cls:'Bone Giant',      hp:220, atk:48, def:40, xp:46 },
-    { name:'Land Crawler',     emoji:'🦂', cls:'First Walker',    hp:175, atk:52, def:32, xp:42 },
-    { name:'Mass Extinction',  emoji:'☄', cls:'Event Specter',   hp:130, atk:64, def:16, xp:52 },
-    { name:'Trilobite Elder',  emoji:'🪲', cls:'Cambrian Guard',  hp:190, atk:45, def:50, xp:48 },
+    { name:'Bloom Keeper',     emoji:'🌿', cls:'Bloom Honey Guardian', hp:240, atk:42, def:45, xp:44 },
+    { name:'Reef Warden',      emoji:'🪸', cls:'Bloom Honey Guardian', hp:220, atk:48, def:40, xp:46 },
+    { name:'Venom Crawler',    emoji:'🦂', cls:'Bloom Honey Guardian', hp:175, atk:52, def:32, xp:42 },
+    { name:'Spore Specter',    emoji:'🌱', cls:'Bloom Honey Guardian', hp:130, atk:64, def:16, xp:52 },
+    { name:'Tide Leviathan',   emoji:'🐚', cls:'Bloom Honey Guardian', hp:190, atk:45, def:50, xp:48 },
   ],
   mesozoic: [
-    { name:'Quartz Hydra',     emoji:'🐉', cls:'Crystalline One', hp:290, atk:55, def:52, xp:58 },
-    { name:'Carbonite Drake',  emoji:'🦕', cls:'Mega Fauna',      hp:340, atk:48, def:58, xp:60 },
-    { name:'K-Pg Specter',     emoji:'💫', cls:'Void Stalker',    hp:210, atk:64, def:38, xp:62 },
-    { name:'Pangaea Titan',    emoji:'🌍', cls:'Continental',     hp:380, atk:58, def:62, xp:65 },
-    { name:'Pterosaur Wraith', emoji:'🦅', cls:'Sky Ancient',     hp:240, atk:68, def:30, xp:64 },
+    { name:'Titan Keeper',     emoji:'🦕', cls:'Titan Honey Guardian', hp:290, atk:55, def:52, xp:58 },
+    { name:'Scale Warden',     emoji:'🐉', cls:'Titan Honey Guardian', hp:340, atk:48, def:58, xp:60 },
+    { name:'Apex Sentinel',    emoji:'🦖', cls:'Titan Honey Guardian', hp:210, atk:64, def:38, xp:62 },
+    { name:'Pangaea Colossus', emoji:'🌍', cls:'Titan Honey Guardian', hp:380, atk:58, def:62, xp:65 },
+    { name:'Sky Warden',       emoji:'🦅', cls:'Titan Honey Guardian', hp:240, atk:68, def:30, xp:64 },
   ],
   cenozoic: [
-    { name:'Fault Walker',     emoji:'⚡', cls:'Tectonic Ghost',   hp:360, atk:68, def:62, xp:72 },
-    { name:'Ice Age Titan',    emoji:'❄', cls:'Glacial Overlord', hp:440, atk:62, def:72, xp:78 },
-    { name:'Extinction Herald',emoji:'💀', cls:'Terminal Stratum', hp:520, atk:72, def:68, xp:88 },
-    { name:'The Final Strata', emoji:'🏔', cls:'Earth Ancient',   hp:650, atk:78, def:78, xp:100 },
-    { name:'Cenozoic Specter', emoji:'👁', cls:'Epoch Wraith',    hp:400, atk:75, def:60, xp:82 },
+    { name:'Frost Keeper',     emoji:'❄',  cls:'Frost Honey Guardian', hp:360, atk:68, def:62, xp:72 },
+    { name:'Time Warden',      emoji:'⏳', cls:'Frost Honey Guardian', hp:440, atk:62, def:72, xp:78 },
+    { name:'Epoch Sentinel',   emoji:'🌀', cls:'Frost Honey Guardian', hp:520, atk:72, def:68, xp:88 },
+    { name:'The Last Guardian',emoji:'👁', cls:'Frost Honey Guardian', hp:650, atk:78, def:78, xp:100 },
+    { name:'Ice Age Titan',    emoji:'🏔', cls:'Frost Honey Guardian', hp:400, atk:75, def:60, xp:82 },
   ],
 };
 
@@ -669,27 +669,27 @@ const ERA_ENEMIES = {
 const ENEMIES = ERA_ENEMIES.hadean;
 
 const GEO_BURSTS = [
-  'Seismic Rupture','Magma Wave','Crystal Storm','Tectonic Slam',
-  'Fossil Surge','Obsidian Spike','Stratum Crush','Quartz Barrage',
-  'Volcanic Purge','Amber Lock','Lithic Pulse','Core Eruption',
+  'Magma Honey Wave','Stone Honey Slam','Tide Honey Surge','Bloom Honey Rush',
+  'Titan Honey Crush','Frost Honey Spike','Golden Burst','Honey Strike',
+  'Amber Flood','Crystal Drop','Primal Honey','The Golden Drop',
 ];
 
 // Class-specific special moves
 const CLASS_BURSTS = {
-  'Magma Warden':     ['Magma Wave','Core Eruption','Volcanic Purge'],
-  'Ember Knight':     ['Seismic Rupture','Ember Barrage','Magma Wave'],
-  'Glacial Scout':    ['Crystal Storm','Glacial Shard','Frost Spike'],
-  'Void Stalker':     ['Obsidian Spike','Void Rift','Shadow Crush'],
-  'Quartz Sage':      ['Crystal Storm','Quartz Barrage','Lithic Pulse'],
-  'Stratum Knight':   ['Tectonic Slam','Stratum Crush','Seismic Rupture'],
-  'Tidal Rogue':      ['Fossil Surge','Amber Lock','Tidal Crush'],
-  'Desert Fossil':    ['Amber Lock','Fossil Surge','Desert Scorch'],
-  'Carbonite Ranger': ['Fossil Surge','Stratum Crush','Carbon Strike'],
-  'Sediment Scout':   ['Tectonic Slam','Lithic Pulse','Stratum Crush'],
-  'Fossil Rogue':     ['Fossil Surge','Obsidian Spike','Amber Lock'],
-  'Crystal Mage':     ['Crystal Storm','Quartz Barrage','Lithic Pulse'],
-  'Tectonic Guard':   ['Tectonic Slam','Stratum Crush','Seismic Rupture'],
-  'Stratum Keeper':   ['Stratum Crush','Tectonic Slam','Lithic Pulse'],
+  'Magma Warden':     ['Magma Honey Wave','Core Honey Eruption','Lava Drop'],
+  'Ember Knight':     ['Ember Honey Barrage','Magma Honey Wave','Fire Drop'],
+  'Glacial Scout':    ['Tide Honey Surge','Frost Honey Spike','Glacial Drop'],
+  'Void Stalker':     ['Shadow Honey Strike','Void Drop','Dark Honey Crush'],
+  'Quartz Sage':      ['Crystal Drop','Tide Honey Surge','Stone Honey Slam'],
+  'Stratum Knight':   ['Stone Honey Slam','Titan Honey Crush','Golden Burst'],
+  'Tidal Rogue':      ['Tide Honey Surge','Amber Flood','Bloom Honey Rush'],
+  'Desert Fossil':    ['Bloom Honey Rush','Amber Flood','Golden Drop'],
+  'Carbonite Ranger': ['Titan Honey Crush','Bloom Honey Rush','Golden Burst'],
+  'Sediment Scout':   ['Stone Honey Slam','Honey Strike','Primal Honey'],
+  'Fossil Rogue':     ['Bloom Honey Rush','Amber Flood','Crystal Drop'],
+  'Crystal Mage':     ['Crystal Drop','Frost Honey Spike','The Golden Drop'],
+  'Tectonic Guard':   ['Stone Honey Slam','Titan Honey Crush','Honey Strike'],
+  'Stratum Keeper':   ['Stone Honey Slam','Primal Honey','Honey Strike'],
 };
 
 // ─────────────────────────────────────────
@@ -942,13 +942,13 @@ function deriveClass(traits) {
 function getDemoCubs() {
   // Image paths served from /cubs/ by the Next.js merch app (merch/public/cubs/)
   return [
-    { id:1, name:'Cub #0035', image:'/cubs/35.png', rarity:'legendary', class:'Magma Warden',
+    { id:1, name:'OkayCub #35', image:'/cubs/35.png', rarity:'legendary', class:'Magma Warden',
       traits:{ Background:'Volcanic Rift', Eyes:'Obsidian Gaze', Fur:'Ashen Gray', Accessory:'Crystal Pickaxe', Mouth:'Ember Fangs', Era:'Hadean' } },
-    { id:2, name:'Cub #0099', image:'/cubs/99.png', rarity:'epic', class:'Stratum Knight',
+    { id:2, name:'OkayCub #99', image:'/cubs/99.png', rarity:'epic', class:'Stratum Knight',
       traits:{ Background:'Deep Fault', Eyes:'Sapphire Core', Fur:'Slate Blue', Accessory:'Geode Shield', Mouth:'Iron Jaw', Era:'Archean' } },
-    { id:3, name:'Cub #0177', image:'/cubs/177.png', rarity:'rare', class:'Fossil Rogue',
+    { id:3, name:'OkayCub #177', image:'/cubs/177.png', rarity:'rare', class:'Fossil Rogue',
       traits:{ Background:'Amber Resin', Eyes:'Topaz Sight', Fur:'Sandstone', Accessory:'Ammonite Ring', Mouth:'Quartz Bite', Era:'Proterozoic' } },
-    { id:4, name:'Cub #0432', image:'/cubs/432.png', rarity:'common', class:'Sediment Scout',
+    { id:4, name:'OkayCub #432', image:'/cubs/432.png', rarity:'common', class:'Sediment Scout',
       traits:{ Background:'River Delta', Eyes:'Flint Gray', Fur:'Clay Brown', Accessory:'Stone Compass', Mouth:'Pebble Grin', Era:'Hadean' } },
   ];
 }
@@ -1113,13 +1113,17 @@ function selectCub(cub) {
   updatePlayer();
   setBtns(true);
   const enterFlair = {
-    'Magma Warden':'🌋 channels primordial magma',  'Ember Knight':'🔥 ignites their ember blade',
-    'Glacial Scout':'❄ emerges from the frozen strata','Void Stalker':'🌑 steps from the obsidian dark',
-    'Quartz Sage':'💎 aligns their crystalline aura',  'Stratum Knight':'⚔ holds the geological line',
-    'Tidal Rogue':'🌊 surges through ancient seabeds', 'Desert Fossil':'⏳ rises from the amber sands',
-    'Carbonite Ranger':'🌿 strides through fossilised groves',
+    'Magma Warden':     '🌋 hunts for the Magma Honey',
+    'Ember Knight':     '🔥 burns a path to the golden drop',
+    'Glacial Scout':    '❄ tracks the Tide Honey through frozen seas',
+    'Void Stalker':     '🌑 stalks the guardian in the dark',
+    'Quartz Sage':      '💎 reads the honey in the crystal formations',
+    'Stratum Knight':   '⚔ marches to claim the Stone Honey',
+    'Tidal Rogue':      '🌊 dives for the honey beneath the waves',
+    'Desert Fossil':    '⏳ follows the trail of the Bloom Honey',
+    'Carbonite Ranger': '🌿 hunts the Titan Honey through megafauna territory',
   };
-  const flair = enterFlair[cub.class] || '⛏ descends into the Hadean Crucible';
+  const flair = enterFlair[cub.class] || '🍯 enters the hunt for the golden drop';
   addLog(`${cub.name} ${flair}…`, 'ls');
 }
 
@@ -1244,6 +1248,9 @@ function act(action) {
   }
 
   if (G.eHP <= 0) {
+    // Lock out immediately — prevents repeated clicks awarding extra wins during the delay
+    G.active = false;
+    setBtns(false);
     anim('enemySlot', 'anim-death');
     updateEnemy();
     const xpGain = G.enemy.xp || 10;
@@ -1253,8 +1260,12 @@ function act(action) {
     checkEraUnlocks(prevWins);
     updateProgBar();
     setTimeout(() => {
-      addLog(`🏆 ${G.enemy.name} returns to the strata! (+${xpGain} XP · ${G.wins} wins)`, 'ls');
-      setTimeout(() => { spawnEnemy(); addLog('💀 A new challenger rises from the deep…', 'ls'); }, 1400);
+      addLog(`🍯 Guardian defeated! The honey is yours. (+${xpGain} XP · ${G.wins} wins)`, 'ls');
+      setTimeout(() => {
+        spawnEnemy();
+        addLog('⚔ Another guardian steps forward to defend the honey…', 'ls');
+        setBtns(true);
+      }, 1400);
     }, 300);
     return;
   }
@@ -1271,7 +1282,7 @@ function act(action) {
     updateEnemy();
 
     if (G.pHP <= 0) {
-      addLog(`💀 ${cub.name} has fallen… The strata claims another.`, 'ls');
+      addLog(`💀 ${cub.name} has fallen… The honey remains out of reach.`, 'ls');
       setBtns(false);
       G.active = false;
       setTimeout(resetBattle, 2500);
