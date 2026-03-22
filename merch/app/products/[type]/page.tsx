@@ -240,7 +240,7 @@ function ProductPageInner() {
           {/* Mockup / placeholder */}
           <div className="card-border p-2 flex items-center justify-center" style={{ minHeight: 340 }}>
             {mockupUrl ? (
-              <Image src={mockupUrl} alt="Product mockup" width={400} height={400} className="w-full object-contain" />
+              <Image src={mockupUrl} alt="Product mockup" width={400} height={400} className="w-full object-contain" unoptimized />
             ) : selectedCub?.image && selectedColor ? (() => {
               const colorHex = UNIQUE_COLORS(type).find(c => c.color === selectedColor)?.colorHex ?? '#1a1a1a';
               return (
