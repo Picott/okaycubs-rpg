@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/printful/catalog
-// Returns the real variant IDs for the products we want to sell.
-// Open this URL in your browser to find the correct IDs to put in products.ts
+// Returns the real variant IDs AND available print placements for each product.
+// Open this URL in your browser to find the correct IDs and placements for products.ts
 // No secret needed — the API key stays server-side.
 export async function GET(req: NextRequest) {
   const apiKey = process.env.PRINTFUL_API_KEY;
@@ -20,16 +20,29 @@ export async function GET(req: NextRequest) {
   const results: Record<number, unknown> = {};
 
   for (const pid of productIds) {
-    const res  = await fetch(`https://api.printful.com/products/${pid}`, { headers: hdrs });
-    const data = await res.json() as {
+    const [variantRes, printfileRes] = await Promise.all([
+      fetch(`https://api.printful.com/products/${pid}`, { headers: hdrs }),
+      fetch(`https://api.printful.com/mockup-generator/printfiles/${pid}`, { headers: hdrs }),
+    ]);
+
+    const variantData = await variantRes.json() as {
       result?: {
         product?: { title?: string };
         variants?: Array<{ id: number; size?: string; color?: string; color_code?: string; availability_status?: string }>;
       };
     };
+    const printfileData = await printfileRes.json() as {
+      result?: {
+        variant_printfiles?: Array<{
+          variant_id: number;
+          placements: Array<{ placement: string; display_name?: string }>;
+        }>;
+        available_placements?: Record<string, string>;
+      };
+    };
 
-    const product  = data?.result?.product;
-    const variants = data?.result?.variants ?? [];
+    const product  = variantData?.result?.product;
+    const variants = variantData?.result?.variants ?? [];
 
     // Group by color for readability
     const byColor: Record<string, Array<{ id: number; size?: string; availability?: string }>> = {};
@@ -39,10 +52,19 @@ export async function GET(req: NextRequest) {
       byColor[c].push({ id: v.id, size: v.size, availability: v.availability_status });
     }
 
+    // Extract unique valid placements
+    const availablePlacements = printfileData?.result?.available_placements ?? {};
+    const placementsFromVariants = new Set<string>();
+    for (const vp of printfileData?.result?.variant_printfiles ?? []) {
+      for (const p of vp.placements ?? []) placementsFromVariants.add(p.placement);
+    }
+
     results[pid] = {
       name: product?.title ?? `Product ${pid}`,
-      httpStatus: res.status,
+      httpStatus: variantRes.status,
       totalVariants: variants.length,
+      availablePlacements,
+      uniquePlacementsFromVariants: Array.from(placementsFromVariants),
       byColor,
     };
   }

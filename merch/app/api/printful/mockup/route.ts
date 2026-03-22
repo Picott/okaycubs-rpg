@@ -97,7 +97,9 @@ export async function GET(req: NextRequest) {
   }
 
   if (status === 'failed') {
-    return NextResponse.json({ status: 'failed' });
+    const reason = data?.result?.error ?? data?.result ?? data;
+    console.error('[Printful mockup] task failed:', JSON.stringify(reason));
+    return NextResponse.json({ status: 'failed', reason });
   }
 
   return NextResponse.json({ status: status ?? 'pending' });
