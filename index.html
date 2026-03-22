@@ -942,13 +942,13 @@ function deriveClass(traits) {
 function getDemoCubs() {
   // Image paths served from /cubs/ by the Next.js merch app (merch/public/cubs/)
   return [
-    { id:1, name:'Cub #0035', image:'/cubs/35.png', rarity:'legendary', class:'Magma Warden',
+    { id:1, name:'OkayCub #35', image:'/cubs/35.png', rarity:'legendary', class:'Magma Warden',
       traits:{ Background:'Volcanic Rift', Eyes:'Obsidian Gaze', Fur:'Ashen Gray', Accessory:'Crystal Pickaxe', Mouth:'Ember Fangs', Era:'Hadean' } },
-    { id:2, name:'Cub #0099', image:'/cubs/99.png', rarity:'epic', class:'Stratum Knight',
+    { id:2, name:'OkayCub #99', image:'/cubs/99.png', rarity:'epic', class:'Stratum Knight',
       traits:{ Background:'Deep Fault', Eyes:'Sapphire Core', Fur:'Slate Blue', Accessory:'Geode Shield', Mouth:'Iron Jaw', Era:'Archean' } },
-    { id:3, name:'Cub #0177', image:'/cubs/177.png', rarity:'rare', class:'Fossil Rogue',
+    { id:3, name:'OkayCub #177', image:'/cubs/177.png', rarity:'rare', class:'Fossil Rogue',
       traits:{ Background:'Amber Resin', Eyes:'Topaz Sight', Fur:'Sandstone', Accessory:'Ammonite Ring', Mouth:'Quartz Bite', Era:'Proterozoic' } },
-    { id:4, name:'Cub #0432', image:'/cubs/432.png', rarity:'common', class:'Sediment Scout',
+    { id:4, name:'OkayCub #432', image:'/cubs/432.png', rarity:'common', class:'Sediment Scout',
       traits:{ Background:'River Delta', Eyes:'Flint Gray', Fur:'Clay Brown', Accessory:'Stone Compass', Mouth:'Pebble Grin', Era:'Hadean' } },
   ];
 }
@@ -1244,6 +1244,9 @@ function act(action) {
   }
 
   if (G.eHP <= 0) {
+    // Lock out immediately — prevents repeated clicks awarding extra wins during the delay
+    G.active = false;
+    setBtns(false);
     anim('enemySlot', 'anim-death');
     updateEnemy();
     const xpGain = G.enemy.xp || 10;
@@ -1254,7 +1257,11 @@ function act(action) {
     updateProgBar();
     setTimeout(() => {
       addLog(`🏆 ${G.enemy.name} returns to the strata! (+${xpGain} XP · ${G.wins} wins)`, 'ls');
-      setTimeout(() => { spawnEnemy(); addLog('💀 A new challenger rises from the deep…', 'ls'); }, 1400);
+      setTimeout(() => {
+        spawnEnemy();
+        addLog('💀 A new challenger rises from the deep…', 'ls');
+        setBtns(true);
+      }, 1400);
     }, 300);
     return;
   }

@@ -33,6 +33,7 @@ function ProductPageInner() {
   const [loadingMockup, setLoadingMockup] = useState(false);
   const [mockupFailed, setMockupFailed] = useState(false);
   const mockupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mockupReqId   = useRef(0);
   const [paying, setPaying]         = useState(false);
   const [solPrice, setSolPrice]     = useState<number>(0);
   const [qrUrl, setQrUrl]           = useState<string>('');
@@ -73,13 +74,19 @@ function ProductPageInner() {
     // Cancel any in-flight debounce timer
     if (mockupDebounce.current) clearTimeout(mockupDebounce.current);
 
+    // Reset state for the new selection immediately
     setMockupUrl('');
     setMockupFailed(false);
+    setLoadingMockup(false);
 
-    let cancelled = false;
+    // Increment request counter — each request owns its ID; only the latest clears loading
+    const reqId = ++mockupReqId.current;
 
     // Debounce: wait 600ms after the last change before calling Printful
     mockupDebounce.current = setTimeout(() => {
+      // Abort if a newer request has already been scheduled
+      if (mockupReqId.current !== reqId) return;
+
       setLoadingMockup(true);
 
       const absImage = selectedCub.image.startsWith('http')
@@ -91,6 +98,7 @@ function ProductPageInner() {
         // Step 1: create task — retry once on 429
         let taskKey: string | null = null;
         for (let attempt = 0; attempt < 2; attempt++) {
+          if (mockupReqId.current !== reqId) return;
           const createRes = await fetch('/api/printful/mockup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -101,7 +109,7 @@ function ProductPageInner() {
           // 400 = bad product config — not retriable
           if (createRes.status === 400) {
             console.error('[mockup] Bad config (variant/product mismatch):', JSON.stringify(createData));
-            if (!cancelled) setMockupFailed(true);
+            if (mockupReqId.current === reqId) setMockupFailed(true);
             return;
           }
 
@@ -109,60 +117,64 @@ function ProductPageInner() {
           if (createRes.status === 429) {
             if (attempt >= 1) {
               console.warn('[mockup] Still rate limited after retry — giving up');
-              if (!cancelled) setMockupFailed(true);
+              if (mockupReqId.current === reqId) setMockupFailed(true);
               return;
             }
             const wait = Math.min((createData.retryAfter ?? 30), 90) * 1000;
             console.warn(`[mockup] Rate limited — backing off ${wait / 1000}s then retrying…`);
             await new Promise(r => setTimeout(r, wait));
-            if (cancelled) return;
+            if (mockupReqId.current !== reqId) return;
             continue;
           }
 
           if (!createData.taskKey) {
             console.error('[mockup] Printful error:', JSON.stringify(createData));
-            if (!cancelled) setMockupFailed(true);
+            if (mockupReqId.current === reqId) setMockupFailed(true);
             return;
           }
           taskKey = createData.taskKey;
           break;
         }
 
-        if (!taskKey || cancelled) {
-          if (!cancelled) setMockupFailed(true);
+        if (!taskKey) {
+          if (mockupReqId.current === reqId) setMockupFailed(true);
           return;
         }
 
         // Step 2: poll every 2s until done (max 60s)
         for (let i = 0; i < 30; i++) {
           await new Promise(r => setTimeout(r, 2000));
-          if (cancelled) return;
+          if (mockupReqId.current !== reqId) return;
 
           const pollRes = await fetch(`/api/printful/mockup?task_key=${taskKey}`);
           const data = await pollRes.json() as { status: string; mockupUrl?: string };
 
           if (data.status === 'completed') {
-            if (!cancelled && data.mockupUrl) setMockupUrl(data.mockupUrl);
+            if (mockupReqId.current === reqId && data.mockupUrl) setMockupUrl(data.mockupUrl);
             return;
           }
           if (data.status === 'failed') {
-            if (!cancelled) setMockupFailed(true);
+            if (mockupReqId.current === reqId) setMockupFailed(true);
             return;
           }
         }
         // timed out
-        if (!cancelled) setMockupFailed(true);
+        if (mockupReqId.current === reqId) setMockupFailed(true);
       } catch {
-        if (!cancelled) setMockupFailed(true);
+        if (mockupReqId.current === reqId) setMockupFailed(true);
       } finally {
-        if (!cancelled) setLoadingMockup(false);
+        // Only the owning request clears the loading spinner
+        if (mockupReqId.current === reqId) setLoadingMockup(false);
       }
     })();
     }, 600); // debounce: only fire after 600ms of no changes
 
     return () => {
-      cancelled = true;
-      if (mockupDebounce.current) clearTimeout(mockupDebounce.current);
+      // Invalidate this request by bumping the counter if debounce hasn't fired yet
+      if (mockupDebounce.current) {
+        clearTimeout(mockupDebounce.current);
+        mockupReqId.current++;
+      }
     };
   }, [selectedCub, variant?.printfulVariantId]);
 
