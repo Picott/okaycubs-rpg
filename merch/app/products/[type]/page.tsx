@@ -88,33 +88,47 @@ function ProductPageInner() {
 
     (async () => {
       try {
-        // Step 1: create task
-        const createRes = await fetch('/api/printful/mockup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
-        });
-        const createData = await createRes.json() as { taskKey?: string; error?: string; retryAfter?: number; detail?: unknown };
+        // Step 1: create task — retry once on 429
+        let taskKey: string | null = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const createRes = await fetch('/api/printful/mockup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
+          });
+          const createData = await createRes.json() as { taskKey?: string; error?: string; retryAfter?: number; detail?: unknown };
 
-        // 400 = bad product config — don't retry, just bail
-        if (createRes.status === 400) {
-          console.error('[mockup] Bad config (variant/product mismatch):', JSON.stringify(createData));
-          if (!cancelled) setMockupFailed(true);
-          return;
+          // 400 = bad product config — not retriable
+          if (createRes.status === 400) {
+            console.error('[mockup] Bad config (variant/product mismatch):', JSON.stringify(createData));
+            if (!cancelled) setMockupFailed(true);
+            return;
+          }
+
+          // 429 = rate limited — back off then retry once
+          if (createRes.status === 429) {
+            if (attempt >= 1) {
+              console.warn('[mockup] Still rate limited after retry — giving up');
+              if (!cancelled) setMockupFailed(true);
+              return;
+            }
+            const wait = Math.min((createData.retryAfter ?? 30), 90) * 1000;
+            console.warn(`[mockup] Rate limited — backing off ${wait / 1000}s then retrying…`);
+            await new Promise(r => setTimeout(r, wait));
+            if (cancelled) return;
+            continue;
+          }
+
+          if (!createData.taskKey) {
+            console.error('[mockup] Printful error:', JSON.stringify(createData));
+            if (!cancelled) setMockupFailed(true);
+            return;
+          }
+          taskKey = createData.taskKey;
+          break;
         }
 
-        // 429 = rate limited — wait retryAfter seconds then abandon (user can reselect)
-        if (createRes.status === 429) {
-          const wait = (createData.retryAfter ?? 60) * 1000;
-          console.warn(`[mockup] Rate limited — backing off ${wait / 1000}s`);
-          await new Promise(r => setTimeout(r, wait));
-          if (!cancelled) setMockupFailed(true);
-          return;
-        }
-
-        const { taskKey } = createData;
         if (!taskKey || cancelled) {
-          console.error('[mockup] Printful error:', JSON.stringify(createData));
           if (!cancelled) setMockupFailed(true);
           return;
         }
