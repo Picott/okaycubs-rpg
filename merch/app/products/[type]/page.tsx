@@ -32,6 +32,7 @@ function ProductPageInner() {
   const [mockupUrl, setMockupUrl]   = useState<string>('');
   const [loadingMockup, setLoadingMockup] = useState(false);
   const [mockupFailed, setMockupFailed] = useState(false);
+  const [mockupError, setMockupError] = useState<string>('');
   const mockupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [paying, setPaying]         = useState(false);
   const [solPrice, setSolPrice]     = useState<number>(0);
@@ -75,6 +76,7 @@ function ProductPageInner() {
 
     setMockupUrl('');
     setMockupFailed(false);
+    setMockupError('');
 
     let cancelled = false;
 
@@ -98,10 +100,17 @@ function ProductPageInner() {
           });
           const createData = await createRes.json() as { taskKey?: string; error?: string; retryAfter?: number; detail?: unknown };
 
+          // 503 = API key not configured
+          if (createRes.status === 503) {
+            console.error('[mockup] Printful API key not configured on server');
+            if (!cancelled) { setMockupFailed(true); setMockupError('503: PRINTFUL_API_KEY missing in Vercel env vars'); }
+            return;
+          }
+
           // 400 = bad product config — not retriable
           if (createRes.status === 400) {
             console.error('[mockup] Bad config (variant/product mismatch):', JSON.stringify(createData));
-            if (!cancelled) setMockupFailed(true);
+            if (!cancelled) { setMockupFailed(true); setMockupError('400: bad variant/product config — check Printful IDs'); }
             return;
           }
 
@@ -109,7 +118,7 @@ function ProductPageInner() {
           if (createRes.status === 429) {
             if (attempt >= 1) {
               console.warn('[mockup] Still rate limited after retry — giving up');
-              if (!cancelled) setMockupFailed(true);
+              if (!cancelled) { setMockupFailed(true); setMockupError('429: Printful rate limit'); }
               return;
             }
             const wait = Math.min((createData.retryAfter ?? 30), 90) * 1000;
@@ -121,7 +130,7 @@ function ProductPageInner() {
 
           if (!createData.taskKey) {
             console.error('[mockup] Printful error:', JSON.stringify(createData));
-            if (!cancelled) setMockupFailed(true);
+            if (!cancelled) { setMockupFailed(true); setMockupError(`${createRes.status}: ${createData.error ?? 'unknown'}`); }
             return;
           }
           taskKey = createData.taskKey;
@@ -260,8 +269,13 @@ function ProductPageInner() {
                     )}
                   </div>
                   <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 uppercase text-center">
-                    {loadingMockup ? 'Generating mockup…' : mockupFailed ? 'Preview unavailable — image above is a preview' : selectedCub.name}
+                    {loadingMockup ? 'Generating mockup…' : mockupFailed ? 'Mockup unavailable' : selectedCub.name}
                   </div>
+                  {mockupFailed && mockupError && (
+                    <div className="font-cinzel text-[8px] tracking-[1px] text-red-400 opacity-60 text-center mt-1">
+                      {mockupError}
+                    </div>
+                  )}
                 </div>
               );
             })() : selectedCub?.image ? (
