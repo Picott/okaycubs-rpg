@@ -52,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="rule" />
             {/* Back to RPG */}
             <a
-              href="../index.html"
+              href="/game.html"
               className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 hover:opacity-70 transition-opacity uppercase"
             >
               ← Back to RPG
