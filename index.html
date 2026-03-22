@@ -364,7 +364,7 @@
     <div class="sec-title">✦ Battle Arena — Hadean Depths ✦</div>
     <div class="arena">
       <div class="arena-title">Hadean Crucible</div>
-      <div class="arena-sub">Where primordial fire tests the worthy</div>
+      <div class="arena-sub">Where primordial fire separates stone from legend</div>
       <div class="battle-field">
         <div class="fighter player" id="playerSlot"><div class="empty-slot">Select a Cub<br/>to enter battle</div></div>
         <div class="vs">VS</div>
@@ -386,37 +386,37 @@
       <div class="zone z-h unlocked">
         <span class="z-icon">🌋</span>
         <div class="z-name" style="color:#9b59b6">Hadean</div>
-        <div class="z-desc">Primordial fire. The world is born in chaos.</div>
+        <div class="z-desc">Primordial fire. Magma Wardens and Ember Knights forge their legend in the planet's first breath. Igneous Wraiths patrol the caldera walls.</div>
         <div class="z-lvl">LVL 1–5 · Unlocked</div>
       </div>
       <div class="zone z-a unlocked">
         <span class="z-icon">🪨</span>
         <div class="z-name" style="color:#3498db">Archean</div>
-        <div class="z-desc">Ancient crust. First life stirs in the deep.</div>
+        <div class="z-desc">Ancient crust hardens. Stratum Knights hold the deep faults as Obsidian Golems rise from the cooling mantle. First life stirs in dark hydrothermal vents.</div>
         <div class="z-lvl">LVL 6–15 · Unlocked</div>
       </div>
       <div class="zone z-p locked">
         <span class="z-icon">🔒</span>
         <div class="z-name" style="color:#1abc9c">Proterozoic</div>
-        <div class="z-desc">Oxygen rises. The great oxidation event.</div>
+        <div class="z-desc">Oxygen poisons the sky. Glacial Scouts navigate toxic ice shelves while Amber Lurkers crystallise the first organisms in resin tombs. The Great Oxidation awaits.</div>
         <div class="z-lvl">LVL 16–30 · Locked</div>
       </div>
       <div class="zone z-l locked">
         <span class="z-icon">🔒</span>
         <div class="z-name" style="color:#2ecc71">Paleozoic</div>
-        <div class="z-desc">Life explodes across the ancient seas.</div>
+        <div class="z-desc">Life erupts across the ancient seas. Tidal Rogues command the primordial ocean and Desert Fossils mark the first crawl onto land. Fossil Revenants guard the mass-extinction gates.</div>
         <div class="z-lvl">LVL 31–50 · Locked</div>
       </div>
       <div class="zone z-m locked">
         <span class="z-icon">🔒</span>
         <div class="z-name" style="color:#f39c12">Mesozoic</div>
-        <div class="z-desc">Age of giants. Titans rule the earth.</div>
+        <div class="z-desc">Quartz Hydras soar above pangaea. Carbonite Rangers track the megafauna and Void Stalkers haunt the K-Pg boundary. The age of giants ends in fire from the sky.</div>
         <div class="z-lvl">LVL 51–75 · Locked</div>
       </div>
       <div class="zone z-c locked">
         <span class="z-icon">🔒</span>
         <div class="z-name" style="color:#e74c3c">Cenozoic</div>
-        <div class="z-desc">The modern age. The final reckoning.</div>
+        <div class="z-desc">The final age. Quartz Sages interpret the ice cores. Seismic Specters haunt the fault lines of civilisation. Only the most legendary Cubs reach the terminal stratum.</div>
         <div class="z-lvl">LVL 76–100 · Locked</div>
       </div>
     </div>
@@ -448,13 +448,39 @@ const G = {
 };
 
 const ENEMIES = [
-  { name:'Igneous Wraith',  emoji:'👹', cls:'Lava Spawn',   hp:80,  atk:22, def:10 },
-  { name:'Obsidian Golem',  emoji:'🗿', cls:'Stone Titan',  hp:120, atk:18, def:25 },
-  { name:'Fossil Revenant', emoji:'💀', cls:'Ancient Dead', hp:65,  atk:28, def:8  },
-  { name:'Crystal Basilisk',emoji:'🦎', cls:'Gem Crawler',  hp:90,  atk:20, def:15 },
+  { name:'Igneous Wraith',   emoji:'👹', cls:'Lava Spawn',      hp:80,  atk:22, def:10 },
+  { name:'Obsidian Golem',   emoji:'🗿', cls:'Stone Titan',     hp:120, atk:18, def:25 },
+  { name:'Fossil Revenant',  emoji:'💀', cls:'Ancient Dead',    hp:65,  atk:28, def:8  },
+  { name:'Crystal Basilisk', emoji:'🦎', cls:'Gem Crawler',     hp:90,  atk:20, def:15 },
+  { name:'Magma Titan',      emoji:'🌋', cls:'Caldera Born',    hp:140, atk:25, def:18 },
+  { name:'Seismic Specter',  emoji:'👻', cls:'Fault Walker',    hp:55,  atk:32, def:5  },
+  { name:'Amber Lurker',     emoji:'🫙', cls:'Resin Trapped',   hp:75,  atk:19, def:22 },
+  { name:'Quartz Hydra',     emoji:'🐉', cls:'Crystalline One', hp:160, atk:30, def:20 },
 ];
 
-const GEO_BURSTS = ['Seismic Rupture','Magma Wave','Crystal Storm','Tectonic Slam','Fossil Surge','Obsidian Spike'];
+const GEO_BURSTS = [
+  'Seismic Rupture','Magma Wave','Crystal Storm','Tectonic Slam',
+  'Fossil Surge','Obsidian Spike','Stratum Crush','Quartz Barrage',
+  'Volcanic Purge','Amber Lock','Lithic Pulse','Core Eruption',
+];
+
+// Class-specific special moves
+const CLASS_BURSTS = {
+  'Magma Warden':     ['Magma Wave','Core Eruption','Volcanic Purge'],
+  'Ember Knight':     ['Seismic Rupture','Ember Barrage','Magma Wave'],
+  'Glacial Scout':    ['Crystal Storm','Glacial Shard','Frost Spike'],
+  'Void Stalker':     ['Obsidian Spike','Void Rift','Shadow Crush'],
+  'Quartz Sage':      ['Crystal Storm','Quartz Barrage','Lithic Pulse'],
+  'Stratum Knight':   ['Tectonic Slam','Stratum Crush','Seismic Rupture'],
+  'Tidal Rogue':      ['Fossil Surge','Amber Lock','Tidal Crush'],
+  'Desert Fossil':    ['Amber Lock','Fossil Surge','Desert Scorch'],
+  'Carbonite Ranger': ['Fossil Surge','Stratum Crush','Carbon Strike'],
+  'Sediment Scout':   ['Tectonic Slam','Lithic Pulse','Stratum Crush'],
+  'Fossil Rogue':     ['Fossil Surge','Obsidian Spike','Amber Lock'],
+  'Crystal Mage':     ['Crystal Storm','Quartz Barrage','Lithic Pulse'],
+  'Tectonic Guard':   ['Tectonic Slam','Stratum Crush','Seismic Rupture'],
+  'Stratum Keeper':   ['Stratum Crush','Tectonic Slam','Lithic Pulse'],
+};
 
 // ─────────────────────────────────────────
 // TENSOR — holder verification + floor price
@@ -471,27 +497,49 @@ async function tensorQuery(query, variables) {
 }
 
 async function fetchCubsTensor(wallet) {
-  const data = await tensorQuery(
-    `query UserNfts($owner: String!, $slugs: [String!]!) {
-      userNfts(owner: $owner, slugs: $slugs) {
-        mint { onchainId name imageUri }
-      }
-    }`,
-    { owner: wallet, slugs: [OKAY_CUBS_COLLECTION] }
-  );
+  // Try with attributes first for richer stats; fall back to minimal query if field unavailable
+  let data = null;
+  try {
+    data = await tensorQuery(
+      `query UserNfts($owner: String!, $slugs: [String!]!) {
+        userNfts(owner: $owner, slugs: $slugs) {
+          mint { onchainId name imageUri attributes { traitType value } }
+        }
+      }`,
+      { owner: wallet, slugs: [OKAY_CUBS_COLLECTION] }
+    );
+  } catch(e) {
+    data = await tensorQuery(
+      `query UserNfts($owner: String!, $slugs: [String!]!) {
+        userNfts(owner: $owner, slugs: $slugs) {
+          mint { onchainId name imageUri }
+        }
+      }`,
+      { owner: wallet, slugs: [OKAY_CUBS_COLLECTION] }
+    );
+  }
   const nfts = data?.userNfts || [];
   if (nfts.length === 0) return null;
   return nfts.map((n, i) => {
     const name   = n.mint?.name || `OkayCub #${i + 1}`;
     const num    = parseInt(name.replace(/\D/g, '')) || i + 1;
-    const rarity = num % 100 === 0 ? 'legendary' : num % 25 === 0 ? 'epic' : num % 5 === 0 ? 'rare' : 'common';
+    // Build traits from attributes if available
+    const traits = {};
+    const attrs  = n.mint?.attributes || [];
+    attrs.forEach(a => { const k = a.traitType || a.trait_type; if (k) traits[k] = a.value; });
+    // Rarity from trait count if we have traits, else from number
+    const tc     = attrs.length;
+    const rarity = tc >= 8 ? 'legendary' : tc >= 6 ? 'epic' : tc >= 4 ? 'rare' :
+                   tc > 0  ? 'common' :
+                   num % 100 === 0 ? 'legendary' : num % 25 === 0 ? 'epic' : num % 5 === 0 ? 'rare' : 'common';
     return {
       id:     n.mint?.onchainId || String(i),
       name,
       image:  n.mint?.imageUri  || '',
+      number: num,
       rarity,
-      class:  deriveClass({}),
-      traits: {},
+      class:  deriveClass(traits),
+      traits,
     };
   });
 }
@@ -660,16 +708,22 @@ function parseCubs(nfts) {
 
 function deriveClass(traits) {
   const classes = {
-    'Volcanic':'Magma Warden', 'Fire':'Ember Knight', 'Ice':'Glacial Scout',
-    'Dark':'Void Stalker', 'Light':'Quartz Sage', 'Stone':'Stratum Knight',
-    'Water':'Tidal Rogue', 'Sand':'Desert Fossil', 'Forest':'Carbonite Ranger',
+    'Volcanic':'Magma Warden',    'Lava':'Magma Warden',     'Caldera':'Magma Warden',
+    'Fire':'Ember Knight',        'Flame':'Ember Knight',    'Ember':'Ember Knight',
+    'Ice':'Glacial Scout',        'Frost':'Glacial Scout',   'Arctic':'Glacial Scout',  'Glacial':'Glacial Scout',
+    'Dark':'Void Stalker',        'Shadow':'Void Stalker',   'Obsidian':'Void Stalker', 'Void':'Void Stalker',
+    'Light':'Quartz Sage',        'Crystal':'Quartz Sage',   'Quartz':'Quartz Sage',    'Gem':'Quartz Sage',
+    'Stone':'Stratum Knight',     'Rock':'Stratum Knight',   'Granite':'Stratum Knight','Stratum':'Stratum Knight',
+    'Water':'Tidal Rogue',        'Ocean':'Tidal Rogue',     'River':'Tidal Rogue',     'Tidal':'Tidal Rogue',
+    'Sand':'Desert Fossil',       'Desert':'Desert Fossil',  'Amber':'Desert Fossil',   'Dune':'Desert Fossil',
+    'Forest':'Carbonite Ranger',  'Jungle':'Carbonite Ranger','Moss':'Carbonite Ranger', 'Carbon':'Carbonite Ranger',
   };
-  const bg = traits['Background'] || traits['background'] || '';
+  const bg = traits['Background'] || traits['background'] || traits['Era'] || traits['era'] || '';
   for (const [k, v] of Object.entries(classes)) {
     if (bg.toLowerCase().includes(k.toLowerCase())) return v;
   }
-  const fallbacks = ['Sediment Scout','Fossil Rogue','Crystal Mage','Tectonic Guard','Magma Warden'];
-  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  const fallbacks = ['Sediment Scout','Fossil Rogue','Crystal Mage','Tectonic Guard','Magma Warden','Stratum Keeper'];
+  return fallbacks[Math.abs(hash(bg + (traits['Eyes'] || ''))) % fallbacks.length];
 }
 
 // ─────────────────────────────────────────
@@ -699,10 +753,20 @@ function hash(s) {
 }
 
 function getStats(cub) {
-  const seed = hash(Object.values(cub.traits).join('|') + cub.name);
-  const rb   = { legendary:30, epic:20, rare:10, common:0 }[cub.rarity] || 0;
-  const r    = n => Math.min(99, 30 + (seed % n) + rb);
-  return { ATK: r(40), DEF: r(35), SPD: r(38), LCK: r(30), HP: 100 + rb * 2 };
+  const rb     = { legendary:30, epic:20, rare:10, common:0 }[cub.rarity] || 0;
+  const t      = cub.traits || {};
+  // Each stat seeded by a different trait → more varied builds per cub
+  const atkSeed = hash((t['Eyes']       || t['Mouth']  || '') + 'atk' + cub.name);
+  const defSeed = hash((t['Fur']        || t['Body']   || '') + 'def' + cub.name);
+  const spdSeed = hash((t['Accessory']  || t['Hat']    || '') + 'spd' + cub.name);
+  const lckSeed = hash((t['Background'] || t['Era']    || '') + 'lck' + cub.name);
+  return {
+    ATK: Math.min(99, 28 + (atkSeed % 45) + rb),
+    DEF: Math.min(99, 22 + (defSeed % 40) + rb),
+    SPD: Math.min(99, 25 + (spdSeed % 42) + rb),
+    LCK: Math.min(99, 18 + (lckSeed % 38) + rb),
+    HP:  100 + rb * 2,
+  };
 }
 
 // ─────────────────────────────────────────
@@ -838,7 +902,15 @@ function selectCub(cub) {
   spawnEnemy();
   updatePlayer();
   setBtns(true);
-  addLog(`⛏ ${cub.name} descends into the Hadean Crucible…`, 'ls');
+  const enterFlair = {
+    'Magma Warden':'🌋 channels primordial magma',  'Ember Knight':'🔥 ignites their ember blade',
+    'Glacial Scout':'❄ emerges from the frozen strata','Void Stalker':'🌑 steps from the obsidian dark',
+    'Quartz Sage':'💎 aligns their crystalline aura',  'Stratum Knight':'⚔ holds the geological line',
+    'Tidal Rogue':'🌊 surges through ancient seabeds', 'Desert Fossil':'⏳ rises from the amber sands',
+    'Carbonite Ranger':'🌿 strides through fossilised groves',
+  };
+  const flair = enterFlair[cub.class] || '⛏ descends into the Hadean Crucible';
+  addLog(`${cub.name} ${flair}…`, 'ls');
 }
 
 function showTraits(cub) {
@@ -930,7 +1002,8 @@ function act(action) {
     addLog(`🛡 ${cub.name} fortifies — DEF +${Math.floor(stats.DEF * .5)}`, 'lp');
 
   } else {
-    const burst = GEO_BURSTS[Math.floor(Math.random() * GEO_BURSTS.length)];
+    const pool  = CLASS_BURSTS[cub.class] || GEO_BURSTS;
+    const burst = pool[Math.floor(Math.random() * pool.length)];
     const dmg   = Math.floor(stats.ATK * .6 + stats.LCK * .3 + Math.random() * 20);
     G.eHP = Math.max(0, G.eHP - dmg);
     addLog(`✦ ${cub.name} unleashes ${burst} for ${dmg}!`, 'lp');

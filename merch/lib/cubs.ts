@@ -7,6 +7,8 @@ export interface Cub {
   name: string;
   image: string;
   number: number;
+  rarity?: string;
+  traits?: Record<string, string>;
 }
 
 const HELIUS_KEY = process.env.HELIUS_KEY || 'b5292800-573a-40c5-9104-fa505b84baa9';
