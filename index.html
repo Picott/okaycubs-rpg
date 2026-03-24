@@ -170,6 +170,32 @@
     .cub-card.selected { border-color:var(--gold); box-shadow:0 0 28px rgba(212,175,55,.18); }
     .cub-card.selected::after { opacity:1; }
 
+    /* cooldown overlay */
+    .cub-card.on-cooldown .cub-img,
+    .cub-card.on-cooldown .cub-placeholder { filter:grayscale(1) brightness(.35); }
+    .cub-cooldown {
+      position:absolute; inset:0; border-radius:inherit;
+      background:rgba(0,0,0,.78); display:flex; flex-direction:column;
+      align-items:center; justify-content:center; z-index:10; gap:3px;
+    }
+    .cd-label { font-family:'Cinzel',serif; font-size:8px; letter-spacing:2px; color:#e74c3c; text-transform:uppercase; opacity:.85; }
+    .cd-timer { font-family:'Cinzel',serif; font-size:18px; color:#e74c3c; font-weight:700; letter-spacing:2px; }
+    .cd-ad-btn {
+      margin-top:6px; padding:4px 12px; font-family:'Cinzel',serif; font-size:8px;
+      letter-spacing:1px; border:1px solid var(--gold); background:transparent;
+      color:var(--gold); cursor:pointer; text-transform:uppercase; border-radius:3px;
+      transition:all .2s;
+    }
+    .cd-ad-btn:hover { background:var(--gold); color:#000; }
+    .cd-ad-btn:disabled { opacity:.3; cursor:not-allowed; }
+
+    /* roster status bar */
+    .roster-status {
+      text-align:center; font-family:'Cinzel',serif; font-size:10px;
+      letter-spacing:2px; color:var(--silver); opacity:.55; margin:4px 0 12px;
+    }
+    .roster-status .available { color:var(--gold2); opacity:1; }
+
     /* avatar */
     .cub-img-wrap { width:80px; height:80px; margin:0 auto 12px; position:relative; }
     .cub-img { width:100%; height:100%; border-radius:50%; object-fit:cover; border:2px solid rgba(212,175,55,.25); }
@@ -596,6 +622,12 @@ const TENSOR_KEY  = 'd682006c-c115-4c1e-a52f-c63e6f8e3e46';
 const TENSOR_GQL  = 'https://api.tensor.so/graphql';
 
 // ─────────────────────────────────────────
+// COOLDOWN CONFIG
+// ─────────────────────────────────────────
+const COOLDOWN_MS  = 30 * 60 * 1000;  // 30 min recovery after defeat
+const AD_SKIP_MS   = 10 * 60 * 1000;  // each ad watched = 10 min off
+
+// ─────────────────────────────────────────
 // GAME STATE
 // ─────────────────────────────────────────
 const G = {
@@ -605,6 +637,8 @@ const G = {
   enemy: null, defending: false,
   // Progression
   wins: 0, currentEra: 'hadean',
+  // Cooldowns: { cubId: expiryTimestamp }
+  cooldowns: {},
 };
 
 // Era unlock thresholds (total wins needed)
@@ -1060,10 +1094,19 @@ function renderCubs(cubs) {
     grid.innerHTML = '<div style="text-align:center;font-style:italic;opacity:.4;padding:30px;font-family:Crimson Pro,serif">No Cubs found.</div>';
     return;
   }
+
+  // Roster status bar
+  document.getElementById('rosterStatus')?.remove();
+  const available = cubs.filter(c => !isCoolingDown(c.id)).length;
+  grid.insertAdjacentHTML('beforebegin',
+    `<div class="roster-status" id="rosterStatus"><span class="available">${available}</span> / ${cubs.length} Cubs ready</div>`
+  );
+
   cubs.forEach(cub => {
-    const stats = getStats(cub);
-    const card  = document.createElement('div');
-    card.className = `cub-card r-${cub.rarity}`;
+    const stats   = getStats(cub);
+    const cooling = isCoolingDown(cub.id);
+    const card    = document.createElement('div');
+    card.className = `cub-card r-${cub.rarity}${cooling ? ' on-cooldown' : ''}`;
     card.id = `c-${cub.id}`;
     card.onclick = () => selectCub(cub);
     const hasDirectImg = !!cub.image;
@@ -1078,6 +1121,12 @@ function renderCubs(cubs) {
       <div class="cub-name">${cub.name}</div>
       <div class="cub-class">${cub.class}</div>
       ${statBars(stats)}
+      ${cooling ? `
+      <div class="cub-cooldown">
+        <div class="cd-label">Recovering</div>
+        <div class="cd-timer" data-cub-id="${cub.id}">${fmtCD(cooldownRemaining(cub.id))}</div>
+        <button class="cd-ad-btn" onclick="event.stopPropagation();watchAd('${cub.id}',this)">▶ Watch Ad −10 min</button>
+      </div>` : ''}
     `;
     grid.appendChild(card);
 
@@ -1101,6 +1150,12 @@ function statBars(s) {
 // SELECT CUB → BATTLE
 // ─────────────────────────────────────────
 function selectCub(cub) {
+  if (isCoolingDown(cub.id)) {
+    addLog(`⏳ ${cub.name} is recovering — ${fmtCD(cooldownRemaining(cub.id))} remaining. Pick another Cub or watch an ad.`, 'ls');
+    return;
+  }
+  if (G.active) return; // mid-battle, don't switch
+
   G.selected = cub;
   const stats = getStats(cub);
   G.pHP = G.pMaxHP = stats.HP;
@@ -1282,9 +1337,29 @@ function act(action) {
     updateEnemy();
 
     if (G.pHP <= 0) {
-      addLog(`💀 ${cub.name} has fallen… The honey remains out of reach.`, 'ls');
+      // Apply cooldown to the defeated cub
+      setCooldown(cub.id);
+      const card = document.getElementById(`c-${cub.id}`);
+      if (card) {
+        card.classList.add('on-cooldown');
+        card.querySelector('.cub-img')?.style && (card.querySelector('.cub-img').style.filter = 'grayscale(1) brightness(.35)');
+        card.querySelector('.cub-placeholder') && (card.querySelector('.cub-placeholder').style.filter = 'grayscale(1) brightness(.35)');
+        if (!card.querySelector('.cub-cooldown')) {
+          card.insertAdjacentHTML('beforeend', `
+            <div class="cub-cooldown">
+              <div class="cd-label">Recovering</div>
+              <div class="cd-timer" data-cub-id="${cub.id}">${fmtCD(COOLDOWN_MS)}</div>
+              <button class="cd-ad-btn" onclick="event.stopPropagation();watchAd('${cub.id}',this)">▶ Watch Ad −10 min</button>
+            </div>`);
+        }
+      }
+      updateRosterStatus();
+      const nextReady = G.cubs.find(c => c.id !== cub.id && !isCoolingDown(c.id));
+      addLog(`💀 ${cub.name} has fallen and needs 30 min to recover.${nextReady ? ` Send in ${nextReady.name}!` : ' All Cubs are recovering…'}`, 'ls');
       setBtns(false);
       G.active = false;
+      G.selected = null;
+      document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
       setTimeout(resetBattle, 2500);
     }
   }, 650);
@@ -1294,11 +1369,10 @@ function act(action) {
 }
 
 function resetBattle() {
-  addLog('⛏ Select a Cub to re-enter the crucible…', 'ls');
+  const nextReady = G.cubs.find(c => !isCoolingDown(c.id));
+  addLog(nextReady ? `🐻 Pick your next Cub to continue the hunt…` : '⏳ All Cubs are recovering. Watch an ad or wait…', 'ls');
   document.getElementById('playerSlot').innerHTML = '<div class="empty-slot">Select a Cub<br/>to enter battle</div>';
   document.getElementById('enemySlot').innerHTML  = '<div class="empty-slot">Awaiting<br/>challenger...</div>';
-  G.selected = null;
-  document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
 }
 
 // ─────────────────────────────────────────
@@ -1378,16 +1452,106 @@ function showLoader(on) {
 // PROGRESSION & ERA SYSTEM
 // ─────────────────────────────────────────
 function saveProgress() {
-  try { localStorage.setItem('okaycubs_progress', JSON.stringify({ wins: G.wins, era: G.currentEra })); } catch(e) {}
+  try {
+    localStorage.setItem('okaycubs_progress', JSON.stringify({
+      wins: G.wins, era: G.currentEra, cooldowns: G.cooldowns
+    }));
+  } catch(e) {}
 }
 
 function loadProgress() {
   try {
     const saved = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}');
-    G.wins = saved.wins || 0;
+    G.wins      = saved.wins || 0;
     G.currentEra = saved.era || 'hadean';
-  } catch(e) { G.wins = 0; G.currentEra = 'hadean'; }
+    // Load cooldowns, drop any already expired
+    const now = Date.now();
+    G.cooldowns = {};
+    Object.entries(saved.cooldowns || {}).forEach(([id, exp]) => {
+      if (exp > now) G.cooldowns[id] = exp;
+    });
+  } catch(e) { G.wins = 0; G.currentEra = 'hadean'; G.cooldowns = {}; }
 }
+
+// ─────────────────────────────────────────
+// COOLDOWN HELPERS
+// ─────────────────────────────────────────
+function isCoolingDown(cubId) {
+  return !!G.cooldowns[cubId] && G.cooldowns[cubId] > Date.now();
+}
+
+function cooldownRemaining(cubId) {
+  return Math.max(0, (G.cooldowns[cubId] || 0) - Date.now());
+}
+
+function fmtCD(ms) {
+  const s = Math.ceil(ms / 1000);
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function setCooldown(cubId) {
+  G.cooldowns[cubId] = Date.now() + COOLDOWN_MS;
+  saveProgress();
+}
+
+function watchAd(cubId, btn) {
+  if (!isCoolingDown(cubId)) return;
+  btn.disabled = true;
+  btn.textContent = '▶ Watching…';
+  setTimeout(() => {
+    G.cooldowns[cubId] = Math.max(Date.now(), G.cooldowns[cubId] - AD_SKIP_MS);
+    saveProgress();
+    // If cooldown expired after reduction, clean it up
+    if (!isCoolingDown(cubId)) delete G.cooldowns[cubId];
+    updateRosterStatus();
+    const card = document.getElementById(`c-${cubId}`);
+    if (card) refreshCardCooldown(cubId, card);
+    addLog(`📺 Ad watched — cooldown reduced by 10 min for Cub #${cubId}`, 'ls');
+  }, 3000);
+}
+
+function refreshCardCooldown(cubId, card) {
+  const overlay = card.querySelector('.cub-cooldown');
+  if (!isCoolingDown(cubId)) {
+    if (overlay) overlay.remove();
+    card.classList.remove('on-cooldown');
+    updateRosterStatus();
+    return;
+  }
+  if (overlay) {
+    const timer = overlay.querySelector('.cd-timer');
+    if (timer) timer.textContent = fmtCD(cooldownRemaining(cubId));
+    const adBtn = overlay.querySelector('.cd-ad-btn');
+    if (adBtn) adBtn.disabled = false, adBtn.textContent = '▶ Watch Ad −10 min';
+  }
+}
+
+function updateRosterStatus() {
+  const el = document.getElementById('rosterStatus');
+  if (!el || !G.cubs.length) return;
+  const available = G.cubs.filter(c => !isCoolingDown(c.id)).length;
+  const total = G.cubs.length;
+  el.innerHTML = `<span class="available">${available}</span> / ${total} Cubs ready`;
+}
+
+// Tick: update all visible cooldown timers every second
+setInterval(() => {
+  const now = Date.now();
+  document.querySelectorAll('.cd-timer[data-cub-id]').forEach(el => {
+    const id = el.dataset.cubId;
+    const rem = cooldownRemaining(id);
+    if (rem <= 0) {
+      delete G.cooldowns[id];
+      saveProgress();
+      const card = document.getElementById(`c-${id}`);
+      if (card) { card.querySelector('.cub-cooldown')?.remove(); card.classList.remove('on-cooldown'); }
+      updateRosterStatus();
+    } else {
+      el.textContent = fmtCD(rem);
+    }
+  });
+}, 1000);
 
 function isEraUnlocked(era) {
   return G.wins >= (ERA_UNLOCK[era] || 0);
