@@ -171,11 +171,8 @@ export default function HomePage() {
         ) : cubs.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {cubs.map(cub => (
-              <Link
-                key={cub.id}
-                href={`/products/hoodie?cub=${encodeURIComponent(cub.id)}${wallet ? `&wallet=${wallet}` : ''}`}
-                className="card-border p-4 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
-              >
+              <div key={cub.id} className="card-border p-4 text-center group">
+                {/* Cub image */}
                 <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gold/25 mx-auto mb-3 relative">
                   {cub.image ? (
                     <Image
@@ -189,10 +186,29 @@ export default function HomePage() {
                     <div className="w-full h-full flex items-center justify-center text-3xl bg-black/40">🐻</div>
                   )}
                 </div>
-                <div className="font-cinzel text-[12px] text-quartz group-hover:text-gold transition-colors">
+                <div className="font-cinzel text-[12px] text-quartz group-hover:text-gold transition-colors mb-2">
                   {cub.name}
                 </div>
-              </Link>
+                {/* Action links */}
+                <div className="flex gap-1 justify-center">
+                  <Link
+                    href={`/products/hoodie?cub=${encodeURIComponent(cub.id)}${wallet ? `&wallet=${wallet}` : ''}`}
+                    className="font-cinzel text-[8px] tracking-[1px] uppercase px-2 py-1 border border-gold/30 text-gold/60 hover:border-gold hover:text-gold transition-all"
+                    title="Get merch"
+                  >
+                    🧥
+                  </Link>
+                  {wallet && (
+                    <Link
+                      href={`/cub/${encodeURIComponent(cub.id)}?wallet=${wallet}`}
+                      className="font-cinzel text-[8px] tracking-[1px] uppercase px-2 py-1 border border-gold/30 text-gold/60 hover:border-gold hover:text-gold transition-all"
+                      title="View Moltbook"
+                    >
+                      📜
+                    </Link>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         ) : !wallet ? (
