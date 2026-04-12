@@ -11,16 +11,24 @@ export function createPaymentURL(params: {
   label: string;
   message: string;
   memo: string;
-}) {
-  const solAmount = new BigNumber(params.amountUsd / params.solPriceUsd).toFixed(6);
+}): { url: URL; reference: PublicKey; lamports: number } {
+  const solAmount  = new BigNumber(params.amountUsd / params.solPriceUsd).toFixed(6);
+  const lamports   = Math.round(parseFloat(solAmount) * LAMPORTS_PER_SOL);
+  // Generate a unique reference key for this payment — used to identify it on-chain
+  const reference  = new PublicKey(
+    Array.from({ length: 32 }, () => Math.floor(Math.random() * 256))
+  );
 
-  return encodeURL({
-    recipient: MERCHANT_WALLET,
-    amount: new BigNumber(solAmount),
-    label: params.label,
-    message: params.message,
-    memo: params.memo,
+  const url = encodeURL({
+    recipient:  MERCHANT_WALLET,
+    amount:     new BigNumber(solAmount),
+    reference,
+    label:      params.label,
+    message:    params.message,
+    memo:       params.memo,
   });
+
+  return { url, reference, lamports };
 }
 
 export async function verifySolanaPayment(reference: string, expectedLamports: number) {

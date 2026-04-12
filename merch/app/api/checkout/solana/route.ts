@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const amountUsd = product.basePrice / 100;
   const memo      = `okaycubs-${cubId}-${productType}-${Date.now()}`;
 
-  const url = createPaymentURL({
+  const { url, reference, lamports } = createPaymentURL({
     amountUsd,
     solPriceUsd,
     label:   'OkayCubs Merch',
@@ -41,5 +41,11 @@ export async function POST(req: NextRequest) {
 
   const solAmount = (amountUsd / solPriceUsd).toFixed(6);
 
-  return NextResponse.json({ url: url.toString(), solAmount, memo });
+  return NextResponse.json({
+    url:       url.toString(),
+    solAmount,
+    memo,
+    reference: reference.toBase58(), // passed back to frontend for fulfillment polling
+    lamports,
+  });
 }

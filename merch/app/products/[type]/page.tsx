@@ -38,6 +38,14 @@ function ProductPageInner() {
   const [solPrice, setSolPrice]     = useState<number>(0);
   const [qrUrl, setQrUrl]           = useState<string>('');
   const [payMode, setPayMode]       = useState<'card' | 'sol'>('card');
+  // Solana Pay — reference key + order snapshot for post-payment fulfillment
+  const [solReference, setSolReference] = useState<string>('');
+  const [solLamports, setSolLamports]   = useState<number>(0);
+  const [solStatus, setSolStatus]       = useState<'idle'|'waiting'|'confirmed'|'failed'>('idle');
+  const solPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Shipping form (required for SOL checkout)
+  const [showShipping, setShowShipping] = useState(false);
+  const [shipping, setShipping] = useState({ name:'', address1:'', city:'', state:'', country:'US', zip:'' });
 
   const colors   = product ? UNIQUE_COLORS(type) : [];
   const sizes    = selectedColor ? SIZES(type, selectedColor) : [];
@@ -214,25 +222,81 @@ function ProductPageInner() {
     }
   }
 
+  // Stop any active Solana polling
+  function stopSolPoll() {
+    if (solPollRef.current) { clearInterval(solPollRef.current); solPollRef.current = null; }
+  }
+
+  // Show shipping form before generating QR
+  function initiateSolanaCheckout() {
+    if (!canCheckout || !solPrice) return;
+    setShowShipping(true);
+  }
+
   async function handleSolanaCheckout() {
     if (!canCheckout || !solPrice) return;
+    // Validate shipping
+    if (!shipping.name || !shipping.address1 || !shipping.city || !shipping.country) return;
+
+    setShowShipping(false);
     setPaying(true);
+    setSolStatus('idle');
+    stopSolPoll();
+
     try {
       const res = await fetch('/api/checkout/solana', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productType: type, cubId: selectedCub!.id, solPriceUsd: solPrice }),
       });
-      const { url } = await res.json();
-      if (url) {
-        // Mobile: deep link; Desktop: show QR
-        if (/Mobi|Android/i.test(navigator.userAgent)) {
-          window.location.href = url;
-        } else {
-          const qr = await import('qrcode');
-          const dataUrl = await qr.default.toDataURL(url, { width: 280, margin: 2, color: { dark: '#d4af37', light: '#07080f' } });
-          setQrUrl(dataUrl);
-        }
+      const data = await res.json() as { url?: string; solAmount?: string; memo?: string; reference?: string; lamports?: number };
+      if (!data.url) return;
+
+      // Save reference + lamports for fulfillment polling
+      if (data.reference) setSolReference(data.reference);
+      if (data.lamports)  setSolLamports(data.lamports);
+
+      if (/Mobi|Android/i.test(navigator.userAgent)) {
+        window.location.href = data.url;
+      } else {
+        const qr = await import('qrcode');
+        const dataUrl = await qr.default.toDataURL(data.url, { width: 280, margin: 2, color: { dark: '#d4af37', light: '#07080f' } });
+        setQrUrl(dataUrl);
+        setSolStatus('waiting');
+
+        // Poll every 4s until payment confirmed (max 5 min)
+        let attempts = 0;
+        solPollRef.current = setInterval(async () => {
+          attempts++;
+          if (attempts > 75) { stopSolPoll(); setSolStatus('failed'); return; }
+          if (!data.reference || !data.lamports) return;
+
+          try {
+            const fulfillRes = await fetch('/api/checkout/solana/fulfill', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                reference:   data.reference,
+                lamports:    data.lamports,
+                productType: type,
+                variantId:   variant!.printfulVariantId,
+                cubId:       selectedCub!.id,
+                cubImage:    selectedCub!.image
+                  ? (selectedCub!.image.startsWith('http') ? selectedCub!.image : window.location.origin + selectedCub!.image)
+                  : '',
+                shipping,
+              }),
+            });
+            const result = await fulfillRes.json() as { verified?: boolean; pending?: boolean };
+            if (result.verified) {
+              stopSolPoll();
+              setSolStatus('confirmed');
+              // Redirect to success after short delay
+              setTimeout(() => { window.location.href = '/order/success'; }, 1500);
+            }
+            // if pending: keep polling
+          } catch { /* network hiccup — keep polling */ }
+        }, 4000);
       }
     } finally {
       setPaying(false);
@@ -409,23 +473,66 @@ function ProductPageInner() {
               </button>
             ) : (
               <>
-                <button
-                  className="btn-sol w-full"
-                  disabled={!canCheckout || paying || !solPrice}
-                  onClick={handleSolanaCheckout}
-                >
-                  {paying ? 'Preparing…' : `Pay ${priceSol} SOL`}
-                </button>
+                {/* Shipping form — shown before QR */}
+                {showShipping && (
+                  <div className="card-border p-4 space-y-3 animate-fade-up">
+                    <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-60 uppercase mb-1">Shipping Address</div>
+                    {(['name','address1','city','state','zip'] as const).map(field => (
+                      <input
+                        key={field}
+                        type="text"
+                        placeholder={field === 'address1' ? 'Address' : field === 'name' ? 'Full Name' : field.charAt(0).toUpperCase() + field.slice(1)}
+                        value={shipping[field]}
+                        onChange={e => setShipping(s => ({ ...s, [field]: e.target.value }))}
+                        className="w-full bg-black/30 border border-white/10 text-silver text-[12px] px-3 py-2 font-crimson focus:border-gold/50 outline-none"
+                      />
+                    ))}
+                    <select
+                      value={shipping.country}
+                      onChange={e => setShipping(s => ({ ...s, country: e.target.value }))}
+                      className="w-full bg-black/30 border border-white/10 text-silver text-[12px] px-3 py-2 font-crimson focus:border-gold/50 outline-none"
+                    >
+                      {['US','CA','GB','AU','DE','FR','ES','MX'].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <button
+                      onClick={handleSolanaCheckout}
+                      disabled={!shipping.name || !shipping.address1 || !shipping.city || !shipping.country}
+                      className="btn-sol w-full"
+                    >
+                      Generate QR · {priceSol} SOL
+                    </button>
+                    <button onClick={() => setShowShipping(false)} className="font-cinzel text-[8px] tracking-[2px] text-gold opacity-30 hover:opacity-60 w-full text-center uppercase">Cancel</button>
+                  </div>
+                )}
+
+                {!showShipping && !qrUrl && (
+                  <button
+                    className="btn-sol w-full"
+                    disabled={!canCheckout || paying || !solPrice}
+                    onClick={initiateSolanaCheckout}
+                  >
+                    {paying ? 'Preparing…' : `Pay ${priceSol} SOL`}
+                  </button>
+                )}
+
                 {qrUrl && (
-                  <div className="card-border p-4 text-center animate-fade-up">
-                    <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-60 uppercase mb-3">
+                  <div className="card-border p-4 text-center animate-fade-up space-y-3">
+                    <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-60 uppercase">
                       Scan with Phantom
                     </div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={qrUrl} alt="Solana Pay QR" className="mx-auto w-52" />
-                    <div className="font-cinzel text-[8px] tracking-[2px] opacity-30 mt-3 uppercase">
-                      Waiting for payment…
+                    <div className={`font-cinzel text-[8px] tracking-[2px] uppercase ${
+                      solStatus === 'confirmed' ? 'text-green-400 opacity-80' :
+                      solStatus === 'failed'    ? 'text-red-400 opacity-70'   : 'opacity-30'
+                    }`}>
+                      {solStatus === 'confirmed' ? '✓ Payment confirmed — placing your order…' :
+                       solStatus === 'failed'    ? 'Payment not detected. Please try again.' :
+                       'Waiting for payment…'}
                     </div>
+                    {solStatus === 'waiting' && (
+                      <div className="w-4 h-4 border border-gold/30 border-t-gold rounded-full animate-spin mx-auto" />
+                    )}
                   </div>
                 )}
               </>
