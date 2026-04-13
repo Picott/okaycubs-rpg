@@ -50,23 +50,28 @@ function toHttpUrl(url: string | null | undefined): string {
   return url;
 }
 
-function isOkayCub(nft: Record<string, unknown>): boolean {
-  const content = nft.content as Record<string, unknown> | undefined;
-  const meta    = (content?.metadata as Record<string, string> | undefined) || {};
-  const name    = (meta.name || '').toLowerCase();
-  const uri     = ((content?.json_uri as string) || '').toLowerCase();
-  const groups  = (nft.grouping as Array<Record<string, unknown>>) || [];
+// First verified creator for OkayCubs legacy Metaplex collection
+const OKAYCUBS_CREATOR = '3mfXiBBCjH2YmYENhiJtwoHuzWCNzS2gYkZKgjfNFVje';
 
-  const nameMatch = name.includes('cub') || name.includes('okay');
-  const uriMatch  = uri.includes('cub') || uri.includes('okay') || uri.includes('testlaunchmynft');
-  const collMatch = groups.some(g => {
+function isOkayCub(nft: Record<string, unknown>): boolean {
+  const content   = nft.content as Record<string, unknown> | undefined;
+  const meta      = (content?.metadata as Record<string, string> | undefined) || {};
+  const name      = (meta.name || '').toLowerCase();
+  const uri       = ((content?.json_uri as string) || '').toLowerCase();
+  const groups    = (nft.grouping as Array<Record<string, unknown>>) || [];
+  const creators  = (nft.creators as Array<Record<string, unknown>>) || [];
+
+  const nameMatch    = name.includes('cub') || name.includes('okay');
+  const uriMatch     = uri.includes('cub') || uri.includes('okay') || uri.includes('testlaunchmynft');
+  const creatorMatch = creators.some(c => c.verified && c.address === OKAYCUBS_CREATOR);
+  const collMatch    = groups.some(g => {
     const collMeta = (g.collection_metadata as Record<string, string> | undefined) || {};
     const collName = (collMeta.name || '').toLowerCase();
     const symbol   = (collMeta.symbol || '').toLowerCase();
     return collName.includes('cub') || collName.includes('okay') ||
            symbol.includes('cub')   || symbol.includes('okay');
   });
-  return nameMatch || uriMatch || collMatch;
+  return creatorMatch || nameMatch || uriMatch || collMatch;
 }
 
 function nftToCub(nft: Record<string, unknown>, index: number): Cub {
@@ -156,7 +161,8 @@ export async function getAllOkayCubs(page = 1, limit = 50): Promise<Cub[]> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         jsonrpc: '2.0', id: 'get-collection', method: 'getAssetsByGroup',
-        params: { groupKey: 'collection', groupValue: collectionAddress, page, limit },
+        // OkayCubs is a legacy Metaplex collection — uses firstVerifiedCreator, not collection NFT
+        params: { groupKey: 'firstVerifiedCreator', groupValue: collectionAddress, page, limit },
       }),
     });
     const data = await res.json() as { result?: { items?: Record<string, unknown>[] } };
