@@ -12,11 +12,12 @@ export async function GET(req: NextRequest) {
 
   const hdrs = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
 
-  // Accept ?ids=74,380,447 to probe arbitrary product IDs, default to current config
+  // Accept ?ids=74,380,447 to probe arbitrary product IDs
+  // Default: current config + common jogger/cap alternatives to find valid IDs
   const idsParam = req.nextUrl?.searchParams?.get('ids');
   const productIds = idsParam
     ? idsParam.split(',').map(Number).filter(Boolean)
-    : [380, 447, 74];
+    : [380, 447, 74, 374, 398, 405, 325, 3719, 9819, 77, 453, 460];
   const results: Record<number, unknown> = {};
 
   for (const pid of productIds) {

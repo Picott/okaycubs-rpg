@@ -66,19 +66,22 @@ export const PRODUCTS: Record<ProductType, Product> = {
     name: 'OkayCubs Joggers',
     description: 'Unisex fleece joggers with your Cub on the front.',
     basePrice: 4800, // $48.00
-    printfulProductId: 447,
-    // Use 'front' placement — Printful will center the design automatically (no custom position)
+    // Bella+Canvas 3727 Unisex Polycotton Fleece Jogger — catalog product 374
+    // Run /api/printful/catalog to verify IDs; update if 374 returns httpStatus 404
+    printfulProductId: 374,
     printPlacement: 'front',
-    // No printPosition: Printful uses default center placement (avoids dimension mismatches)
+    printPosition: { area_width: 1800, area_height: 2400, width: 900, height: 900, top: 600, left: 450 },
     variants: [
-      { size: 'S',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14302 },
-      { size: 'M',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14303 },
-      { size: 'L',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14304 },
-      { size: 'XL', color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14305 },
-      { size: 'S',  color: 'Navy',  colorHex: '#1b2a4a', printfulVariantId: 14312 },
-      { size: 'M',  color: 'Navy',  colorHex: '#1b2a4a', printfulVariantId: 14313 },
-      { size: 'L',  color: 'Navy',  colorHex: '#1b2a4a', printfulVariantId: 14314 },
-      { size: 'XL', color: 'Navy',  colorHex: '#1b2a4a', printfulVariantId: 14315 },
+      // Variant IDs for product 374 — fetch /api/printful/catalog to get real IDs
+      // Placeholder IDs below — MUST be updated after checking catalog
+      { size: 'S',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 10799 },
+      { size: 'M',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 10800 },
+      { size: 'L',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 10801 },
+      { size: 'XL', color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 10802 },
+      { size: 'S',  color: 'Dark Heather', colorHex: '#333333', printfulVariantId: 10811 },
+      { size: 'M',  color: 'Dark Heather', colorHex: '#333333', printfulVariantId: 10812 },
+      { size: 'L',  color: 'Dark Heather', colorHex: '#333333', printfulVariantId: 10813 },
+      { size: 'XL', color: 'Dark Heather', colorHex: '#333333', printfulVariantId: 10814 },
     ],
   },
 
@@ -87,16 +90,18 @@ export const PRODUCTS: Record<ProductType, Product> = {
     name: 'OkayCubs Cap',
     description: 'Classic unstructured dad hat with your Cub printed on the front.',
     basePrice: 3200, // $32.00
-    printfulProductId: 74,
+    // Yupoong 6089 Unstructured Classic Dad Hat — catalog product 3719
+    // Run /api/printful/catalog to verify IDs; update if 3719 returns httpStatus 404
+    printfulProductId: 3719,
     printPlacement: 'front',
-    // Hat front print area: 1800×450 px landscape template; Cub centered in the panel
     printPosition: { area_width: 1800, area_height: 450, width: 800, height: 350, top: 50, left: 500 },
     variants: [
-      { color: 'Black',         colorHex: '#1a1a1a', printfulVariantId: 3502 },
-      { color: 'Navy',          colorHex: '#1b2a4a', printfulVariantId: 3503 },
-      { color: 'Khaki',         colorHex: '#c8b89a', printfulVariantId: 3506 },
-      { color: 'Stone',         colorHex: '#9e9e8e', printfulVariantId: 3508 },
-      { color: 'Vintage White', colorHex: '#ede8df', printfulVariantId: 3510 },
+      // Variant IDs for product 3719 — fetch /api/printful/catalog to get real IDs
+      { color: 'Black',         colorHex: '#1a1a1a', printfulVariantId: 60213 },
+      { color: 'Navy',          colorHex: '#1b2a4a', printfulVariantId: 60214 },
+      { color: 'Khaki',         colorHex: '#c8b89a', printfulVariantId: 60219 },
+      { color: 'Stone',         colorHex: '#9e9e8e', printfulVariantId: 60222 },
+      { color: 'White',         colorHex: '#f5f5f0', printfulVariantId: 60210 },
     ],
   },
 };

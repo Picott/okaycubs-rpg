@@ -155,7 +155,7 @@ function ProductPageInner() {
           if (mockupReqId.current !== reqId) return;
 
           const pollRes = await fetch(`/api/printful/mockup?task_key=${taskKey}`);
-          const data = await pollRes.json() as { status: string; mockupUrl?: string };
+          const data = await pollRes.json() as { status: string; mockupUrl?: string; reason?: unknown };
 
           if (data.status === 'completed') {
             if (mockupReqId.current === reqId && data.mockupUrl) setMockupUrl(data.mockupUrl);
