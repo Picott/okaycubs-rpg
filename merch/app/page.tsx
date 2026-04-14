@@ -12,6 +12,34 @@ interface Cub {
   number: number;
 }
 
+// Call Tensor directly from the browser (same method as game.html — proven to work)
+const TENSOR_GQL = 'https://api.tensor.so/graphql';
+const TENSOR_KEY = 'd682006c-c115-4c1e-a52f-c63e6f8e3e46';
+
+async function fetchCubsFromTensor(wallet: string): Promise<Cub[]> {
+  try {
+    const query = `query UserNfts($owner: String!, $slugs: [String!]!) {
+      userNfts(owner: $owner, slugs: $slugs) {
+        mint { onchainId name imageUri }
+      }
+    }`;
+    const res  = await fetch(TENSOR_GQL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-TENSOR-API-KEY': TENSOR_KEY },
+      body:    JSON.stringify({ query, variables: { owner: wallet, slugs: ['okay_cubs'] } }),
+    });
+    const json = await res.json() as { data?: { userNfts?: Array<{ mint: { onchainId: string; name: string; imageUri: string } }> } };
+    const nfts = json?.data?.userNfts || [];
+    return nfts.map((n, i) => {
+      const name   = n.mint?.name || `OkayCub #${i + 1}`;
+      const num    = parseInt(name.replace(/\D/g, '')) || i + 1;
+      return { id: n.mint?.onchainId || `t-${i}`, name, image: n.mint?.imageUri || '', number: num };
+    });
+  } catch {
+    return [];
+  }
+}
+
 const PRODUCT_ICONS: Record<string, string> = {
   hoodie:  '🧥',
   joggers: '👖',
@@ -63,8 +91,8 @@ export default function HomePage() {
     setLoading(true);
     setStatus('Scanning the strata for your Cubs…');
     try {
-      const res  = await fetch(`/api/cubs?wallet=${encodeURIComponent(addr)}`);
-      const data = await res.json() as Cub[];
+      // Call Tensor directly from the browser — same as game.html (proven to work)
+      const data = await fetchCubsFromTensor(addr);
       setCubs(data);
       setStatus(data.length > 0
         ? `✦ ${data.length} OkayCubs loaded from chain ✦`
