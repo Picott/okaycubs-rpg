@@ -64,24 +64,27 @@ export const PRODUCTS: Record<ProductType, Product> = {
   joggers: {
     type: 'joggers',
     name: 'OkayCubs Joggers',
-    description: 'Unisex fleece joggers with your Cub on the front.',
-    basePrice: 4800, // $48.00
-    // Bella+Canvas 3727 Unisex Polycotton Fleece Jogger — catalog product 374
-    // Run /api/printful/catalog to verify IDs; update if 374 returns httpStatus 404
-    printfulProductId: 374,
+    description: 'Unisex fleece sweatpants with your Cub printed on the front.',
+    basePrice: 4500, // $45.00
+    // Cotton Heritage M7580 Unisex Fleece Sweatpants — catalog product 412
+    // Variant IDs verified via /api/printful/catalog
+    printfulProductId: 412,
     printPlacement: 'front',
+    // Cub image centered on the front thigh area
     printPosition: { area_width: 1800, area_height: 2400, width: 900, height: 900, top: 600, left: 450 },
     variants: [
-      // Variant IDs for product 374 — fetch /api/printful/catalog to get real IDs
-      // Placeholder IDs below — MUST be updated after checking catalog
-      { size: 'S',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 10799 },
-      { size: 'M',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 10800 },
-      { size: 'L',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 10801 },
-      { size: 'XL', color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 10802 },
-      { size: 'S',  color: 'Dark Heather', colorHex: '#333333', printfulVariantId: 10811 },
-      { size: 'M',  color: 'Dark Heather', colorHex: '#333333', printfulVariantId: 10812 },
-      { size: 'L',  color: 'Dark Heather', colorHex: '#333333', printfulVariantId: 10813 },
-      { size: 'XL', color: 'Dark Heather', colorHex: '#333333', printfulVariantId: 10814 },
+      { size: 'S',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11266 },
+      { size: 'M',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11267 },
+      { size: 'L',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11268 },
+      { size: 'XL', color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11269 },
+      { size: 'S',  color: 'Carbon Grey',      colorHex: '#3a3a3a', printfulVariantId: 11278 },
+      { size: 'M',  color: 'Carbon Grey',      colorHex: '#3a3a3a', printfulVariantId: 11279 },
+      { size: 'L',  color: 'Carbon Grey',      colorHex: '#3a3a3a', printfulVariantId: 11280 },
+      { size: 'XL', color: 'Carbon Grey',      colorHex: '#3a3a3a', printfulVariantId: 11281 },
+      { size: 'S',  color: 'Navy Blazer',      colorHex: '#1b2a4a', printfulVariantId: 13852 },
+      { size: 'M',  color: 'Navy Blazer',      colorHex: '#1b2a4a', printfulVariantId: 13853 },
+      { size: 'L',  color: 'Navy Blazer',      colorHex: '#1b2a4a', printfulVariantId: 13854 },
+      { size: 'XL', color: 'Navy Blazer',      colorHex: '#1b2a4a', printfulVariantId: 13855 },
     ],
   },
 
