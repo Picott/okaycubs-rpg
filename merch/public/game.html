@@ -438,6 +438,88 @@
       text-transform:uppercase; padding:3px 10px; border:1px solid currentColor;
       border-radius:1px; margin-left:10px; vertical-align:middle; opacity:.7;
     }
+
+    /* === HONEY SYSTEM === */
+    .honey-panel {
+      background:linear-gradient(135deg,rgba(212,175,55,.04),rgba(212,175,55,.08));
+      border:1px solid rgba(212,175,55,.2); padding:22px; margin:18px 0; display:none;
+    }
+    .honey-panel.show { display:block; animation:fadeUp .4s ease; }
+    .honey-section-title { font-family:'Cinzel',serif; font-size:11px; letter-spacing:4px; color:var(--gold); opacity:.7; text-align:center; margin-bottom:16px; text-transform:uppercase; }
+    .honey-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+    .honey-jar {
+      background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.06); padding:13px; text-align:center;
+      cursor:pointer; transition:all .3s; position:relative;
+    }
+    .honey-jar:hover:not(.empty) { border-color:rgba(212,175,55,.35); transform:translateY(-2px); }
+    .honey-jar.active-buff { border-color:var(--gold); box-shadow:0 0 14px rgba(212,175,55,.28); }
+    .honey-jar.empty { opacity:.28; cursor:not-allowed; }
+    .honey-emoji { font-size:22px; display:block; margin-bottom:6px; }
+    .honey-name { font-family:'Cinzel',serif; font-size:8px; letter-spacing:2px; color:var(--quartz); opacity:.9; text-transform:uppercase; margin-bottom:3px; }
+    .honey-count { font-family:'Cinzel Decorative',serif; font-size:18px; color:var(--gold); margin-bottom:4px; }
+    .honey-desc { font-family:'Crimson Pro',serif; font-size:10px; font-style:italic; color:var(--silver); opacity:.5; line-height:1.3; }
+
+    /* Buff indicator in arena */
+    .buff-indicator {
+      background:rgba(212,175,55,.1); border:1px solid rgba(212,175,55,.3); border-top:none;
+      padding:7px 18px; font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px;
+      color:var(--gold); text-align:center; display:none;
+    }
+    .buff-indicator.show { display:block; }
+
+    /* === RESTING CUB === */
+    .cub-card.resting { filter:grayscale(.7); }
+    .cub-card.resting:hover { transform:none; cursor:not-allowed; box-shadow:none; border-color:rgba(212,175,55,.12); }
+    .cub-rest-overlay {
+      position:absolute; inset:0; background:rgba(0,0,0,.6); z-index:5;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+    }
+    .rest-icon { font-size:22px; }
+    .rest-timer { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; color:var(--silver); opacity:.75; }
+    .rest-revive {
+      font-family:'Cinzel',serif; font-size:8px; letter-spacing:2px; color:var(--gold);
+      border:1px solid rgba(212,175,55,.4); padding:4px 10px; margin-top:4px;
+      background:none; cursor:pointer; transition:all .3s;
+    }
+    .rest-revive:hover { background:rgba(212,175,55,.15); border-color:rgba(212,175,55,.7); }
+
+    /* === MOLTBOOK BUTTON ON CUB CARD === */
+    .cub-moltbook {
+      position:absolute; top:8px; right:8px; font-size:13px; background:rgba(0,0,0,.5);
+      border:1px solid rgba(212,175,55,.25); border-radius:2px; cursor:pointer;
+      padding:3px 5px; opacity:.55; transition:all .3s; z-index:10; line-height:1;
+    }
+    .cub-moltbook:hover { opacity:1; border-color:rgba(212,175,55,.7); background:rgba(0,0,0,.8); }
+
+    /* === ERA MODIFIER BADGE === */
+    .era-mod-badge {
+      font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; text-align:center;
+      color:var(--lava); border:1px solid rgba(230,126,34,.25); padding:5px 14px;
+      margin:8px 0 0; display:none; opacity:.8;
+    }
+    .era-mod-badge.show { display:block; }
+
+    /* === REVIVE MODAL === */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:800;
+      display:none; align-items:center; justify-content:center;
+    }
+    .modal-overlay.show { display:flex; animation:fadeUp .3s ease; }
+    .modal-box {
+      background:linear-gradient(135deg,#0d0f1a,#12151f);
+      border:1px solid rgba(212,175,55,.35); padding:40px 36px; max-width:400px; width:90%; text-align:center;
+    }
+    .modal-title { font-family:'Cinzel Decorative',serif; font-size:20px; color:var(--gold); margin-bottom:12px; }
+    .modal-body { font-family:'Crimson Pro',serif; font-size:15px; font-style:italic; color:var(--silver); opacity:.75; line-height:1.75; margin-bottom:26px; }
+    .modal-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .modal-btn {
+      font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+      padding:11px 20px; border:1px solid; background:transparent; cursor:pointer; transition:all .3s;
+    }
+    .mb-revive { border-color:var(--gold); color:var(--gold); }
+    .mb-revive:hover { background:rgba(212,175,55,.12); box-shadow:0 0 16px rgba(212,175,55,.18); }
+    .mb-wait { border-color:rgba(184,188,200,.35); color:var(--silver); opacity:.5; }
+    .mb-wait:hover { opacity:.8; }
   </style>
 </head>
 <body>
@@ -505,6 +587,12 @@
   <div class="sec-title" id="cubsTitle">✦ Your Cubs ✦</div>
   <div class="cubs-grid" id="cubsGrid"></div>
 
+  <!-- HONEY INVENTORY PANEL -->
+  <div class="honey-panel" id="honeyPanel">
+    <div class="honey-section-title">🍯 Honey Inventory — La Miel</div>
+    <div class="honey-grid" id="honeyGrid"></div>
+  </div>
+
   <!-- TRAIT PANEL -->
   <div class="trait-panel" id="traitPanel">
     <div class="sec-title" style="margin-top:0">✦ Trait Analysis ✦</div>
@@ -517,6 +605,7 @@
     <div class="arena" id="arenaBox">
       <div class="arena-title" id="arenaName">Hadean Crucible <span class="era-badge" id="arenaBadge" style="color:#9b59b6">Hadean</span></div>
       <div class="arena-sub" id="arenaSub">Where primordial fire separates stone from legend</div>
+      <div class="era-mod-badge" id="eraModBadge"></div>
       <div class="battle-field">
         <div class="fighter player" id="playerSlot"><div class="empty-slot">Select a Cub<br/>to enter battle</div></div>
         <div class="vs">VS</div>
@@ -528,7 +617,20 @@
         <button class="battle-btn bb-spc" id="btnS" onclick="act('spc')" disabled>🍯 Honey Burst</button>
       </div>
     </div>
+    <div class="buff-indicator" id="buffIndicator"></div>
     <div class="log" id="log"><div class="log-line ls">🍯 Select a Cub to begin the hunt for Magma Honey...</div></div>
+  </div>
+
+  <!-- REVIVE MODAL -->
+  <div class="modal-overlay" id="reviveModal">
+    <div class="modal-box">
+      <div class="modal-title">💀 Cub Fallen</div>
+      <div class="modal-body" id="reviveModalBody">Your Cub has fallen in battle and needs to rest for <strong>8 hours</strong> before returning to the hunt.<br><br>Watch an ad to revive instantly.</div>
+      <div class="modal-btns">
+        <button class="modal-btn mb-revive" onclick="watchAdRevive()">📺 Watch Ad · Revive Now</button>
+        <button class="modal-btn mb-wait" onclick="closeReviveModal()">Rest &amp; Return Later</button>
+      </div>
+    </div>
   </div>
 
   <!-- WORLD MAP -->
@@ -605,6 +707,10 @@ const G = {
   enemy: null, defending: false,
   // Progression
   wins: 0, currentEra: 'hadean',
+  // Honey
+  honey: { magma:0, stone:0, bloom:0, tide:0, titan:0, frost:0 },
+  activeBuff: null,   // { type, roundsLeft, shieldHits }
+  eShield: false,     // archean era modifier: enemy armor for first hit
 };
 
 // Era unlock thresholds (total wins needed)
@@ -667,6 +773,30 @@ const ERA_ENEMIES = {
 
 // Keep old ENEMIES as fallback alias
 const ENEMIES = ERA_ENEMIES.hadean;
+
+// ─────────────────────────────────────────
+// HONEY SYSTEM
+// ─────────────────────────────────────────
+const HONEY_TYPES = {
+  magma: { name:'Magma Honey', emoji:'🔥', era:'hadean',      color:'#e74c3c', buff:'atk',    desc:'+40% ATK for 3 rounds', rounds:3 },
+  stone: { name:'Stone Honey', emoji:'🪨', era:'archean',     color:'#3498db', buff:'def',    desc:'+50% DEF for 3 rounds', rounds:3 },
+  bloom: { name:'Bloom Honey', emoji:'🌿', era:'proterozoic', color:'#2ecc71', buff:'regen',  desc:'Regen 20 HP/round for 3 rounds', rounds:3 },
+  tide:  { name:'Tide Honey',  emoji:'🌊', era:'paleozoic',   color:'#1abc9c', buff:'spd',    desc:'Strike first every round for 3 rounds', rounds:3 },
+  titan: { name:'Titan Honey', emoji:'⚡', era:'mesozoic',    color:'#f39c12', buff:'power',  desc:'+60% ATK & DEF for 3 rounds', rounds:3 },
+  frost: { name:'Frost Honey', emoji:'❄️', era:'cenozoic',    color:'#ecf0f1', buff:'shield', desc:'Block next 3 enemy hits (absorb 80%)', rounds:3 },
+};
+const ERA_HONEY_DROP = { hadean:'magma', archean:'stone', proterozoic:'bloom', paleozoic:'tide', mesozoic:'titan', cenozoic:'frost' };
+const HONEY_COOLDOWN_MS = 8 * 60 * 60 * 1000; // 8 hours
+
+// Era-specific passive modifiers (break repetition)
+const ERA_MODIFIERS = {
+  hadean:      { label:'🌋 Burn: enemy deals 3 extra damage each round',  burnDmg: 3 },
+  archean:     { label:'🪨 Armor: enemies absorb the first hit each fight', shield: true },
+  proterozoic: { label:'🌫 Regen: enemies recover 8 HP each round',        eRegen: 8 },
+  paleozoic:   { label:'🌊 Surge: 30% chance enemy strikes twice',          doubleHit: 0.30 },
+  mesozoic:    { label:'🐉 Frenzy: enemies gain +20% ATK when below 50% HP', frenzy: true },
+  cenozoic:    { label:'💀 Lifesteal: enemy heals 30% of damage dealt',     lifesteal: 0.30 },
+};
 
 const GEO_BURSTS = [
   'Seismic Rupture','Magma Wave','Crystal Storm','Tectonic Slam',
@@ -1065,6 +1195,105 @@ async function loadCubImage(imgEl, jsonUri) {
 }
 
 // ─────────────────────────────────────────
+// HP / REST / HONEY HELPERS
+// ─────────────────────────────────────────
+function cubHpKey(cubId)   { return `okaycubs_hp_${G.wallet || 'demo'}_${cubId}`; }
+function cubRestKey(cubId) { return `okaycubs_rest_${G.wallet || 'demo'}_${cubId}`; }
+function honeyKey()        { return `okaycubs_honey_${G.wallet || 'demo'}`; }
+
+function saveCubHp(cubId, hp) {
+  try { localStorage.setItem(cubHpKey(cubId), String(hp)); } catch(e) {}
+}
+function loadCubHp(cubId, maxHp) {
+  try {
+    const v = localStorage.getItem(cubHpKey(cubId));
+    if (v === null) return maxHp;
+    const n = parseInt(v);
+    return isNaN(n) ? maxHp : Math.max(0, Math.min(n, maxHp));
+  } catch(e) { return maxHp; }
+}
+function setCubResting(cubId) {
+  try { localStorage.setItem(cubRestKey(cubId), String(Date.now())); } catch(e) {}
+}
+function restMsRemaining(cubId) {
+  try {
+    const t = parseInt(localStorage.getItem(cubRestKey(cubId)) || '0');
+    if (!t) return 0;
+    const elapsed = Date.now() - t;
+    return Math.max(0, HONEY_COOLDOWN_MS - elapsed);
+  } catch(e) { return 0; }
+}
+function reviveCub(cubId) {
+  try {
+    localStorage.removeItem(cubRestKey(cubId));
+    localStorage.setItem(cubHpKey(cubId), String(9999)); // will be capped to maxHp in loadCubHp
+  } catch(e) {}
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) return 'Ready';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function saveHoney() {
+  try { localStorage.setItem(honeyKey(), JSON.stringify(G.honey)); } catch(e) {}
+}
+function loadHoney() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(honeyKey()) || '{}');
+    Object.keys(HONEY_TYPES).forEach(k => { G.honey[k] = saved[k] || 0; });
+  } catch(e) {}
+}
+function awardHoney(type) {
+  if (!HONEY_TYPES[type]) return;
+  G.honey[type] = (G.honey[type] || 0) + 1;
+  saveHoney();
+  renderHoneyPanel();
+  const h = HONEY_TYPES[type];
+  const toast = document.createElement('div');
+  toast.className = 'era-toast';
+  toast.innerHTML = `${h.emoji} ${h.name} Acquired!<br><span style="font-size:9px;opacity:.7">${h.desc}</span>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+function activateHoney(type) {
+  if (!G.honey[type] || G.honey[type] <= 0) return;
+  if (!G.active) {
+    addLog(`🍯 Equip ${HONEY_TYPES[type].name} — will activate when battle starts.`, 'ls');
+    G.activeBuff = { type, roundsLeft: HONEY_TYPES[type].rounds, shieldHits: type === 'frost' ? 3 : 0 };
+    G.honey[type]--;
+    saveHoney();
+    renderHoneyPanel();
+    updateBuffIndicator();
+    return;
+  }
+  G.honey[type]--;
+  saveHoney();
+  G.activeBuff = { type, roundsLeft: HONEY_TYPES[type].rounds, shieldHits: type === 'frost' ? 3 : 0 };
+  renderHoneyPanel();
+  updateBuffIndicator();
+  addLog(`🍯 ${HONEY_TYPES[type].name} activated! ${HONEY_TYPES[type].desc}`, 'ls');
+}
+function updateBuffIndicator() {
+  const el = document.getElementById('buffIndicator');
+  if (!el) return;
+  if (G.activeBuff && G.activeBuff.roundsLeft > 0) {
+    const h = HONEY_TYPES[G.activeBuff.type];
+    el.textContent = `${h.emoji} ${h.name} active — ${G.activeBuff.roundsLeft} round${G.activeBuff.roundsLeft !== 1 ? 's' : ''} remaining`;
+    el.classList.add('show');
+    el.style.borderColor = h.color + '55';
+    el.style.color = h.color;
+  } else {
+    el.classList.remove('show');
+  }
+}
+
+// ─────────────────────────────────────────
 // RENDER CUBS
 // ─────────────────────────────────────────
 function renderCubs(cubs) {
@@ -1075,13 +1304,26 @@ function renderCubs(cubs) {
     return;
   }
   cubs.forEach(cub => {
-    const stats = getStats(cub);
-    const card  = document.createElement('div');
-    card.className = `cub-card r-${cub.rarity}`;
+    const stats  = getStats(cub);
+    const card   = document.createElement('div');
+    const msLeft = restMsRemaining(cub.id);
+    const resting = msLeft > 0;
+    const savedHp = loadCubHp(cub.id, stats.HP);
+
+    card.className = `cub-card r-${cub.rarity}${resting ? ' resting' : ''}`;
     card.id = `c-${cub.id}`;
-    card.onclick = () => selectCub(cub);
+    card.onclick = () => resting ? null : selectCub(cub);
+
     const hasDirectImg = !!cub.image;
+    const hpPct = Math.max(0, Math.min(100, (savedHp / stats.HP) * 100));
+    const hpColor = hpPct > 50 ? '#2ecc71' : hpPct > 20 ? '#f39c12' : '#e74c3c';
+
+    // Build moltbook URL
+    const baseUrl = window.location.origin.replace('/game.html','').replace('game.html','');
+    const moltUrl = `${window.location.origin.replace('/game.html','')}/cub/${encodeURIComponent(cub.id)}?wallet=${G.wallet || ''}`;
+
     card.innerHTML = `
+      <button class="cub-moltbook" title="Open Moltbook" onclick="event.stopPropagation();window.open('${moltUrl}','_blank')">📜</button>
       <div class="cub-img-wrap">
         <img class="cub-img" src="${cub.image || ''}" alt="${cub.name}"
           style="${hasDirectImg ? '' : 'display:none'}"
@@ -1091,11 +1333,24 @@ function renderCubs(cubs) {
       </div>
       <div class="cub-name">${cub.name}</div>
       <div class="cub-class">${cub.class}</div>
+      <div style="margin:6px 0 8px;padding:0 2px">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+          <span style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:var(--silver);opacity:.4;width:18px">HP</span>
+          <div style="flex:1;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${hpPct}%;background:${hpColor};border-radius:2px;transition:width .5s"></div>
+          </div>
+          <span style="font-family:'Cinzel',serif;font-size:8px;color:var(--silver);opacity:.45;min-width:36px;text-align:right">${savedHp}/${stats.HP}</span>
+        </div>
+      </div>
       ${statBars(stats)}
+      ${resting ? `<div class="cub-rest-overlay">
+        <div class="rest-icon">💤</div>
+        <div class="rest-timer" id="rtimer-${cub.id}">${formatCountdown(msLeft)}</div>
+        <button class="rest-revive" onclick="event.stopPropagation();showReviveModal('${cub.id}')">📺 Watch Ad · Revive</button>
+      </div>` : ''}
     `;
     grid.appendChild(card);
 
-    // If no direct image from Helius, fetch from off-chain metadata
     if (!hasDirectImg && cub.jsonUri) {
       loadCubImage(card.querySelector('.cub-img'), cub.jsonUri);
     }
@@ -1115,17 +1370,38 @@ function statBars(s) {
 // SELECT CUB → BATTLE
 // ─────────────────────────────────────────
 function selectCub(cub) {
+  // Check cooldown
+  const msLeft = restMsRemaining(cub.id);
+  if (msLeft > 0) {
+    addLog(`💤 ${cub.name} is resting — ${formatCountdown(msLeft)} remaining.`, 'ls');
+    return;
+  }
+
   G.selected = cub;
-  const stats = getStats(cub);
-  G.pHP = G.pMaxHP = stats.HP;
+  const stats   = getStats(cub);
+  G.pMaxHP = stats.HP;
+
+  // Load persisted HP (full if first time or after revive)
+  const savedHp = loadCubHp(cub.id, stats.HP);
+  G.pHP = savedHp > 0 ? savedHp : stats.HP;
 
   document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
   document.getElementById(`c-${cub.id}`)?.classList.add('selected');
 
   showTraits(cub);
   spawnEnemy();
+
+  // Apply era modifier: reset enemy shield flag for Archean
+  const mod = ERA_MODIFIERS[G.currentEra];
+  G.eShield = !!(mod && mod.shield);
+  updateEraModBadge();
+
   updatePlayer();
   setBtns(true);
+
+  // Restore active buff if any was queued before battle
+  updateBuffIndicator();
+
   const enterFlair = {
     'Magma Warden':'🌋 channels primordial magma',  'Ember Knight':'🔥 ignites their ember blade',
     'Glacial Scout':'❄ emerges from the frozen strata','Void Stalker':'🌑 steps from the obsidian dark',
@@ -1134,7 +1410,17 @@ function selectCub(cub) {
     'Carbonite Ranger':'🌿 strides through fossilised groves',
   };
   const flair = enterFlair[cub.class] || '⛏ descends into the Hadean Crucible';
-  addLog(`${cub.name} ${flair}…`, 'ls');
+  const hpNote = G.pHP < stats.HP ? ` (${G.pHP}/${stats.HP} HP remaining)` : '';
+  addLog(`${cub.name} ${flair}…${hpNote}`, 'ls');
+  if (mod) addLog(`⚠ ${mod.label}`, 'le');
+}
+
+function updateEraModBadge() {
+  const badge = document.getElementById('eraModBadge');
+  if (!badge) return;
+  const mod = ERA_MODIFIERS[G.currentEra];
+  if (mod) { badge.textContent = mod.label; badge.classList.add('show'); }
+  else { badge.classList.remove('show'); }
 }
 
 function showTraits(cub) {
@@ -1151,6 +1437,9 @@ function spawnEnemy() {
   G.enemy = { ...pool[Math.floor(Math.random() * pool.length)] };
   G.eHP = G.eMaxHP = G.enemy.hp;
   G.active = true;
+  // Reset archean shield for each new enemy
+  const mod = ERA_MODIFIERS[G.currentEra];
+  G.eShield = !!(mod && mod.shield);
   updateEnemy();
 }
 
@@ -1231,44 +1520,99 @@ function act(action) {
   const cub   = G.selected;
   G.defending = false;
 
+  // ── Buff multipliers ──
+  const buff   = G.activeBuff;
+  const bType  = buff ? buff.type : null;
+  const atkMul = bType === 'magma' ? 1.4 : bType === 'titan' ? 1.6 : 1;
+  const defMul = bType === 'stone' ? 1.5 : bType === 'titan' ? 1.6 : 1;
+  const tideFt = bType === 'tide'; // strike first
+
+  // ── Player action ──
   if (action === 'atk') {
     const crit = Math.random() < stats.LCK / 200;
-    let dmg    = Math.floor(stats.ATK * 0.4 + Math.random() * 15);
+    let dmg    = Math.floor(stats.ATK * atkMul * 0.4 + Math.random() * 15);
     if (crit) { dmg = Math.floor(dmg * 1.8); arenaFx('crit-fx'); }
-    G.eHP = Math.max(0, G.eHP - dmg);
-    addLog(`⚔ ${cub.name} strikes for ${dmg}${crit ? ' 💥 CRITICAL!' : ''}!`, 'lp');
-    anim('enemySlot', 'anim-shake');
-    showDmg('enemySlot', dmg, crit ? 'crit' : 'atk');
+    if (G.eShield) {
+      G.eShield = false;
+      addLog(`🪨 ${G.enemy.name}'s armor absorbs the hit!`, 'le');
+      showDmg('enemySlot', 0, 'def');
+    } else {
+      G.eHP = Math.max(0, G.eHP - dmg);
+      addLog(`⚔ ${cub.name} strikes for ${dmg}${crit ? ' 💥 CRITICAL!' : ''}!`, 'lp');
+      anim('enemySlot', 'anim-shake');
+      showDmg('enemySlot', dmg, crit ? 'crit' : 'atk');
+    }
 
   } else if (action === 'def') {
     G.defending = true;
-    const shield = Math.floor(stats.DEF * .5);
+    const shield = Math.floor(stats.DEF * defMul * .5);
     addLog(`🛡 ${cub.name} fortifies — DEF +${shield}`, 'lp');
     showDmg('playerSlot', shield, 'def');
 
   } else {
-    const pool  = CLASS_BURSTS[cub.class] || GEO_BURSTS;
-    const burst = pool[Math.floor(Math.random() * pool.length)];
-    const dmg   = Math.floor(stats.ATK * .6 + stats.LCK * .3 + Math.random() * 20);
-    G.eHP = Math.max(0, G.eHP - dmg);
-    addLog(`✦ ${cub.name} unleashes ${burst} for ${dmg}!`, 'lp');
-    anim('enemySlot', 'anim-shake');
-    arenaFx('spc-fx');
-    showDmg('enemySlot', dmg, 'spc');
+    // Special / Honey Burst
+    if (bType) {
+      const h = HONEY_TYPES[bType];
+      if (bType === 'bloom') {
+        // Regen: heal player
+        const heal = 20;
+        G.pHP = Math.min(G.pMaxHP, G.pHP + heal);
+        addLog(`🌿 ${h.name} — ${cub.name} regenerates ${heal} HP!`, 'lp');
+        showDmg('playerSlot', heal, 'def');
+      } else if (bType === 'frost') {
+        // Frost shield: mark shield hits
+        const pool2 = CLASS_BURSTS[cub.class] || GEO_BURSTS;
+        const burst2 = pool2[Math.floor(Math.random() * pool2.length)];
+        const dmg2 = Math.floor(stats.ATK * atkMul * .6 + stats.LCK * .3 + Math.random() * 20);
+        G.eHP = Math.max(0, G.eHP - dmg2);
+        addLog(`❄️ ${cub.name} unleashes Frost ${burst2} for ${dmg2}! Ice shield raises!`, 'lp');
+        anim('enemySlot', 'anim-shake'); arenaFx('spc-fx');
+        showDmg('enemySlot', dmg2, 'spc');
+      } else {
+        const pool2 = CLASS_BURSTS[cub.class] || GEO_BURSTS;
+        const burst2 = pool2[Math.floor(Math.random() * pool2.length)];
+        const dmg2 = Math.floor(stats.ATK * atkMul * .6 + stats.LCK * .3 + Math.random() * 20);
+        G.eHP = Math.max(0, G.eHP - dmg2);
+        addLog(`${h.emoji} ${cub.name} channels ${h.name} — ${burst2} for ${dmg2}!`, 'lp');
+        anim('enemySlot', 'anim-shake'); arenaFx('spc-fx');
+        showDmg('enemySlot', dmg2, 'spc');
+      }
+    } else {
+      // Generic burst
+      const pool  = CLASS_BURSTS[cub.class] || GEO_BURSTS;
+      const burst = pool[Math.floor(Math.random() * pool.length)];
+      const dmg   = Math.floor(stats.ATK * .6 + stats.LCK * .3 + Math.random() * 20);
+      G.eHP = Math.max(0, G.eHP - dmg);
+      addLog(`✦ ${cub.name} unleashes ${burst} for ${dmg}!`, 'lp');
+      anim('enemySlot', 'anim-shake'); arenaFx('spc-fx');
+      showDmg('enemySlot', dmg, 'spc');
+    }
   }
 
+  // ── Tick buff rounds down ──
+  if (buff && buff.roundsLeft > 0) {
+    buff.roundsLeft--;
+    if (buff.roundsLeft <= 0) {
+      addLog(`🍯 ${HONEY_TYPES[bType].name} effect has worn off.`, 'ls');
+      G.activeBuff = null;
+    }
+    updateBuffIndicator();
+  }
+
+  // ── Enemy defeated? ──
   if (G.eHP <= 0) {
-    // Lock out immediately — prevents repeated clicks awarding extra wins during the delay
     G.active = false;
     setBtns(false);
     anim('enemySlot', 'anim-death');
     updateEnemy();
     const xpGain = G.enemy.xp || 10;
     G.wins++;
+    saveCubHp(cub.id, G.pHP); // persist HP after win
     saveProgress();
     const prevWins = G.wins - 1;
     checkEraUnlocks(prevWins);
     updateProgBar();
+    updateCubCardHp(); // refresh HP bar on card
     setTimeout(() => {
       addLog(`🏆 ${G.enemy.name} returns to the strata! (+${xpGain} XP · ${G.wins} wins)`, 'ls');
       setTimeout(() => {
@@ -1280,14 +1624,69 @@ function act(action) {
     return;
   }
 
+  // ── Enemy counter-attack ──
+  const eraDelay = tideFt ? 0 : 650; // Tide honey: player goes first (instant enemy turn after)
   setTimeout(() => {
-    const rawDmg = Math.floor(G.enemy.atk * .6 + Math.random() * 12);
-    const red    = G.defending ? Math.floor(rawDmg * .35) : rawDmg;
-    const final  = Math.max(1, red - Math.floor(stats.DEF * .12));
+    if (!G.active) return; // safety
+    const mod = ERA_MODIFIERS[G.currentEra];
+    let rawDmg = Math.floor(G.enemy.atk * .6 + Math.random() * 12);
+
+    // Mesozoic frenzy: +20% ATK when enemy below 50% HP
+    if (mod && mod.frenzy && G.eHP < G.eMaxHP * 0.5) {
+      rawDmg = Math.floor(rawDmg * 1.2);
+    }
+
+    const red   = G.defending ? Math.floor(rawDmg * .35) : rawDmg;
+    let final   = Math.max(1, red - Math.floor(stats.DEF * defMul * .12));
+
+    // Frost shield absorbs hits
+    if (buff && buff.type === 'frost' && buff.shieldHits > 0) {
+      final = Math.floor(final * 0.2); // absorb 80%
+      buff.shieldHits--;
+      addLog(`❄️ Frost shield absorbs most of the blow! (${buff.shieldHits} absorbs left)`, 'lp');
+    }
+
     G.pHP = Math.max(0, G.pHP - final);
+
+    // Hadean burn damage
+    if (mod && mod.burnDmg) {
+      G.pHP = Math.max(0, G.pHP - mod.burnDmg);
+      addLog(`🔥 Burn deals ${mod.burnDmg} damage!`, 'le');
+    }
+    // Proterozoic regen: enemy heals
+    if (mod && mod.eRegen) {
+      G.eHP = Math.min(G.eMaxHP, G.eHP + mod.eRegen);
+      updateEnemy();
+    }
+
     addLog(`${G.enemy.emoji} ${G.enemy.name} retaliates for ${final}${G.defending ? ' (blocked!)' : ''}!`, 'le');
     anim('playerSlot', 'anim-flash');
     showDmg('playerSlot', final, 'hit');
+
+    // Cenozoic lifesteal: enemy heals from damage dealt
+    if (mod && mod.lifesteal) {
+      const heal = Math.floor(final * mod.lifesteal);
+      G.eHP = Math.min(G.eMaxHP, G.eHP + heal);
+      updateEnemy();
+    }
+
+    // Paleozoic double-hit
+    if (mod && mod.doubleHit && Math.random() < mod.doubleHit) {
+      const dmg2 = Math.max(1, Math.floor(G.enemy.atk * .3 + Math.random() * 8) - Math.floor(stats.DEF * .08));
+      G.pHP = Math.max(0, G.pHP - dmg2);
+      addLog(`🌊 ${G.enemy.name} surges for a second hit — ${dmg2}!`, 'le');
+      showDmg('playerSlot', dmg2, 'hit');
+    }
+
+    // Bloom honey regen tick
+    if (buff && buff.type === 'bloom' && buff.roundsLeft > 0) {
+      const regen = 20;
+      G.pHP = Math.min(G.pMaxHP, G.pHP + regen);
+      addLog(`🌿 Bloom Honey regenerates ${regen} HP`, 'lp');
+    }
+
+    saveCubHp(cub.id, G.pHP); // persist HP every round
+    updateCubCardHp();         // refresh mini-bar on card
     updatePlayer();
     updateEnemy();
 
@@ -1295,12 +1694,36 @@ function act(action) {
       addLog(`💀 ${cub.name} has fallen… The strata claims another.`, 'ls');
       setBtns(false);
       G.active = false;
-      setTimeout(resetBattle, 2500);
+      G.activeBuff = null;
+      updateBuffIndicator();
+      // Set resting cooldown
+      setCubResting(cub.id);
+      saveCubHp(cub.id, 0);
+      // Re-render cubs to show resting state
+      renderCubs(G.cubs);
+      setTimeout(() => {
+        showReviveModal(cub.id);
+        resetBattle();
+      }, 1800);
     }
-  }, 650);
+  }, eraDelay);
 
   updatePlayer();
   updateEnemy();
+}
+
+// Update the HP mini-bar on the selected cub's card without full re-render
+function updateCubCardHp() {
+  if (!G.selected) return;
+  const card = document.getElementById(`c-${G.selected.id}`);
+  if (!card) return;
+  const stats = getStats(G.selected);
+  const pct   = Math.max(0, Math.min(100, (G.pHP / stats.HP) * 100));
+  const color = pct > 50 ? '#2ecc71' : pct > 20 ? '#f39c12' : '#e74c3c';
+  const fill  = card.querySelector('[style*="height:100%;width"]');
+  const txt   = card.querySelector('[style*="min-width:36px"]');
+  if (fill) { fill.style.width = pct + '%'; fill.style.background = color; }
+  if (txt)  { txt.textContent = `${G.pHP}/${stats.HP}`; }
 }
 
 function resetBattle() {
@@ -1309,6 +1732,37 @@ function resetBattle() {
   document.getElementById('enemySlot').innerHTML  = '<div class="empty-slot">Awaiting<br/>challenger...</div>';
   G.selected = null;
   document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
+}
+
+let _reviveTargetId = null;
+function showReviveModal(cubId) {
+  _reviveTargetId = cubId;
+  const cub  = G.cubs.find(c => c.id === cubId);
+  const name = cub ? cub.name : 'Your Cub';
+  document.getElementById('reviveModalBody').innerHTML =
+    `<strong>${name}</strong> has fallen and needs to rest for <strong>8 hours</strong> before returning to the hunt.<br><br>Watch a short ad to revive instantly — or rest and come back later.`;
+  document.getElementById('reviveModal').classList.add('show');
+}
+function closeReviveModal() {
+  document.getElementById('reviveModal').classList.remove('show');
+  _reviveTargetId = null;
+}
+function watchAdRevive() {
+  // In production, swap this with the real AdSense rewarded ad unit call
+  // For now: simulate a ~3s ad, then revive
+  const modal = document.getElementById('reviveModal');
+  const btn   = modal.querySelector('.mb-revive');
+  if (btn) { btn.textContent = '📺 Loading ad…'; btn.disabled = true; }
+  setTimeout(() => {
+    if (_reviveTargetId) {
+      reviveCub(_reviveTargetId);
+      const cub = G.cubs.find(c => c.id === _reviveTargetId);
+      addLog(`✨ ${cub ? cub.name : 'Cub'} revived! Back in the hunt.`, 'ls');
+    }
+    closeReviveModal();
+    renderCubs(G.cubs); // re-render to clear resting overlay
+    if (btn) { btn.textContent = '📺 Watch Ad · Revive Now'; btn.disabled = false; }
+  }, 3000);
 }
 
 // ─────────────────────────────────────────
@@ -1389,6 +1843,7 @@ function showLoader(on) {
 // ─────────────────────────────────────────
 function saveProgress() {
   try { localStorage.setItem('okaycubs_progress', JSON.stringify({ wins: G.wins, era: G.currentEra })); } catch(e) {}
+  saveHoney();
 }
 
 function loadProgress() {
@@ -1397,10 +1852,40 @@ function loadProgress() {
     G.wins = saved.wins || 0;
     G.currentEra = saved.era || 'hadean';
   } catch(e) { G.wins = 0; G.currentEra = 'hadean'; }
+  loadHoney();
 }
 
 function isEraUnlocked(era) {
   return G.wins >= (ERA_UNLOCK[era] || 0);
+}
+
+// ─────────────────────────────────────────
+// HONEY PANEL RENDER
+// ─────────────────────────────────────────
+function renderHoneyPanel() {
+  const panel = document.getElementById('honeyPanel');
+  const grid  = document.getElementById('honeyGrid');
+  if (!panel || !grid) return;
+
+  const total = Object.values(G.honey).reduce((a, b) => a + b, 0);
+  panel.classList.toggle('show', total > 0 || (G.wins > 0));
+
+  grid.innerHTML = Object.entries(HONEY_TYPES).map(([key, h]) => {
+    const count   = G.honey[key] || 0;
+    const isEmpty = count <= 0;
+    const isActive = G.activeBuff && G.activeBuff.type === key;
+    return `
+      <div class="honey-jar${isEmpty ? ' empty' : ''}${isActive ? ' active-buff' : ''}"
+           onclick="${isEmpty ? '' : `activateHoney('${key}')`}"
+           title="${isEmpty ? 'Not yet collected' : `Click to activate before battle · ${h.desc}`}">
+        <span class="honey-emoji">${h.emoji}</span>
+        <div class="honey-name">${h.name}</div>
+        <div class="honey-count" style="color:${isEmpty ? '#555' : h.color}">${count}</div>
+        <div class="honey-desc">${isEmpty ? `Unlock ${h.era} era` : h.desc}</div>
+        ${isActive ? `<div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:2px;color:var(--gold);margin-top:4px;text-transform:uppercase">● Active</div>` : ''}
+      </div>
+    `;
+  }).join('');
 }
 
 function checkEraUnlocks(prevWins) {
@@ -1409,8 +1894,15 @@ function checkEraUnlocks(prevWins) {
     const threshold = ERA_UNLOCK[era];
     if (prevWins < threshold && G.wins >= threshold) {
       showEraToast(era);
+      // Award honey for the just-unlocked era's honey type
+      const honeyType = ERA_HONEY_DROP[era];
+      if (honeyType) setTimeout(() => awardHoney(honeyType), 2000);
     }
   });
+  // Award hadean honey on first win if player hasn't gotten one yet
+  if (prevWins === 0 && G.wins >= 1 && G.honey.magma === 0) {
+    setTimeout(() => awardHoney('magma'), 1500);
+  }
   updateWorldMap();
 }
 
@@ -1538,7 +2030,7 @@ function toggleChronicle() {
 // INIT — auto-load demo on start
 // ─────────────────────────────────────────
 (async function init() {
-  // Restore progression
+  // Restore progression (also loads honey)
   loadProgress();
 
   // Hide chronicle if already seen
@@ -1556,10 +2048,27 @@ function toggleChronicle() {
 
   updateWorldMap();
   updateProgBar();
+  renderHoneyPanel();
 
   G.cubs = getDemoCubs();
   renderCubs(G.cubs);
   loadFloorPrice(); // non-blocking — fills in floor price header when ready
+
+  // ── Rest countdown ticker — updates every second ──
+  setInterval(() => {
+    if (!G.cubs.length) return;
+    G.cubs.forEach(cub => {
+      const ms  = restMsRemaining(cub.id);
+      const el  = document.getElementById(`rtimer-${cub.id}`);
+      if (!el) return;
+      if (ms <= 0) {
+        // Cooldown expired — re-render to remove resting overlay
+        renderCubs(G.cubs);
+      } else {
+        el.textContent = formatCountdown(ms);
+      }
+    });
+  }, 1000);
 })();
 </script>
 </body>

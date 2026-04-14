@@ -28,7 +28,8 @@ export interface Product {
   printPlacement: string;
   // Position of the design within the print area (pixels at product template resolution).
   // Values come from GET /mockup-generator/printfiles/{product_id}.
-  printPosition: PrintPosition;
+  // If omitted, Printful uses the default center position (recommended for caps/joggers).
+  printPosition?: PrintPosition;
   variants: ProductVariant[];
 }
 
@@ -63,11 +64,12 @@ export const PRODUCTS: Record<ProductType, Product> = {
   joggers: {
     type: 'joggers',
     name: 'OkayCubs Joggers',
-    description: 'Unisex fleece joggers with your Cub on the left leg.',
+    description: 'Unisex fleece joggers with your Cub on the front.',
     basePrice: 4800, // $48.00
     printfulProductId: 447,
-    printPlacement: 'front',           // fallback to front if left_leg unsupported
-    printPosition: { area_width: 1800, area_height: 2400, width: 900, height: 900, top: 400, left: 450 },
+    // Use 'front' placement — Printful will center the design automatically (no custom position)
+    printPlacement: 'front',
+    // No printPosition: Printful uses default center placement (avoids dimension mismatches)
     variants: [
       { size: 'S',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14302 },
       { size: 'M',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14303 },
@@ -86,8 +88,9 @@ export const PRODUCTS: Record<ProductType, Product> = {
     description: 'Classic unstructured dad hat with embroidered Cub number.',
     basePrice: 3200, // $32.00
     printfulProductId: 74,
-    printPlacement: 'front',
-    printPosition: { area_width: 1200, area_height: 600, width: 600, height: 300, top: 150, left: 300 },
+    // Caps use embroidery — 'embroidery_front' is the Printful placement for cap front embroidery
+    printPlacement: 'embroidery_front',
+    // No printPosition: let Printful use default embroidery placement (custom positions often rejected)
     variants: [
       { color: 'Black',         colorHex: '#1a1a1a', printfulVariantId: 3502 },
       { color: 'Navy',          colorHex: '#1b2a4a', printfulVariantId: 3503 },

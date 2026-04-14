@@ -33,16 +33,22 @@ export async function POST(req: NextRequest) {
     ? imageUrl
     : `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(imageUrl)}`;
 
+  // Build file entry — only include position when explicitly configured
+  // (omitting it lets Printful use the default center placement, which works for caps/joggers)
+  const fileEntry: Record<string, unknown> = {
+    placement: product.printPlacement,
+    image_url: printfulImageUrl,
+  };
+  if (product.printPosition) {
+    fileEntry.position = product.printPosition;
+  }
+
   const res = await fetch(`${PRINTFUL_API}/mockup-generator/create-task/${product.printfulProductId}`, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
       variant_ids: [variantId],
-      files: [{
-        placement: product.printPlacement,
-        image_url: printfulImageUrl,
-        position: product.printPosition,
-      }],
+      files: [fileEntry],
     }),
   });
 
