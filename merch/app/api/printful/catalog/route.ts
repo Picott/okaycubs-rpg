@@ -17,7 +17,10 @@ export async function GET(req: NextRequest) {
   const idsParam = req.nextUrl?.searchParams?.get('ids');
   const productIds = idsParam
     ? idsParam.split(',').map(Number).filter(Boolean)
-    : [380, 447, 74, 374, 398, 405, 325, 3719, 9819, 77, 453, 460];
+    // AOP Wide-Leg Jogger candidates: 398, 405, 460, 453, 9819, 407, 412, 440, 450, 470, 480
+    // OTTO Cap 31-069 DTFilm candidates: 3719, 9819, 325, 77, 453, 460, 407
+    // Known working: 380 (hoodie), 374 (regular jogger)
+    : [380, 374, 398, 405, 325, 3719, 9819, 77, 453, 460, 407, 412, 440, 450, 470, 480, 500, 510];
   const results: Record<number, unknown> = {};
 
   for (const pid of productIds) {
