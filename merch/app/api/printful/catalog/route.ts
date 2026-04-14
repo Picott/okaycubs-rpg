@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     const variantData = await variantRes.json() as {
       result?: {
         product?: { title?: string };
-        variants?: Array<{ id: number; size?: string; color?: string; color_code?: string; availability_status?: string }>;
+        variants?: Array<{ id: number; size?: string; color?: string; color_code?: string; availability_status?: string; price?: string }>;
       };
     };
     const printfileData = await printfileRes.json() as {
@@ -49,11 +49,11 @@ export async function GET(req: NextRequest) {
     const variants = variantData?.result?.variants ?? [];
 
     // Group by color for readability
-    const byColor: Record<string, Array<{ id: number; size?: string; availability?: string }>> = {};
+    const byColor: Record<string, Array<{ id: number; size?: string; availability?: string; printfulCost?: string }>> = {};
     for (const v of variants) {
       const c = v.color ?? 'Unknown';
       if (!byColor[c]) byColor[c] = [];
-      byColor[c].push({ id: v.id, size: v.size, availability: v.availability_status });
+      byColor[c].push({ id: v.id, size: v.size, availability: v.availability_status, printfulCost: v.price });
     }
 
     // Extract unique valid placements
