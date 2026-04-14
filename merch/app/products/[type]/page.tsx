@@ -208,7 +208,8 @@ function ProductPageInner() {
         body: JSON.stringify({
           productType: type,
           variantId: variant!.printfulVariantId,
-          cubId: selectedCub!.id,
+          cubId:   selectedCub!.id,
+          cubName: selectedCub!.name,
           cubImage: selectedCub!.image
             ? (selectedCub!.image.startsWith('http') ? selectedCub!.image : window.location.origin + selectedCub!.image)
             : '',

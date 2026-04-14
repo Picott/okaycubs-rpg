@@ -3,7 +3,7 @@ import { createCheckoutSession } from '@/lib/stripe';
 import { PRODUCTS, ProductType } from '@/lib/products';
 
 export async function POST(req: NextRequest) {
-  const { productType, variantId, cubId, cubImage, mockupUrl } = await req.json();
+  const { productType, variantId, cubId, cubName, cubImage, mockupUrl } = await req.json();
 
   if (!productType || !variantId || !cubId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const session = await createCheckoutSession({
-      productName:  `${product.name} — ${cubId}`,
+      productName:  `${product.name} — ${cubName || cubId.slice(0, 8) + '…'}`,
       imageUrl:     mockupUrl || cubImage || `${origin}/logo.png`,
       amountCents:  product.basePrice,
       cubId,
