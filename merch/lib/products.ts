@@ -91,20 +91,20 @@ export const PRODUCTS: Record<ProductType, Product> = {
   cap: {
     type: 'cap',
     name: 'OkayCubs Cap',
-    description: 'Classic unstructured dad hat with your Cub printed on the front.',
-    basePrice: 3200, // $32.00
-    // Yupoong 6089 Unstructured Classic Dad Hat — catalog product 3719
-    // Run /api/printful/catalog to verify IDs; update if 3719 returns httpStatus 404
-    printfulProductId: 3719,
+    description: 'Classic 5-panel cap with your Cub printed on the front.',
+    basePrice: 2800, // $28.00
+    // Yupoong 7005 5 Panel Cap — catalog product 92
+    // Variant IDs verified via /api/printful/catalog
+    printfulProductId: 92,
     printPlacement: 'front',
-    printPosition: { area_width: 1800, area_height: 450, width: 800, height: 350, top: 50, left: 500 },
+    // Front panel is roughly 1800×600 px at template resolution; center the Cub design
+    printPosition: { area_width: 1800, area_height: 600, width: 700, height: 500, top: 50, left: 550 },
     variants: [
-      // Variant IDs for product 3719 — fetch /api/printful/catalog to get real IDs
-      { color: 'Black',         colorHex: '#1a1a1a', printfulVariantId: 60213 },
-      { color: 'Navy',          colorHex: '#1b2a4a', printfulVariantId: 60214 },
-      { color: 'Khaki',         colorHex: '#c8b89a', printfulVariantId: 60219 },
-      { color: 'Stone',         colorHex: '#9e9e8e', printfulVariantId: 60222 },
-      { color: 'White',         colorHex: '#f5f5f0', printfulVariantId: 60210 },
+      { color: 'Black',  colorHex: '#1a1a1a', printfulVariantId: 4622 },
+      { color: 'Grey',   colorHex: '#888888', printfulVariantId: 4624 },
+      { color: 'Khaki',  colorHex: '#c8b89a', printfulVariantId: 4625 },
+      { color: 'Navy',   colorHex: '#1b2a4a', printfulVariantId: 4626 },
+      { color: 'Olive',  colorHex: '#6b6b3a', printfulVariantId: 4627 },
     ],
   },
 };
