@@ -85,12 +85,12 @@ export const PRODUCTS: Record<ProductType, Product> = {
   cap: {
     type: 'cap',
     name: 'OkayCubs Cap',
-    description: 'Classic unstructured dad hat with embroidered Cub number.',
+    description: 'Classic unstructured dad hat with your Cub printed on the front.',
     basePrice: 3200, // $32.00
     printfulProductId: 74,
-    // Caps use embroidery — 'embroidery_front' is the Printful placement for cap front embroidery
-    printPlacement: 'embroidery_front',
-    // No printPosition: let Printful use default embroidery placement (custom positions often rejected)
+    printPlacement: 'front',
+    // Hat front print area: 1800×450 px landscape template; Cub centered in the panel
+    printPosition: { area_width: 1800, area_height: 450, width: 800, height: 350, top: 50, left: 500 },
     variants: [
       { color: 'Black',         colorHex: '#1a1a1a', printfulVariantId: 3502 },
       { color: 'Navy',          colorHex: '#1b2a4a', printfulVariantId: 3503 },

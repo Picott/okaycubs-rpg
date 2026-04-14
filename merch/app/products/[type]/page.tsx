@@ -162,6 +162,8 @@ function ProductPageInner() {
             return;
           }
           if (data.status === 'failed') {
+            // Log the actual Printful reason so we can debug
+            console.error('[mockup] Printful task failed. Reason:', JSON.stringify(data.reason ?? data));
             if (mockupReqId.current === reqId) setMockupFailed(true);
             return;
           }
@@ -337,7 +339,7 @@ function ProductPageInner() {
                     )}
                   </div>
                   <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 uppercase text-center">
-                    {loadingMockup ? 'Generating mockup…' : mockupFailed ? 'Preview unavailable — image above is a preview' : selectedCub.name}
+                    {loadingMockup ? 'Generating mockup…' : mockupFailed ? `${selectedCub.name} — Color Preview` : selectedCub.name}
                   </div>
                 </div>
               );
