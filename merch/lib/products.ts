@@ -66,8 +66,8 @@ export const PRODUCTS: Record<ProductType, Product> = {
     description: 'Unisex fleece joggers with your Cub on the left leg.',
     basePrice: 4800, // $48.00
     printfulProductId: 447,
-    printPlacement: 'left_leg',
-    printPosition: { area_width: 700, area_height: 1800, width: 700, height: 700, top: 400, left: 0 },
+    printPlacement: 'front',           // fallback to front if left_leg unsupported
+    printPosition: { area_width: 1800, area_height: 2400, width: 900, height: 900, top: 400, left: 450 },
     variants: [
       { size: 'S',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14302 },
       { size: 'M',  color: 'Black', colorHex: '#1a1a1a', printfulVariantId: 14303 },
