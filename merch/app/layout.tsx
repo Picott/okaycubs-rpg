@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'OkayCubs Merch — Geological Chronicles',
+  title: 'OkayCubs Merch — The Honey Chronicles',
   description: 'Official OkayCubs merch store. Print-on-demand hoodies, joggers and caps. Pay with SOL or card.',
   openGraph: {
     title: 'OkayCubs Merch',
@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Shared header */}
           <header className="text-center pt-12 pb-8">
             <div className="font-cinzel text-[10px] tracking-[7px] text-gold opacity-65 uppercase mb-3">
-              ⛏ Geological Chronicles · Merch
+              🍯 The Honey Chronicles · Merch
             </div>
             <a href="/" className="block">
               <h1
@@ -47,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </h1>
             </a>
             <div className="font-cinzel text-[11px] tracking-[4px] text-silver opacity-50 mt-2">
-              Wear the Strata
+              Wear Your Cub
             </div>
             <div className="rule" />
             {/* Back to RPG */}

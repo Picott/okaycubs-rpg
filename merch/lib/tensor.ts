@@ -2,9 +2,11 @@ import type { Cub } from './cubs';
 
 const TENSOR_GQL     = 'https://api.tensor.so/graphql';
 const OKAYCUBS_SLUG  = 'okay_cubs';
+// Fallback to the same key used in the public game client
+const TENSOR_API_KEY = process.env.TENSOR_API_KEY || 'd682006c-c115-4c1e-a52f-c63e6f8e3e46';
 
 async function tensorGql<T>(query: string, variables: Record<string, unknown>): Promise<T | null> {
-  const key = process.env.TENSOR_API_KEY;
+  const key = TENSOR_API_KEY;
   if (!key) return null;
   try {
     const res = await fetch(TENSOR_GQL, {
