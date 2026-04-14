@@ -904,9 +904,23 @@ function parseCubs(nfts) {
     const traitCount = attrs.length;
     const rarity = traitCount >= 8 ? 'legendary' : traitCount >= 6 ? 'epic' : traitCount >= 4 ? 'rare' : 'common';
 
+    // Extract real Cub number from name, image URL, or JSON URI
+    const nameFromMeta = meta.name || '';
+    let cubNum = parseInt(nameFromMeta.replace(/\D/g, '')) || 0;
+    if (!cubNum && rawUrl) {
+      const m = rawUrl.match(/\/(\d+)\.(?:png|jpe?g|gif|webp)/i);
+      if (m) cubNum = parseInt(m[1]);
+    }
+    if (!cubNum && jsonUri) {
+      const m = jsonUri.match(/\/(\d+)(?:\.json)?(?:\?|$)/i);
+      if (m) cubNum = parseInt(m[1]);
+    }
+    const displayName = nameFromMeta || (cubNum ? `OkayCub #${cubNum}` : `OkayCub #${i + 1}`);
+
     return {
       id:     nft.id || i,
-      name:    meta.name || `Cub #${i}`,
+      name:    displayName,
+      number:  cubNum || i + 1,
       image:   imgUrl,
       jsonUri: jsonUri,
       rarity,
