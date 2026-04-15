@@ -112,7 +112,13 @@ function ProductPageInner() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
           });
-          const createData = await createRes.json() as { taskKey?: string; error?: string; retryAfter?: number; detail?: unknown };
+          const createData = await createRes.json() as { taskKey?: string; mockupUrl?: string; cached?: boolean; error?: string; retryAfter?: number; detail?: unknown };
+
+          // Server cache hit — mockupUrl returned directly, skip polling
+          if (createData.mockupUrl && createData.cached) {
+            if (mockupReqId.current === reqId) setMockupUrl(createData.mockupUrl);
+            return;
+          }
 
           // 400 = bad product config — not retriable
           if (createRes.status === 400) {

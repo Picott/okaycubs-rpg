@@ -13,6 +13,18 @@ function headers() {
 // Cache the store_id so we only fetch it once per cold start
 let cachedStoreId: number | null = null;
 
+// Mockup URL cache (key → mockupUrl). Module-level, persists across requests
+// within the same warm serverless instance. Dramatically reduces Printful rate-limit hits.
+const mockupCache = new Map<string, string>();
+// In-flight task cache (key → taskKey) so duplicate requests reuse the same task.
+const pendingTasks = new Map<string, string>();
+// Reverse lookup: taskKey → cache key, so GET handler can populate mockupCache on completion.
+const taskKeyToCacheKey = new Map<string, string>();
+
+function mockupCacheKey(productId: number, variantId: number, imageUrl: string): string {
+  return `${productId}:${variantId}:${imageUrl}`;
+}
+
 async function getStoreId(): Promise<number | null> {
   if (process.env.PRINTFUL_STORE_ID) return parseInt(process.env.PRINTFUL_STORE_ID);
   if (cachedStoreId) return cachedStoreId;
@@ -72,6 +84,20 @@ export async function POST(req: NextRequest) {
     fileEntry.position = product.printPosition;
   }
 
+  // Cache check: if we already generated this mockup, return URL immediately
+  const cacheKey = mockupCacheKey(product.printfulProductId, variantId, printfulImageUrl);
+  const cachedUrl = mockupCache.get(cacheKey);
+  if (cachedUrl) {
+    console.log('[Printful] mockup cache hit for', cacheKey);
+    return NextResponse.json({ mockupUrl: cachedUrl, cached: true });
+  }
+  // In-flight dedup: if an identical request is already pending, reuse its taskKey
+  const pendingTaskKey = pendingTasks.get(cacheKey);
+  if (pendingTaskKey) {
+    console.log('[Printful] reusing in-flight taskKey for', cacheKey);
+    return NextResponse.json({ taskKey: pendingTaskKey });
+  }
+
   const storeId = await getStoreId();
   if (!storeId) {
     return NextResponse.json({ error: 'Could not determine Printful store_id' }, { status: 503 });
@@ -110,6 +136,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create mockup task', printfulStatus: res.status, detail: data }, { status: 502 });
   }
 
+  // Track this task for dedup + later cache population
+  pendingTasks.set(cacheKey, taskKey);
+  taskKeyToCacheKey.set(taskKey, cacheKey);
+
   return NextResponse.json({ taskKey });
 }
 
@@ -134,12 +164,26 @@ export async function GET(req: NextRequest) {
 
   if (status === 'completed') {
     const mockupUrl = data?.result?.mockups?.[0]?.mockup_url ?? null;
+    // Populate cache so subsequent identical requests skip Printful entirely
+    if (mockupUrl) {
+      const cacheKey = taskKeyToCacheKey.get(taskKey);
+      if (cacheKey) {
+        mockupCache.set(cacheKey, mockupUrl);
+        pendingTasks.delete(cacheKey);
+        taskKeyToCacheKey.delete(taskKey);
+      }
+    }
     return NextResponse.json({ status: 'completed', mockupUrl });
   }
 
   if (status === 'failed') {
     const reason = data?.result?.error ?? data?.result ?? data;
     console.error('[Printful mockup] task failed:', JSON.stringify(reason));
+    const cacheKey = taskKeyToCacheKey.get(taskKey);
+    if (cacheKey) {
+      pendingTasks.delete(cacheKey);
+      taskKeyToCacheKey.delete(taskKey);
+    }
     return NextResponse.json({ status: 'failed', reason });
   }
 
