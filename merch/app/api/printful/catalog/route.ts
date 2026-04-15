@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
   const results: Record<number, unknown> = {};
 
   for (const pid of productIds) {
+    let printfileRaw = '';
     try {
     const [variantRes, printfileRes] = await Promise.all([
       fetch(`https://api.printful.com/products/${pid}`, { headers: hdrs }),
@@ -51,14 +52,14 @@ export async function GET(req: NextRequest) {
         variants?: Array<{ id: number; size?: string; color?: string; color_code?: string; availability_status?: string; price?: string }>;
       };
     };
-    const printfileRaw = await printfileRes.text();
+    printfileRaw = await printfileRes.text();
     let printfileData: {
       result?: {
         variant_printfiles?: Array<{
           variant_id: number;
           placements: Array<{ placement: string; display_name?: string }>;
         }>;
-        available_placements?: Record<string, string>;
+        available_placements?: Record<string, string> | Array<unknown>;
       };
     } = {};
     try { printfileData = JSON.parse(printfileRaw); } catch {}
@@ -74,11 +75,16 @@ export async function GET(req: NextRequest) {
       byColor[c].push({ id: v.id, size: v.size, availability: v.availability_status, printfulCost: v.price });
     }
 
-    // Extract unique valid placements
+    // Extract unique valid placements — defensively handle shape changes
     const availablePlacements = printfileData?.result?.available_placements ?? {};
     const placementsFromVariants = new Set<string>();
-    for (const vp of printfileData?.result?.variant_printfiles ?? []) {
-      for (const p of vp.placements ?? []) placementsFromVariants.add(p.placement);
+    const vpRaw = printfileData?.result?.variant_printfiles;
+    const vpArr = Array.isArray(vpRaw) ? vpRaw : [];
+    for (const vp of vpArr) {
+      const plist = Array.isArray(vp?.placements) ? vp.placements : [];
+      for (const p of plist) {
+        if (p?.placement) placementsFromVariants.add(p.placement);
+      }
     }
 
     results[pid] = {
@@ -92,7 +98,7 @@ export async function GET(req: NextRequest) {
       byColor,
     };
     } catch (e) {
-      results[pid] = { error: String(e) };
+      results[pid] = { error: String(e), printfileRawHead: printfileRaw.slice(0, 500) };
     }
   }
 
