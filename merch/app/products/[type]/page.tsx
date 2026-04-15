@@ -103,9 +103,9 @@ function ProductPageInner() {
 
     (async () => {
       try {
-        // Step 1: create task — retry once on 429
+        // Step 1: create task — retry up to 5x with exponential backoff on 429
         let taskKey: string | null = null;
-        for (let attempt = 0; attempt < 2; attempt++) {
+        for (let attempt = 0; attempt < 5; attempt++) {
           if (mockupReqId.current !== reqId) return;
           const createRes = await fetch('/api/printful/mockup', {
             method: 'POST',
@@ -121,15 +121,17 @@ function ProductPageInner() {
             return;
           }
 
-          // 429 = rate limited — back off then retry once
+          // 429 = rate limited — exponential backoff then retry
           if (createRes.status === 429) {
-            if (attempt >= 1) {
-              console.warn('[mockup] Still rate limited after retry — giving up');
+            if (attempt >= 4) {
+              console.warn('[mockup] Still rate limited after 5 attempts — giving up');
               if (mockupReqId.current === reqId) setMockupFailed(true);
               return;
             }
-            const wait = Math.min((createData.retryAfter ?? 30), 90) * 1000;
-            console.warn(`[mockup] Rate limited — backing off ${wait / 1000}s then retrying…`);
+            // Exponential backoff: retryAfter * (attempt+1), capped at 120s
+            const base = createData.retryAfter ?? 30;
+            const wait = Math.min(base * (attempt + 1), 120) * 1000;
+            console.warn(`[mockup] Rate limited (attempt ${attempt + 1}/5) — backing off ${wait / 1000}s…`);
             await new Promise(r => setTimeout(r, wait));
             if (mockupReqId.current !== reqId) return;
             continue;

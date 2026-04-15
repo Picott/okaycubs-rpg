@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Public IPFS gateways in priority order — tried sequentially until one succeeds.
-// nftstorage.link is deprecated and unreliable; the others are fallbacks.
+// cloudflare-ipfs.com shut down its public gateway in 2024 — removed.
 const IPFS_GATEWAYS = [
-  'https://cloudflare-ipfs.com/ipfs/',
   'https://gateway.pinata.cloud/ipfs/',
+  'https://w3s.link/ipfs/',
   'https://ipfs.io/ipfs/',
   'https://nftstorage.link/ipfs/',
 ];
 
 const IPFS_GATEWAY_PATTERN =
-  /^https?:\/\/(?:nftstorage\.link|ipfs\.io|cloudflare-ipfs\.com|gateway\.pinata\.cloud|dweb\.link|gateway\.ipfs\.io)\/ipfs\/(.+)/;
+  /^https?:\/\/(?:nftstorage\.link|ipfs\.io|cloudflare-ipfs\.com|gateway\.pinata\.cloud|w3s\.link|dweb\.link|gateway\.ipfs\.io)\/ipfs\/(.+)/;
 
 // Given any URL, return an ordered list of URLs to try.
 // For IPFS gateway URLs, substitutes alternative gateways first.
