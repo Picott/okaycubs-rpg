@@ -69,10 +69,12 @@ export const PRODUCTS: Record<ProductType, Product> = {
     // Cotton Heritage M7580 Unisex Fleece Sweatpants — catalog product 412
     // Variant IDs verified via /api/printful/catalog
     printfulProductId: 412,
-    // Joggers don't support a generic 'front' placement — use 'front_large' (the DTG printfile
-    // for the front leg). Valid placements can be verified via /api/printful/catalog?ids=412
-    printPlacement: 'front_large',
-    // Let Printful use default centered placement — printfile dimensions differ per placement
+    // Joggers print on ONE leg (DTG). Valid placements: leg_front_left,
+    // leg_front_right, leg_back_left, leg_back_right. We use front-left leg
+    // so the Cub shows when facing forward/walking.
+    printPlacement: 'leg_front_left',
+    // Printfile: 525w × 2175h @ 150 DPI. Cub ~500×500, centered horizontally, upper thigh.
+    printPosition: { area_width: 525, area_height: 2175, width: 500, height: 500, top: 450, left: 12 },
     variants: [
       { size: 'S',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11266 },
       { size: 'M',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11267 },
@@ -100,9 +102,9 @@ export const PRODUCTS: Record<ProductType, Product> = {
     // Yupoong 7005 caps use embroidery — placement is 'embroidery_front', not 'front'.
     // Valid placements can be verified via /api/printful/catalog?ids=92
     printPlacement: 'embroidery_front',
-    // Embroidery front printfile for Yupoong 7005 is ~1800×450 px at template resolution.
-    // Center the Cub design within the front panel.
-    printPosition: { area_width: 1800, area_height: 450, width: 700, height: 400, top: 25, left: 550 },
+    // Embroidery front printfile for Yupoong 7005: 1200w × 525h @ 300 DPI.
+    // Center the Cub design (~500×500) in the front panel.
+    printPosition: { area_width: 1200, area_height: 525, width: 500, height: 500, top: 12, left: 350 },
     variants: [
       { color: 'Black',  colorHex: '#1a1a1a', printfulVariantId: 4622 },
       { color: 'Grey',   colorHex: '#888888', printfulVariantId: 4624 },
