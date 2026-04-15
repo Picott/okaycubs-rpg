@@ -3,7 +3,7 @@
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef, Suspense } from 'react';
 import Image from 'next/image';
-import { PRODUCTS, ProductType, UNIQUE_COLORS, SIZES, getVariant } from '@/lib/products';
+import { PRODUCTS, ProductType, UNIQUE_COLORS, SIZES, SIZE_CHARTS, getVariant } from '@/lib/products';
 
 interface Cub {
   id: string;
@@ -194,7 +194,9 @@ function ProductPageInner() {
         mockupReqId.current++;
       }
     };
-  }, [selectedCub, variant?.printfulVariantId]);
+    // Re-generate mockup ONLY when product/color/cub change — not size.
+    // The mockup looks identical across sizes of the same color.
+  }, [selectedCub, selectedColor, type]);
 
   if (!product) {
     return (
@@ -434,21 +436,43 @@ function ProductPageInner() {
             <div>
               <div className="font-cinzel text-[10px] tracking-[3px] text-gold opacity-60 uppercase mb-3">
                 Size
+                <span className="ml-2 opacity-50 normal-case tracking-normal">— hover for measurements</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {sizes.map(s => (
-                  <button
-                    key={s}
-                    onClick={() => setSize(s)}
-                    className={`font-cinzel text-[10px] tracking-[2px] px-4 py-2 border transition-all ${
-                      selectedSize === s
-                        ? 'border-gold text-gold bg-gold/10'
-                        : 'border-white/10 text-silver/60 hover:border-gold/50'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+                {sizes.map(s => {
+                  const measurements = SIZE_CHARTS[type]?.[s];
+                  return (
+                    <div key={s} className="relative group">
+                      <button
+                        onClick={() => setSize(s)}
+                        className={`font-cinzel text-[10px] tracking-[2px] px-4 py-2 border transition-all ${
+                          selectedSize === s
+                            ? 'border-gold text-gold bg-gold/10'
+                            : 'border-white/10 text-silver/60 hover:border-gold/50'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                      {measurements && (
+                        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[220px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                          <div className="bg-black/95 border border-gold/40 px-3 py-2 shadow-xl">
+                            <div className="font-cinzel text-[9px] tracking-[2px] text-gold uppercase mb-1.5 pb-1 border-b border-gold/20">
+                              Size {s} (inches)
+                            </div>
+                            <div className="space-y-0.5">
+                              {Object.entries(measurements).map(([label, value]) => (
+                                <div key={label} className="flex justify-between gap-4 text-[10px] font-cinzel tracking-wide">
+                                  <span className="text-silver/70">{label}</span>
+                                  <span className="text-silver">{value}"</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

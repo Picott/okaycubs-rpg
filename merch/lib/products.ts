@@ -69,9 +69,10 @@ export const PRODUCTS: Record<ProductType, Product> = {
     // Cotton Heritage M7580 Unisex Fleece Sweatpants — catalog product 412
     // Variant IDs verified via /api/printful/catalog
     printfulProductId: 412,
-    printPlacement: 'front',
-    // Cub image centered on the front thigh area
-    printPosition: { area_width: 1800, area_height: 2400, width: 900, height: 900, top: 600, left: 450 },
+    // Joggers don't support a generic 'front' placement — use 'front_large' (the DTG printfile
+    // for the front leg). Valid placements can be verified via /api/printful/catalog?ids=412
+    printPlacement: 'front_large',
+    // Let Printful use default centered placement — printfile dimensions differ per placement
     variants: [
       { size: 'S',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11266 },
       { size: 'M',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11267 },
@@ -96,9 +97,10 @@ export const PRODUCTS: Record<ProductType, Product> = {
     // Yupoong 7005 5 Panel Cap — catalog product 92
     // Variant IDs verified via /api/printful/catalog
     printfulProductId: 92,
-    printPlacement: 'front',
-    // Front panel is roughly 1800×600 px at template resolution; center the Cub design
-    printPosition: { area_width: 1800, area_height: 600, width: 700, height: 500, top: 50, left: 550 },
+    // Yupoong 7005 caps use embroidery — placement is 'embroidery_front', not 'front'.
+    // Valid placements can be verified via /api/printful/catalog?ids=92
+    printPlacement: 'embroidery_front',
+    // Let Printful use default centered placement — embroidery has its own printfile dimensions
     variants: [
       { color: 'Black',  colorHex: '#1a1a1a', printfulVariantId: 4622 },
       { color: 'Grey',   colorHex: '#888888', printfulVariantId: 4624 },
@@ -120,3 +122,26 @@ export function getVariant(type: ProductType, color: string, size?: string) {
     v => v.color === color && (!size || v.size === size)
   ) ?? null;
 }
+
+// Size charts (inches) — sourced from Printful product pages.
+// Used for hover tooltips on size buttons.
+export interface SizeMeasurements {
+  [label: string]: string; // e.g. "Chest": "38-41"
+}
+
+export const SIZE_CHARTS: Partial<Record<ProductType, Record<string, SizeMeasurements>>> = {
+  // Cotton Heritage M2580 Pullover Hoodie (inches)
+  hoodie: {
+    S:  { Chest: '38-41', 'Body Length': '27', 'Sleeve Length': '34 ½' },
+    M:  { Chest: '42-45', 'Body Length': '28', 'Sleeve Length': '35 ½' },
+    L:  { Chest: '46-49', 'Body Length': '29', 'Sleeve Length': '36 ½' },
+    XL: { Chest: '50-53', 'Body Length': '30', 'Sleeve Length': '37 ½' },
+  },
+  // Cotton Heritage M7580 Fleece Sweatpants (inches)
+  joggers: {
+    S:  { Waist: '28-30', Hip: '37 ½', Inseam: '31' },
+    M:  { Waist: '31-33', Hip: '40 ½', Inseam: '31 ½' },
+    L:  { Waist: '34-36', Hip: '43 ½', Inseam: '32' },
+    XL: { Waist: '37-39', Hip: '46 ½', Inseam: '32 ½' },
+  },
+};
