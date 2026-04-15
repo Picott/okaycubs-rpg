@@ -10,6 +10,24 @@ function headers() {
   };
 }
 
+// Cache the store_id so we only fetch it once per cold start
+let cachedStoreId: number | null = null;
+
+async function getStoreId(): Promise<number | null> {
+  if (process.env.PRINTFUL_STORE_ID) return parseInt(process.env.PRINTFUL_STORE_ID);
+  if (cachedStoreId) return cachedStoreId;
+  try {
+    const res = await fetch(`${PRINTFUL_API}/stores`, { headers: headers() });
+    const data = await res.json() as { result?: Array<{ id: number }> };
+    cachedStoreId = data?.result?.[0]?.id ?? null;
+    console.log('[Printful] auto-fetched store_id:', cachedStoreId);
+    return cachedStoreId;
+  } catch {
+    console.error('[Printful] failed to fetch store_id');
+    return null;
+  }
+}
+
 // POST — create the mockup task, return task_key immediately
 export async function POST(req: NextRequest) {
   const { productType, variantId, imageUrl } = await req.json();
@@ -43,10 +61,16 @@ export async function POST(req: NextRequest) {
     fileEntry.position = product.printPosition;
   }
 
+  const storeId = await getStoreId();
+  if (!storeId) {
+    return NextResponse.json({ error: 'Could not determine Printful store_id' }, { status: 503 });
+  }
+
   const res = await fetch(`${PRINTFUL_API}/mockup-generator/create-task/${product.printfulProductId}`, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
+      store_id: storeId,
       variant_ids: [variantId],
       files: [fileEntry],
     }),
