@@ -12,6 +12,21 @@ export async function GET(req: NextRequest) {
 
   const hdrs = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
 
+  // Fetch store_id — required by /mockup-generator/printfiles for store-level API keys
+  let storeId: number | null = process.env.PRINTFUL_STORE_ID ? parseInt(process.env.PRINTFUL_STORE_ID) : null;
+  if (!storeId) {
+    for (const path of ['/store', '/stores']) {
+      try {
+        const r = await fetch(`https://api.printful.com${path}`, { headers: hdrs });
+        const d = await r.json();
+        const result = d?.result;
+        const id = Array.isArray(result) ? result?.[0]?.id : result?.id;
+        if (typeof id === 'number') { storeId = id; break; }
+      } catch {}
+    }
+  }
+  const storeQuery = storeId ? `?store_id=${storeId}` : '';
+
   // Accept ?ids=74,380,447 to probe arbitrary product IDs
   // Default: current config + common jogger/cap alternatives to find valid IDs
   const idsParam = req.nextUrl?.searchParams?.get('ids');
@@ -26,7 +41,7 @@ export async function GET(req: NextRequest) {
   for (const pid of productIds) {
     const [variantRes, printfileRes] = await Promise.all([
       fetch(`https://api.printful.com/products/${pid}`, { headers: hdrs }),
-      fetch(`https://api.printful.com/mockup-generator/printfiles/${pid}`, { headers: hdrs }),
+      fetch(`https://api.printful.com/mockup-generator/printfiles/${pid}${storeQuery}`, { headers: hdrs }),
     ]);
 
     const variantData = await variantRes.json() as {
