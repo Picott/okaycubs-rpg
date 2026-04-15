@@ -73,8 +73,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
     // leg_front_right, leg_back_left, leg_back_right. We use front-left leg
     // so the Cub shows when facing forward/walking.
     printPlacement: 'leg_front_left',
-    // Printfile: 525w × 2175h @ 150 DPI. Cub ~500×500, centered horizontally, upper thigh.
-    printPosition: { area_width: 525, area_height: 2175, width: 500, height: 500, top: 450, left: 12 },
+    // Let Printful center the Cub automatically — printfile is narrow (525×2175 @150dpi)
     variants: [
       { size: 'S',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11266 },
       { size: 'M',  color: 'Black',            colorHex: '#1a1a1a', printfulVariantId: 11267 },
