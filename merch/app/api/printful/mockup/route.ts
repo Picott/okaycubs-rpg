@@ -16,17 +16,27 @@ let cachedStoreId: number | null = null;
 async function getStoreId(): Promise<number | null> {
   if (process.env.PRINTFUL_STORE_ID) return parseInt(process.env.PRINTFUL_STORE_ID);
   if (cachedStoreId) return cachedStoreId;
-  try {
-    // Store-level API keys use GET /store (singular), not /stores
-    const res = await fetch(`${PRINTFUL_API}/store`, { headers: headers() });
-    const data = await res.json() as { result?: { id?: number } };
-    cachedStoreId = data?.result?.id ?? null;
-    console.log('[Printful] auto-fetched store_id:', cachedStoreId);
-    return cachedStoreId;
-  } catch {
-    console.error('[Printful] failed to fetch store_id');
-    return null;
+
+  // Try /store (store-level key) then /stores (OAuth / team key)
+  for (const path of ['/store', '/stores']) {
+    try {
+      const res = await fetch(`${PRINTFUL_API}${path}`, { headers: headers() });
+      const data = await res.json();
+      console.log(`[Printful] ${path} status=${res.status} body=${JSON.stringify(data).slice(0, 300)}`);
+      const result = data?.result;
+      // /store returns { id }, /stores returns [{ id }, ...]
+      const id = Array.isArray(result) ? result?.[0]?.id : result?.id;
+      if (typeof id === 'number') {
+        cachedStoreId = id;
+        console.log(`[Printful] using store_id=${id} (from ${path})`);
+        return id;
+      }
+    } catch (e) {
+      console.error(`[Printful] ${path} fetch failed:`, e);
+    }
   }
+  console.error('[Printful] could not determine store_id from either endpoint — set PRINTFUL_STORE_ID env var');
+  return null;
 }
 
 // POST — create the mockup task, return task_key immediately
