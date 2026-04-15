@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
   const results: Record<number, unknown> = {};
 
   for (const pid of productIds) {
+    try {
     const [variantRes, printfileRes] = await Promise.all([
       fetch(`https://api.printful.com/products/${pid}`, { headers: hdrs }),
       fetch(`https://api.printful.com/mockup-generator/printfiles/${pid}${storeQuery}`, { headers: hdrs }),
@@ -50,7 +51,8 @@ export async function GET(req: NextRequest) {
         variants?: Array<{ id: number; size?: string; color?: string; color_code?: string; availability_status?: string; price?: string }>;
       };
     };
-    const printfileData = await printfileRes.json() as {
+    const printfileRaw = await printfileRes.text();
+    let printfileData: {
       result?: {
         variant_printfiles?: Array<{
           variant_id: number;
@@ -58,7 +60,8 @@ export async function GET(req: NextRequest) {
         }>;
         available_placements?: Record<string, string>;
       };
-    };
+    } = {};
+    try { printfileData = JSON.parse(printfileRaw); } catch {}
 
     const product  = variantData?.result?.product;
     const variants = variantData?.result?.variants ?? [];
@@ -81,14 +84,19 @@ export async function GET(req: NextRequest) {
     results[pid] = {
       name: product?.title ?? `Product ${pid}`,
       httpStatus: variantRes.status,
+      printfileHttpStatus: printfileRes.status,
+      printfileRawHead: printfileRaw.slice(0, 400),
       totalVariants: variants.length,
       availablePlacements,
       uniquePlacementsFromVariants: Array.from(placementsFromVariants),
       byColor,
     };
+    } catch (e) {
+      results[pid] = { error: String(e) };
+    }
   }
 
-  return NextResponse.json(results, {
+  return NextResponse.json({ storeIdUsed: storeId, ...results }, {
     headers: { 'Cache-Control': 'no-store' },
   });
 }
