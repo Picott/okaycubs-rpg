@@ -40,7 +40,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
     type: 'hoodie',
     name: 'OkayCubs Hoodie',
     description: 'Unisex pullover fleece hoodie with your Cub printed on the front.',
-    basePrice: 5400, // $54.00 — Printful cost ~$32, target $20 net profit
+    basePrice: 4800, // $48.00 — Printful cost $27.29 (S-XL), $20 net profit
     printfulProductId: 380,
     printPlacement: 'front',
     // Dimensions from GET /mockup-generator/printfiles/380 — front template is 1800×2400 px
@@ -65,7 +65,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
     type: 'joggers',
     name: 'OkayCubs Joggers',
     description: 'Unisex fleece sweatpants with your Cub printed on the front.',
-    basePrice: 4900, // $49.00 — Printful cost ~$27, target $20 net profit
+    basePrice: 5000, // $50.00 — Printful cost $29.39 (S-XL), $20 net profit
     // Cotton Heritage M7580 Unisex Fleece Sweatpants — catalog product 412
     // Variant IDs verified via /api/printful/catalog
     printfulProductId: 412,
@@ -92,7 +92,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
     type: 'cap',
     name: 'OkayCubs Cap',
     description: 'Classic 5-panel cap with your Cub printed on the front.',
-    basePrice: 3400, // $34.00 — Printful cost ~$14, target $20 net profit
+    basePrice: 3800, // $38.00 — Printful cost $17.58, $20 net profit
     // Yupoong 7005 5 Panel Cap — catalog product 92
     // Variant IDs verified via /api/printful/catalog
     printfulProductId: 92,
