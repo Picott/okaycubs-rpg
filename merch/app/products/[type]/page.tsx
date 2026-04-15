@@ -157,8 +157,8 @@ function ProductPageInner() {
           return;
         }
 
-        // Step 2: poll every 2s until done (max 60s)
-        for (let i = 0; i < 30; i++) {
+        // Step 2: poll every 2s until done (max 120s — Printful sometimes slow on joggers)
+        for (let i = 0; i < 60; i++) {
           await new Promise(r => setTimeout(r, 2000));
           if (mockupReqId.current !== reqId) return;
 
