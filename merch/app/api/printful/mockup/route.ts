@@ -17,9 +17,10 @@ async function getStoreId(): Promise<number | null> {
   if (process.env.PRINTFUL_STORE_ID) return parseInt(process.env.PRINTFUL_STORE_ID);
   if (cachedStoreId) return cachedStoreId;
   try {
-    const res = await fetch(`${PRINTFUL_API}/stores`, { headers: headers() });
-    const data = await res.json() as { result?: Array<{ id: number }> };
-    cachedStoreId = data?.result?.[0]?.id ?? null;
+    // Store-level API keys use GET /store (singular), not /stores
+    const res = await fetch(`${PRINTFUL_API}/store`, { headers: headers() });
+    const data = await res.json() as { result?: { id?: number } };
+    cachedStoreId = data?.result?.id ?? null;
     console.log('[Printful] auto-fetched store_id:', cachedStoreId);
     return cachedStoreId;
   } catch {
