@@ -100,7 +100,9 @@ export const PRODUCTS: Record<ProductType, Product> = {
     // Yupoong 7005 caps use embroidery — placement is 'embroidery_front', not 'front'.
     // Valid placements can be verified via /api/printful/catalog?ids=92
     printPlacement: 'embroidery_front',
-    // Let Printful use default centered placement — embroidery has its own printfile dimensions
+    // Embroidery front printfile for Yupoong 7005 is ~1800×450 px at template resolution.
+    // Center the Cub design within the front panel.
+    printPosition: { area_width: 1800, area_height: 450, width: 700, height: 400, top: 25, left: 550 },
     variants: [
       { color: 'Black',  colorHex: '#1a1a1a', printfulVariantId: 4622 },
       { color: 'Grey',   colorHex: '#888888', printfulVariantId: 4624 },
