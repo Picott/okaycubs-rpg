@@ -333,7 +333,7 @@ function ProductPageInner() {
                     className="relative flex items-center justify-center rounded-2xl overflow-hidden"
                     style={{ width: 230, height: 230, background: colorHex, boxShadow: `0 8px 40px ${colorHex}88, 0 0 0 1px ${colorHex}33` }}
                   >
-                    <Image src={selectedCub.image} alt={selectedCub.name} width={190} height={190} className="object-contain rounded-full" />
+                    <Image src={selectedCub.image} alt={selectedCub.name} width={190} height={190} className="object-contain rounded-full" unoptimized />
                     {loadingMockup && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
                         <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
