@@ -70,13 +70,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
   }
 
-  // Rewrite the IPFS gateway to Pinata (most reliable for Printful to download from).
-  // nftstorage.link and ipfs.io can be slow/flaky from Printful's data centers.
-  const IPFS_GATEWAY_RE = /^https?:\/\/(?:nftstorage\.link|ipfs\.io|w3s\.link|gateway\.ipfs\.io|dweb\.link)\/ipfs\/(.+)/;
-  const ipfsMatch = imageUrl.match(IPFS_GATEWAY_RE);
-  const printfulImageUrl = ipfsMatch
-    ? `https://gateway.pinata.cloud/ipfs/${ipfsMatch[1]}`
-    : imageUrl;
+  // Proxy external images through our own domain so Printful can reliably download them.
+  // This approach worked when hoodies were loading successfully.
+  const baseUrl = `https://${req.nextUrl.host}`;
+  const printfulImageUrl = imageUrl.startsWith(baseUrl)
+    ? imageUrl
+    : `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(imageUrl)}`;
 
   // Build file entry — only include position when explicitly configured
   // (omitting it lets Printful use the default center placement, which works for caps/joggers)

@@ -32,6 +32,7 @@ function ProductPageInner() {
   const [mockupUrl, setMockupUrl]   = useState<string>('');
   const [loadingMockup, setLoadingMockup] = useState(false);
   const [mockupFailed, setMockupFailed] = useState(false);
+  const [retryCount, setRetryCount] = useState(0); // bump to force re-trigger mockup generation
   const mockupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mockupReqId   = useRef(0);
   const [paying, setPaying]         = useState(false);
@@ -196,7 +197,8 @@ function ProductPageInner() {
     };
     // Re-generate mockup ONLY when product/color/cub change — not size.
     // The mockup looks identical across sizes of the same color.
-  }, [selectedCub, selectedColor, type]);
+    // retryCount allows manual retry via the "Retry Mockup" button.
+  }, [selectedCub, selectedColor, type, retryCount]);
 
   if (!product) {
     return (
@@ -351,6 +353,14 @@ function ProductPageInner() {
                   <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 uppercase text-center">
                     {loadingMockup ? 'Generating mockup…' : mockupFailed ? `${selectedCub.name} — Color Preview` : selectedCub.name}
                   </div>
+                  {mockupFailed && !loadingMockup && (
+                    <button
+                      onClick={() => setRetryCount(c => c + 1)}
+                      className="mt-2 font-cinzel text-[9px] tracking-[2px] px-4 py-1.5 border border-gold/40 text-gold/70 hover:text-gold hover:border-gold transition-all uppercase"
+                    >
+                      Retry Mockup
+                    </button>
+                  )}
                 </div>
               );
             })() : selectedCub?.image ? (
