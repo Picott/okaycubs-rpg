@@ -19,12 +19,18 @@ export async function GET() {
   // Use a well-known public PNG (Printful sample — 1000×1000 placeholder)
   const testImageUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg/800px-Good_Food_Display_-_NCI_Visuals_Online.jpg';
 
-  // Determine store_id
+  // Determine store_id — try env, then /store, then /stores
   let storeId: number | null = process.env.PRINTFUL_STORE_ID ? parseInt(process.env.PRINTFUL_STORE_ID) : null;
   if (!storeId) {
-    const r = await fetch(`${PRINTFUL_API}/store`, { headers: headers() });
-    const d = await r.json();
-    storeId = d?.result?.id ?? null;
+    for (const path of ['/store', '/stores']) {
+      try {
+        const r = await fetch(`${PRINTFUL_API}${path}`, { headers: headers() });
+        const d = await r.json();
+        const result = d?.result;
+        const id = Array.isArray(result) ? result?.[0]?.id : result?.id;
+        if (typeof id === 'number') { storeId = id; break; }
+      } catch {}
+    }
   }
 
   // Create task for hoodie product 380, variant 10779 (Black S)
