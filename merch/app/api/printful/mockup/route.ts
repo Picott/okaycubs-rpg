@@ -68,8 +68,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
   }
 
-  // Proxy IPFS / external images through our own domain so Printful can reliably download them
-  const baseUrl = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  // Proxy IPFS / external images through our own domain so Printful can reliably download them.
+  // IMPORTANT: force https — on Vercel, req.nextUrl.protocol returns 'http:' behind the
+  // load balancer, but the public URL is always HTTPS. If we send http:// to Printful,
+  // Vercel 301-redirects to https:// and Printful doesn't follow redirects → task stuck pending.
+  const baseUrl = `https://${req.nextUrl.host}`;
   const printfulImageUrl = imageUrl.startsWith(baseUrl)
     ? imageUrl
     : `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(imageUrl)}`;
@@ -103,14 +106,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Could not determine Printful store_id' }, { status: 503 });
   }
 
+  const reqBody = {
+    store_id: storeId,
+    variant_ids: [variantId],
+    files: [fileEntry],
+  };
+  console.log('[Printful POST] image_url sent to Printful:', printfulImageUrl);
+  console.log('[Printful POST] full body:', JSON.stringify(reqBody));
+
   const res = await fetch(`${PRINTFUL_API}/mockup-generator/create-task/${product.printfulProductId}`, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({
-      store_id: storeId,
-      variant_ids: [variantId],
-      files: [fileEntry],
-    }),
+    body: JSON.stringify(reqBody),
   });
 
   const data = await res.json();
