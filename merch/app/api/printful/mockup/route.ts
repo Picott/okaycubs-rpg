@@ -16,8 +16,10 @@ let cachedStoreId: number | null = null;
 // Mockup URL cache (key → mockupUrl). Module-level, persists across requests
 // within the same warm serverless instance. Dramatically reduces Printful rate-limit hits.
 const mockupCache = new Map<string, string>();
-// In-flight task cache (key → taskKey) so duplicate requests reuse the same task.
-const pendingTasks = new Map<string, string>();
+// In-flight task cache (key → {taskKey, createdAt}) so duplicate requests reuse the same task.
+// Entries older than PENDING_TTL_MS are evicted to avoid stuck tasks blocking forever.
+const PENDING_TTL_MS = 120_000; // 2 minutes
+const pendingTasks = new Map<string, { taskKey: string; createdAt: number }>();
 // Reverse lookup: taskKey → cache key, so GET handler can populate mockupCache on completion.
 const taskKeyToCacheKey = new Map<string, string>();
 
@@ -68,14 +70,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
   }
 
-  // Proxy IPFS / external images through our own domain so Printful can reliably download them.
-  // IMPORTANT: force https — on Vercel, req.nextUrl.protocol returns 'http:' behind the
-  // load balancer, but the public URL is always HTTPS. If we send http:// to Printful,
-  // Vercel 301-redirects to https:// and Printful doesn't follow redirects → task stuck pending.
-  const baseUrl = `https://${req.nextUrl.host}`;
-  const printfulImageUrl = imageUrl.startsWith(baseUrl)
-    ? imageUrl
-    : `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+  // Send the image URL directly to Printful. Previously we proxied through our domain,
+  // but Printful couldn't download from our Vercel proxy (tasks stuck pending forever).
+  // IPFS gateways like nftstorage.link / pinata are publicly accessible and Printful
+  // can fetch from them directly. If a specific gateway is down, Printful retries.
+  const printfulImageUrl = imageUrl;
 
   // Build file entry — only include position when explicitly configured
   // (omitting it lets Printful use the default center placement, which works for caps/joggers)
@@ -94,11 +93,18 @@ export async function POST(req: NextRequest) {
     console.log('[Printful] mockup cache hit for', cacheKey);
     return NextResponse.json({ mockupUrl: cachedUrl, cached: true });
   }
-  // In-flight dedup: if an identical request is already pending, reuse its taskKey
-  const pendingTaskKey = pendingTasks.get(cacheKey);
-  if (pendingTaskKey) {
-    console.log('[Printful] reusing in-flight taskKey for', cacheKey);
-    return NextResponse.json({ taskKey: pendingTaskKey });
+  // In-flight dedup: if an identical request is already pending AND fresh, reuse its taskKey.
+  // Evict entries older than PENDING_TTL_MS to avoid stuck tasks blocking forever.
+  const pending = pendingTasks.get(cacheKey);
+  if (pending) {
+    if (Date.now() - pending.createdAt < PENDING_TTL_MS) {
+      console.log('[Printful] reusing in-flight taskKey for', cacheKey);
+      return NextResponse.json({ taskKey: pending.taskKey });
+    }
+    // Stale — evict and create a fresh task
+    console.log('[Printful] evicting stale pending task for', cacheKey);
+    pendingTasks.delete(cacheKey);
+    taskKeyToCacheKey.delete(pending.taskKey);
   }
 
   const storeId = await getStoreId();
@@ -144,7 +150,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Track this task for dedup + later cache population
-  pendingTasks.set(cacheKey, taskKey);
+  pendingTasks.set(cacheKey, { taskKey, createdAt: Date.now() });
   taskKeyToCacheKey.set(taskKey, cacheKey);
 
   return NextResponse.json({ taskKey });
