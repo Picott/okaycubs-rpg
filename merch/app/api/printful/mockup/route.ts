@@ -70,11 +70,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
   }
 
-  // Send the image URL directly to Printful. Previously we proxied through our domain,
-  // but Printful couldn't download from our Vercel proxy (tasks stuck pending forever).
-  // IPFS gateways like nftstorage.link / pinata are publicly accessible and Printful
-  // can fetch from them directly. If a specific gateway is down, Printful retries.
-  const printfulImageUrl = imageUrl;
+  // Rewrite the IPFS gateway to Pinata (most reliable for Printful to download from).
+  // nftstorage.link and ipfs.io can be slow/flaky from Printful's data centers.
+  const IPFS_GATEWAY_RE = /^https?:\/\/(?:nftstorage\.link|ipfs\.io|w3s\.link|gateway\.ipfs\.io|dweb\.link)\/ipfs\/(.+)/;
+  const ipfsMatch = imageUrl.match(IPFS_GATEWAY_RE);
+  const printfulImageUrl = ipfsMatch
+    ? `https://gateway.pinata.cloud/ipfs/${ipfsMatch[1]}`
+    : imageUrl;
 
   // Build file entry — only include position when explicitly configured
   // (omitting it lets Printful use the default center placement, which works for caps/joggers)
@@ -153,7 +155,7 @@ export async function POST(req: NextRequest) {
   pendingTasks.set(cacheKey, { taskKey, createdAt: Date.now() });
   taskKeyToCacheKey.set(taskKey, cacheKey);
 
-  return NextResponse.json({ taskKey });
+  return NextResponse.json({ taskKey, _debug_image_url: printfulImageUrl });
 }
 
 // GET — poll task status, return mockupUrl when ready
