@@ -33,13 +33,34 @@ export async function GET() {
     }
   }
 
-  // Create task for hoodie product 380, variant 10779 (Black S)
+  // Step 1: Upload test image to Printful's own file hosting
+  let finalImageUrl = testImageUrl;
+  let uploadInfo: unknown = null;
+  try {
+    const imgRes = await fetch(testImageUrl, { signal: AbortSignal.timeout(10_000) });
+    const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+    const b64 = imgBuf.toString('base64');
+    const ct = imgRes.headers.get('content-type') || 'image/jpeg';
+    const upRes = await fetch(`${PRINTFUL_API}/files`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ url: `data:${ct};base64,${b64}` }),
+    });
+    const upData = await upRes.json();
+    uploadInfo = { status: upRes.status, data: upData };
+    const hostedUrl = upData?.result?.preview_url ?? upData?.result?.url;
+    if (hostedUrl) finalImageUrl = hostedUrl;
+  } catch (e) {
+    uploadInfo = { error: String(e) };
+  }
+
+  // Step 2: Create task using Printful-hosted URL
   const body = {
     store_id: storeId,
     variant_ids: [10779],
     files: [{
       placement: 'front',
-      image_url: testImageUrl,
+      image_url: finalImageUrl,
       position: { area_width: 1800, area_height: 2400, width: 1800, height: 1800, top: 300, left: 0 },
     }],
   };
@@ -54,9 +75,11 @@ export async function GET() {
 
   if (!taskKey) {
     return NextResponse.json({
-      step: 'create-task',
+      step: 'create-task-failed',
       httpStatus: createRes.status,
       response: createData,
+      uploadInfo,
+      finalImageUrl,
       bodySent: body,
     });
   }
@@ -77,7 +100,8 @@ export async function GET() {
         taskKey,
         mockupUrl: pollData?.result?.mockups?.[0]?.mockup_url,
         storeId,
-        imageUrlSent: testImageUrl,
+        uploadInfo,
+        finalImageUrl,
       });
     }
     if (status === 'failed') {
@@ -96,7 +120,8 @@ export async function GET() {
     step: 'timeout',
     taskKey,
     storeId,
-    imageUrlSent: testImageUrl,
+    uploadInfo,
+    finalImageUrl,
     message: 'Task still pending after 30s polling',
   });
 }

@@ -70,12 +70,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
   }
 
-  // Proxy external images through our own domain so Printful can reliably download them.
-  // This approach worked when hoodies were loading successfully.
-  const baseUrl = `https://${req.nextUrl.host}`;
-  const printfulImageUrl = imageUrl.startsWith(baseUrl)
-    ? imageUrl
-    : `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+  // Upload the image to Printful's own file hosting first, then use the Printful-hosted URL.
+  // This bypasses all external URL download issues (IPFS gateways, Vercel proxy, etc.).
+  // Printful's mockup generator was unable to download from ANY external URL (tasks stuck
+  // pending forever), so we fetch the image ourselves and push it to Printful's /files endpoint.
+  let printfulImageUrl = imageUrl;
+  try {
+    // Step 1: Download image from IPFS/external source (our server CAN reach these)
+    const imgRes = await fetch(imageUrl, {
+      headers: { 'User-Agent': 'OkayCubs-Store/1.0' },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!imgRes.ok) throw new Error(`Failed to fetch image: ${imgRes.status}`);
+    const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+    const imgBase64 = imgBuffer.toString('base64');
+    const contentType = imgRes.headers.get('content-type') || 'image/png';
+
+    // Step 2: Upload to Printful's file hosting
+    const uploadRes = await fetch(`${PRINTFUL_API}/files`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({
+        url: `data:${contentType};base64,${imgBase64}`,
+      }),
+    });
+    const uploadData = await uploadRes.json();
+    const printfulHostedUrl = uploadData?.result?.preview_url ?? uploadData?.result?.url;
+    if (printfulHostedUrl) {
+      printfulImageUrl = printfulHostedUrl;
+      console.log('[Printful] image uploaded to Printful CDN:', printfulHostedUrl);
+    } else {
+      console.warn('[Printful] /files upload did not return a URL, falling back to original:', JSON.stringify(uploadData).slice(0, 300));
+    }
+  } catch (e) {
+    console.warn('[Printful] image upload failed, using original URL:', e);
+  }
 
   // Build file entry — only include position when explicitly configured
   // (omitting it lets Printful use the default center placement, which works for caps/joggers)
