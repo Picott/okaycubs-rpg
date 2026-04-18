@@ -3,11 +3,13 @@ import { PRODUCTS, ProductType } from '@/lib/products';
 
 const PRINTFUL_API = 'https://api.printful.com';
 
-function headers() {
-  return {
+function headers(storeId?: number | null) {
+  const h: Record<string, string> = {
     Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
     'Content-Type': 'application/json',
   };
+  if (storeId) h['X-PF-Store-Id'] = String(storeId);
+  return h;
 }
 
 // Cache the store_id so we only fetch it once per cold start
@@ -70,13 +72,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
   }
 
+  // Resolve store_id early — needed for both /files upload and create-task
+  const storeId = await getStoreId();
+  if (!storeId) {
+    return NextResponse.json({ error: 'Could not determine Printful store_id' }, { status: 503 });
+  }
+
   // Upload the image to Printful's own file hosting first, then use the Printful-hosted URL.
-  // This bypasses all external URL download issues (IPFS gateways, Vercel proxy, etc.).
-  // Printful's mockup generator was unable to download from ANY external URL (tasks stuck
-  // pending forever), so we fetch the image ourselves and push it to Printful's /files endpoint.
+  // Printful's mockup generator can't download external URLs (tasks stuck pending forever),
+  // so we fetch the image ourselves and push it to Printful's /files endpoint.
   let printfulImageUrl = imageUrl;
   try {
-    // Step 1: Download image from IPFS/external source (our server CAN reach these)
     const imgRes = await fetch(imageUrl, {
       headers: { 'User-Agent': 'OkayCubs-Store/1.0' },
       signal: AbortSignal.timeout(15_000),
@@ -86,13 +92,10 @@ export async function POST(req: NextRequest) {
     const imgBase64 = imgBuffer.toString('base64');
     const contentType = imgRes.headers.get('content-type') || 'image/png';
 
-    // Step 2: Upload to Printful's file hosting
     const uploadRes = await fetch(`${PRINTFUL_API}/files`, {
       method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({
-        url: `data:${contentType};base64,${imgBase64}`,
-      }),
+      headers: headers(storeId),
+      body: JSON.stringify({ url: `data:${contentType};base64,${imgBase64}` }),
     });
     const uploadData = await uploadRes.json();
     const printfulHostedUrl = uploadData?.result?.preview_url ?? uploadData?.result?.url;
@@ -100,7 +103,7 @@ export async function POST(req: NextRequest) {
       printfulImageUrl = printfulHostedUrl;
       console.log('[Printful] image uploaded to Printful CDN:', printfulHostedUrl);
     } else {
-      console.warn('[Printful] /files upload did not return a URL, falling back to original:', JSON.stringify(uploadData).slice(0, 300));
+      console.warn('[Printful] /files upload failed:', JSON.stringify(uploadData).slice(0, 300));
     }
   } catch (e) {
     console.warn('[Printful] image upload failed, using original URL:', e);
@@ -135,11 +138,6 @@ export async function POST(req: NextRequest) {
     console.log('[Printful] evicting stale pending task for', cacheKey);
     pendingTasks.delete(cacheKey);
     taskKeyToCacheKey.delete(pending.taskKey);
-  }
-
-  const storeId = await getStoreId();
-  if (!storeId) {
-    return NextResponse.json({ error: 'Could not determine Printful store_id' }, { status: 503 });
   }
 
   const reqBody = {

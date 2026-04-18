@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 
 const PRINTFUL_API = 'https://api.printful.com';
 
-function headers() {
-  return {
+function headers(storeId?: number | null) {
+  const h: Record<string, string> = {
     Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
     'Content-Type': 'application/json',
   };
+  if (storeId) h['X-PF-Store-Id'] = String(storeId);
+  return h;
 }
 
 // GET /api/printful/test-mockup
@@ -43,7 +45,7 @@ export async function GET() {
     const ct = imgRes.headers.get('content-type') || 'image/jpeg';
     const upRes = await fetch(`${PRINTFUL_API}/files`, {
       method: 'POST',
-      headers: headers(),
+      headers: headers(storeId),
       body: JSON.stringify({ url: `data:${ct};base64,${b64}` }),
     });
     const upData = await upRes.json();
