@@ -12,16 +12,15 @@ function headers(storeId?: number | null) {
 }
 
 // GET /api/printful/test-mockup
-// Creates a mockup with a well-known public test image, then polls once.
-// Use this to test if Printful mockup generation works AT ALL.
+// Per OpenAPI spec: format is REQUIRED, store_id goes in X-PF-Store-Id header.
+// No /files upload — Printful only accepts URLs, not binary data.
 export async function GET() {
   const apiKey = process.env.PRINTFUL_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 503 });
 
-  // Use a well-known public PNG (Printful sample — 1000×1000 placeholder)
   const testImageUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg/800px-Good_Food_Display_-_NCI_Visuals_Online.jpg';
 
-  // Determine store_id — try env, then /store, then /stores
+  // Determine store_id
   let storeId: number | null = process.env.PRINTFUL_STORE_ID ? parseInt(process.env.PRINTFUL_STORE_ID) : null;
   if (!storeId) {
     for (const path of ['/store', '/stores']) {
@@ -35,45 +34,20 @@ export async function GET() {
     }
   }
 
-  // Step 1: Upload test image to Printful's own file hosting
-  let finalImageUrl = testImageUrl;
-  let uploadInfo: unknown = null;
-  try {
-    const imgRes = await fetch(testImageUrl, { signal: AbortSignal.timeout(10_000) });
-    const imgBuf = Buffer.from(await imgRes.arrayBuffer());
-    const blob = new Blob([imgBuf], { type: imgRes.headers.get('content-type') || 'image/png' });
-    const form = new FormData();
-    form.append('file', blob, 'cub.png');
-    const upRes = await fetch(`${PRINTFUL_API}/files`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
-        'X-PF-Store-Id': String(storeId),
-      },
-      body: form,
-    });
-    const upData = await upRes.json();
-    uploadInfo = { status: upRes.status, data: upData };
-    const hostedUrl = upData?.result?.preview_url ?? upData?.result?.url;
-    if (hostedUrl) finalImageUrl = hostedUrl;
-  } catch (e) {
-    uploadInfo = { error: String(e) };
-  }
-
-  // Step 2: Create task using Printful-hosted URL
+  // Create task — per OpenAPI spec: format is required, store_id in header
   const body = {
-    store_id: storeId,
     variant_ids: [10779],
+    format: 'jpg',
     files: [{
       placement: 'front',
-      image_url: finalImageUrl,
+      image_url: testImageUrl,
       position: { area_width: 1800, area_height: 2400, width: 1800, height: 1800, top: 300, left: 0 },
     }],
   };
 
   const createRes = await fetch(`${PRINTFUL_API}/mockup-generator/create-task/380`, {
     method: 'POST',
-    headers: headers(),
+    headers: headers(storeId),
     body: JSON.stringify(body),
   });
   const createData = await createRes.json();
@@ -84,17 +58,16 @@ export async function GET() {
       step: 'create-task-failed',
       httpStatus: createRes.status,
       response: createData,
-      uploadInfo,
-      finalImageUrl,
       bodySent: body,
+      storeId,
     });
   }
 
-  // Poll 10 times, 3s apart (30s total)
-  for (let i = 0; i < 10; i++) {
+  // Poll 15 times, 3s apart (45s total)
+  for (let i = 0; i < 15; i++) {
     await new Promise(r => setTimeout(r, 3000));
     const pollRes = await fetch(`${PRINTFUL_API}/mockup-generator/task?task_key=${taskKey}`, {
-      headers: headers(),
+      headers: headers(storeId),
     });
     const pollData = await pollRes.json();
     const status = pollData?.result?.status;
@@ -106,8 +79,7 @@ export async function GET() {
         taskKey,
         mockupUrl: pollData?.result?.mockups?.[0]?.mockup_url,
         storeId,
-        uploadInfo,
-        finalImageUrl,
+        imageUrlSent: testImageUrl,
       });
     }
     if (status === 'failed') {
@@ -126,8 +98,7 @@ export async function GET() {
     step: 'timeout',
     taskKey,
     storeId,
-    uploadInfo,
-    finalImageUrl,
-    message: 'Task still pending after 30s polling',
+    imageUrlSent: testImageUrl,
+    message: 'Task still pending after 45s polling',
   });
 }

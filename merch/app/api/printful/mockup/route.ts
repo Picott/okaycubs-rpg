@@ -72,49 +72,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
   }
 
-  // Resolve store_id early — needed for both /files upload and create-task
   const storeId = await getStoreId();
   if (!storeId) {
     return NextResponse.json({ error: 'Could not determine Printful store_id' }, { status: 503 });
   }
 
-  // Upload the image to Printful's own file hosting first, then use the Printful-hosted URL.
-  // Printful's mockup generator can't download external URLs (tasks stuck pending forever),
-  // so we fetch the image ourselves and push it to Printful's /files endpoint.
-  let printfulImageUrl = imageUrl;
-  try {
-    const imgRes = await fetch(imageUrl, {
-      headers: { 'User-Agent': 'OkayCubs-Store/1.0' },
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!imgRes.ok) throw new Error(`Failed to fetch image: ${imgRes.status}`);
-    const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
-    const blob = new Blob([imgBuffer], { type: imgRes.headers.get('content-type') || 'image/png' });
-    const form = new FormData();
-    form.append('file', blob, 'cub.png');
+  // Proxy IPFS images through our domain so Printful gets a stable HTTPS URL
+  const baseUrl = `https://${req.nextUrl.host}`;
+  const printfulImageUrl = imageUrl.startsWith('https://')
+    ? imageUrl  // already HTTPS, send as-is
+    : `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(imageUrl)}`;
 
-    const uploadRes = await fetch(`${PRINTFUL_API}/files`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
-        'X-PF-Store-Id': String(storeId),
-      },
-      body: form,
-    });
-    const uploadData = await uploadRes.json();
-    const printfulHostedUrl = uploadData?.result?.preview_url ?? uploadData?.result?.url;
-    if (printfulHostedUrl) {
-      printfulImageUrl = printfulHostedUrl;
-      console.log('[Printful] image uploaded to Printful CDN:', printfulHostedUrl);
-    } else {
-      console.warn('[Printful] /files upload failed:', JSON.stringify(uploadData).slice(0, 300));
-    }
-  } catch (e) {
-    console.warn('[Printful] image upload failed, using original URL:', e);
-  }
-
-  // Build file entry — only include position when explicitly configured
-  // (omitting it lets Printful use the default center placement, which works for caps/joggers)
+  // Build file entry
   const fileEntry: Record<string, unknown> = {
     placement: product.printPlacement,
     image_url: printfulImageUrl,
@@ -123,38 +92,32 @@ export async function POST(req: NextRequest) {
     fileEntry.position = product.printPosition;
   }
 
-  // Cache check: if we already generated this mockup, return URL immediately
+  // Cache check
   const cacheKey = mockupCacheKey(product.printfulProductId, variantId, printfulImageUrl);
   const cachedUrl = mockupCache.get(cacheKey);
   if (cachedUrl) {
-    console.log('[Printful] mockup cache hit for', cacheKey);
     return NextResponse.json({ mockupUrl: cachedUrl, cached: true });
   }
-  // In-flight dedup: if an identical request is already pending AND fresh, reuse its taskKey.
-  // Evict entries older than PENDING_TTL_MS to avoid stuck tasks blocking forever.
+  // In-flight dedup with TTL
   const pending = pendingTasks.get(cacheKey);
   if (pending) {
     if (Date.now() - pending.createdAt < PENDING_TTL_MS) {
-      console.log('[Printful] reusing in-flight taskKey for', cacheKey);
       return NextResponse.json({ taskKey: pending.taskKey });
     }
-    // Stale — evict and create a fresh task
-    console.log('[Printful] evicting stale pending task for', cacheKey);
     pendingTasks.delete(cacheKey);
     taskKeyToCacheKey.delete(pending.taskKey);
   }
 
+  // Per OpenAPI spec: format is REQUIRED, store_id goes in X-PF-Store-Id header
   const reqBody = {
-    store_id: storeId,
     variant_ids: [variantId],
+    format: 'jpg',
     files: [fileEntry],
   };
-  console.log('[Printful POST] image_url sent to Printful:', printfulImageUrl);
-  console.log('[Printful POST] full body:', JSON.stringify(reqBody));
 
   const res = await fetch(`${PRINTFUL_API}/mockup-generator/create-task/${product.printfulProductId}`, {
     method: 'POST',
-    headers: headers(),
+    headers: headers(storeId),
     body: JSON.stringify(reqBody),
   });
 
