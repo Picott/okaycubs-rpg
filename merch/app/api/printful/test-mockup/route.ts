@@ -14,11 +14,13 @@ function headers(storeId?: number | null) {
 // GET /api/printful/test-mockup
 // Per OpenAPI spec: format is REQUIRED, store_id goes in X-PF-Store-Id header.
 // No /files upload — Printful only accepts URLs, not binary data.
-export async function GET() {
+export async function GET(req: Request) {
   const apiKey = process.env.PRINTFUL_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 503 });
 
-  const testImageUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg/800px-Good_Food_Display_-_NCI_Visuals_Online.jpg';
+  // Use our own Vercel-hosted test image — no redirects, no bot-blocking
+  const reqUrl = new URL(req.url);
+  const testImageUrl = `${reqUrl.origin}/api/printful/test-image`;
 
   // Determine store_id
   let storeId: number | null = process.env.PRINTFUL_STORE_ID ? parseInt(process.env.PRINTFUL_STORE_ID) : null;
