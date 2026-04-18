@@ -41,12 +41,16 @@ export async function GET() {
   try {
     const imgRes = await fetch(testImageUrl, { signal: AbortSignal.timeout(10_000) });
     const imgBuf = Buffer.from(await imgRes.arrayBuffer());
-    const b64 = imgBuf.toString('base64');
-    const ct = imgRes.headers.get('content-type') || 'image/jpeg';
+    const blob = new Blob([imgBuf], { type: imgRes.headers.get('content-type') || 'image/png' });
+    const form = new FormData();
+    form.append('file', blob, 'cub.png');
     const upRes = await fetch(`${PRINTFUL_API}/files`, {
       method: 'POST',
-      headers: headers(storeId),
-      body: JSON.stringify({ url: `data:${ct};base64,${b64}` }),
+      headers: {
+        Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
+        'X-PF-Store-Id': String(storeId),
+      },
+      body: form,
     });
     const upData = await upRes.json();
     uploadInfo = { status: upRes.status, data: upData };

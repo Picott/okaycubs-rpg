@@ -89,13 +89,17 @@ export async function POST(req: NextRequest) {
     });
     if (!imgRes.ok) throw new Error(`Failed to fetch image: ${imgRes.status}`);
     const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
-    const imgBase64 = imgBuffer.toString('base64');
-    const contentType = imgRes.headers.get('content-type') || 'image/png';
+    const blob = new Blob([imgBuffer], { type: imgRes.headers.get('content-type') || 'image/png' });
+    const form = new FormData();
+    form.append('file', blob, 'cub.png');
 
     const uploadRes = await fetch(`${PRINTFUL_API}/files`, {
       method: 'POST',
-      headers: headers(storeId),
-      body: JSON.stringify({ url: `data:${contentType};base64,${imgBase64}` }),
+      headers: {
+        Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
+        'X-PF-Store-Id': String(storeId),
+      },
+      body: form,
     });
     const uploadData = await uploadRes.json();
     const printfulHostedUrl = uploadData?.result?.preview_url ?? uploadData?.result?.url;
