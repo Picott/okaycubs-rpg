@@ -19,16 +19,27 @@ const IPFS_GATEWAYS = [
 const IPFS_GATEWAY_PATTERN =
   /^https?:\/\/(?:nftstorage\.link|ipfs\.io|cloudflare-ipfs\.com|gateway\.pinata\.cloud|w3s\.link|dweb\.link|gateway\.ipfs\.io)\/ipfs\/(.+)/;
 
+interface ReHostResult {
+  url: string | null;
+  failedStep?: 'download' | 'upload' | 'no_blob_token';
+  detail?: string;
+}
+
 /**
  * Download an image from IPFS (trying multiple gateways) or any HTTPS URL,
  * then upload it to Vercel Blob so Printful gets a fast, reliable URL.
  */
-async function reHostImage(imageUrl: string): Promise<string | null> {
+async function reHostImage(imageUrl: string): Promise<ReHostResult> {
+  // Check Blob token first
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return { url: null, failedStep: 'no_blob_token', detail: 'BLOB_READ_WRITE_TOKEN env var not set. Create a Blob store in Vercel Dashboard → Storage.' };
+  }
+
   // Already cached?
   const cached = blobUrlCache.get(imageUrl);
   if (cached) {
     console.log('[Blob] cache hit:', cached);
-    return cached;
+    return { url: cached };
   }
 
   // Build candidate URLs (multiple gateways for IPFS)
@@ -44,6 +55,7 @@ async function reHostImage(imageUrl: string): Promise<string | null> {
   // Try each candidate until one succeeds
   let imageBuffer: Buffer | null = null;
   let contentType = 'image/png';
+  const errors: string[] = [];
   for (const url of candidates) {
     try {
       console.log('[Blob] trying to download from:', url);
@@ -51,36 +63,39 @@ async function reHostImage(imageUrl: string): Promise<string | null> {
         headers: { 'User-Agent': 'OkayCubs-Store/1.0' },
         signal: AbortSignal.timeout(15_000),
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        errors.push(`${url} → ${res.status}`);
+        continue;
+      }
       imageBuffer = Buffer.from(await res.arrayBuffer());
       contentType = res.headers.get('content-type') || 'image/png';
       console.log('[Blob] downloaded', imageBuffer.length, 'bytes from', url);
       break;
     } catch (e) {
+      errors.push(`${url} → ${String(e)}`);
       console.warn('[Blob] failed to download from', url, e);
     }
   }
 
   if (!imageBuffer) {
     console.error('[Blob] all download attempts failed for', imageUrl);
-    return null;
+    return { url: null, failedStep: 'download', detail: errors.join(' | ') };
   }
 
   // Upload to Vercel Blob
   try {
-    // Use the IPFS CID or a hash as the filename for dedup
     const filename = m ? `cubs/${m[1].replace(/\//g, '-')}` : `cubs/${Date.now()}.png`;
     const blob = await put(filename, imageBuffer, {
       access: 'public',
       contentType,
-      addRandomSuffix: false, // deterministic path for same CID
+      addRandomSuffix: false,
     });
     console.log('[Blob] uploaded to Vercel Blob:', blob.url);
     blobUrlCache.set(imageUrl, blob.url);
-    return blob.url;
+    return { url: blob.url };
   } catch (e) {
     console.error('[Blob] upload failed:', e);
-    return null;
+    return { url: null, failedStep: 'upload', detail: String(e) };
   }
 }
 
@@ -170,10 +185,16 @@ export async function POST(req: NextRequest) {
 
   // Download the image and re-host on Vercel Blob so Printful gets a fast, stable URL.
   // Printful cannot download from IPFS gateways (tasks stuck pending forever).
-  const printfulImageUrl = await reHostImage(originalImageUrl);
-  if (!printfulImageUrl) {
-    return NextResponse.json({ error: 'Failed to download and re-host image' }, { status: 502 });
+  const reHostResult = await reHostImage(originalImageUrl);
+  if (!reHostResult.url) {
+    return NextResponse.json({
+      error: 'Failed to download and re-host image',
+      step: reHostResult.failedStep,
+      detail: reHostResult.detail,
+      originalUrl: originalImageUrl,
+    }, { status: 502 });
   }
+  const printfulImageUrl = reHostResult.url;
   console.log('[Printful] image re-hosted for Printful:', printfulImageUrl);
 
   // Build file entry
