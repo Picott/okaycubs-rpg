@@ -1,7 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import { PRODUCTS, ProductType } from '@/lib/products';
 
 const PRINTFUL_API = 'https://api.printful.com';
+
+// Blob URL cache: original image URL → Vercel Blob URL.
+// Persists across requests within the same warm instance so we don't re-upload the same image.
+const blobUrlCache = new Map<string, string>();
+
+// IPFS gateway list for fetching images server-side
+const IPFS_GATEWAYS = [
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://w3s.link/ipfs/',
+  'https://ipfs.io/ipfs/',
+  'https://nftstorage.link/ipfs/',
+];
+
+const IPFS_GATEWAY_PATTERN =
+  /^https?:\/\/(?:nftstorage\.link|ipfs\.io|cloudflare-ipfs\.com|gateway\.pinata\.cloud|w3s\.link|dweb\.link|gateway\.ipfs\.io)\/ipfs\/(.+)/;
+
+/**
+ * Download an image from IPFS (trying multiple gateways) or any HTTPS URL,
+ * then upload it to Vercel Blob so Printful gets a fast, reliable URL.
+ */
+async function reHostImage(imageUrl: string): Promise<string | null> {
+  // Already cached?
+  const cached = blobUrlCache.get(imageUrl);
+  if (cached) {
+    console.log('[Blob] cache hit:', cached);
+    return cached;
+  }
+
+  // Build candidate URLs (multiple gateways for IPFS)
+  let candidates: string[];
+  const m = imageUrl.match(IPFS_GATEWAY_PATTERN);
+  if (m) {
+    const cidPath = m[1];
+    candidates = IPFS_GATEWAYS.map(gw => `${gw}${cidPath}`);
+  } else {
+    candidates = [imageUrl];
+  }
+
+  // Try each candidate until one succeeds
+  let imageBuffer: Buffer | null = null;
+  let contentType = 'image/png';
+  for (const url of candidates) {
+    try {
+      console.log('[Blob] trying to download from:', url);
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'OkayCubs-Store/1.0' },
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) continue;
+      imageBuffer = Buffer.from(await res.arrayBuffer());
+      contentType = res.headers.get('content-type') || 'image/png';
+      console.log('[Blob] downloaded', imageBuffer.length, 'bytes from', url);
+      break;
+    } catch (e) {
+      console.warn('[Blob] failed to download from', url, e);
+    }
+  }
+
+  if (!imageBuffer) {
+    console.error('[Blob] all download attempts failed for', imageUrl);
+    return null;
+  }
+
+  // Upload to Vercel Blob
+  try {
+    // Use the IPFS CID or a hash as the filename for dedup
+    const filename = m ? `cubs/${m[1].replace(/\//g, '-')}` : `cubs/${Date.now()}.png`;
+    const blob = await put(filename, imageBuffer, {
+      access: 'public',
+      contentType,
+      addRandomSuffix: false, // deterministic path for same CID
+    });
+    console.log('[Blob] uploaded to Vercel Blob:', blob.url);
+    blobUrlCache.set(imageUrl, blob.url);
+    return blob.url;
+  } catch (e) {
+    console.error('[Blob] upload failed:', e);
+    return null;
+  }
+}
 
 function headers(storeId?: number | null) {
   const h: Record<string, string> = {
@@ -77,24 +158,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Could not determine Printful store_id' }, { status: 503 });
   }
 
-  // Resolve the image URL that Printful will download.
-  // If the client sent our proxy URL, extract the original IPFS URL and send that
-  // directly — Printful downloading from nftstorage.link CDN is faster than going
-  // through our proxy (which adds Vercel cold-start + IPFS gateway latency).
-  let printfulImageUrl = imageUrl;
+  // Resolve the actual image URL — if client sent a proxy URL, extract the original
+  let originalImageUrl = imageUrl;
   if (imageUrl.includes('/api/printful/proxy-image')) {
     try {
       const u = new URL(imageUrl);
       const original = u.searchParams.get('url');
-      if (original) printfulImageUrl = original;
+      if (original) originalImageUrl = original;
     } catch {}
   }
-  // If it's still not an https:// URL, proxy it through our domain
-  if (!printfulImageUrl.startsWith('https://')) {
-    const baseUrl = `https://${req.nextUrl.host}`;
-    printfulImageUrl = `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(printfulImageUrl)}`;
+
+  // Download the image and re-host on Vercel Blob so Printful gets a fast, stable URL.
+  // Printful cannot download from IPFS gateways (tasks stuck pending forever).
+  const printfulImageUrl = await reHostImage(originalImageUrl);
+  if (!printfulImageUrl) {
+    return NextResponse.json({ error: 'Failed to download and re-host image' }, { status: 502 });
   }
-  console.log('[Printful] resolved image URL for Printful:', printfulImageUrl);
+  console.log('[Printful] image re-hosted for Printful:', printfulImageUrl);
 
   // Build file entry
   const fileEntry: Record<string, unknown> = {
