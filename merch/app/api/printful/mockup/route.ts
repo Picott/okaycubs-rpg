@@ -77,11 +77,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Could not determine Printful store_id' }, { status: 503 });
   }
 
-  // Proxy IPFS images through our domain so Printful gets a stable HTTPS URL
-  const baseUrl = `https://${req.nextUrl.host}`;
-  const printfulImageUrl = imageUrl.startsWith('https://')
-    ? imageUrl  // already HTTPS, send as-is
-    : `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+  // Resolve the image URL that Printful will download.
+  // If the client sent our proxy URL, extract the original IPFS URL and send that
+  // directly — Printful downloading from nftstorage.link CDN is faster than going
+  // through our proxy (which adds Vercel cold-start + IPFS gateway latency).
+  let printfulImageUrl = imageUrl;
+  if (imageUrl.includes('/api/printful/proxy-image')) {
+    try {
+      const u = new URL(imageUrl);
+      const original = u.searchParams.get('url');
+      if (original) printfulImageUrl = original;
+    } catch {}
+  }
+  // If it's still not an https:// URL, proxy it through our domain
+  if (!printfulImageUrl.startsWith('https://')) {
+    const baseUrl = `https://${req.nextUrl.host}`;
+    printfulImageUrl = `${baseUrl}/api/printful/proxy-image?url=${encodeURIComponent(printfulImageUrl)}`;
+  }
+  console.log('[Printful] resolved image URL for Printful:', printfulImageUrl);
 
   // Build file entry
   const fileEntry: Record<string, unknown> = {
