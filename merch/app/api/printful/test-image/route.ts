@@ -9,7 +9,7 @@ export async function GET() {
   const height = 100;
   const png = createPNG(width, height, [0xFF, 0x66, 0x00]); // orange
 
-  return new NextResponse(png, {
+  return new NextResponse(new Uint8Array(png), {
     headers: {
       'Content-Type': 'image/png',
       'Cache-Control': 'public, max-age=31536000',
