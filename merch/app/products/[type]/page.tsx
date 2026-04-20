@@ -104,6 +104,7 @@ function ProductPageInner() {
 
     (async () => {
       try {
+        console.log('[mockup] Starting mockup generation', { absImage, productType: type, variantId: variant.printfulVariantId });
         // Step 1: create task — retry up to 5x with exponential backoff on 429
         let taskKey: string | null = null;
         for (let attempt = 0; attempt < 5; attempt++) {
@@ -114,6 +115,7 @@ function ProductPageInner() {
             body: JSON.stringify({ productType: type, variantId: variant.printfulVariantId, imageUrl: absImage }),
           });
           const createData = await createRes.json() as { taskKey?: string; mockupUrl?: string; cached?: boolean; error?: string; retryAfter?: number; detail?: unknown };
+          console.log('[mockup] POST response:', createRes.status, JSON.stringify(createData));
 
           // Server cache hit — mockupUrl returned directly, skip polling
           if (createData.mockupUrl && createData.cached) {
@@ -165,6 +167,7 @@ function ProductPageInner() {
 
           const pollRes = await fetch(`/api/printful/mockup?task_key=${taskKey}`);
           const data = await pollRes.json() as { status: string; mockupUrl?: string; reason?: unknown };
+          if (i % 5 === 0) console.log(`[mockup] Poll #${i + 1}:`, data.status, data.reason ?? '');
 
           if (data.status === 'completed') {
             if (mockupReqId.current === reqId && data.mockupUrl) setMockupUrl(data.mockupUrl);
@@ -178,8 +181,10 @@ function ProductPageInner() {
           }
         }
         // timed out
+        console.error('[mockup] Timed out after 120s polling');
         if (mockupReqId.current === reqId) setMockupFailed(true);
-      } catch {
+      } catch (err) {
+        console.error('[mockup] Unexpected error:', err);
         if (mockupReqId.current === reqId) setMockupFailed(true);
       } finally {
         // Only the owning request clears the loading spinner
