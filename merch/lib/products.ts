@@ -95,7 +95,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
     type: 'cap',
     name: 'OkayCubs Cap',
     description: 'Classic 5-panel cap with your Cub printed on the front.',
-    basePrice: 3800, // $38.00 — Printful cost $17.58, $20 net profit
+    basePrice: 4500, // $45.00 — Printful cost $17.58 + ~$6.50 digitization (unique per Cub), ~$21 net profit
     // Yupoong 7005 5 Panel Cap — catalog product 92
     // Variant IDs verified via /api/printful/catalog
     printfulProductId: 92,
