@@ -277,8 +277,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Printful API key not configured' }, { status: 503 });
   }
 
+  // Must include X-PF-Store-Id header — without it Printful may not resolve the task
+  const storeId = await getStoreId();
+
   const res = await fetch(`${PRINTFUL_API}/mockup-generator/task?task_key=${taskKey}`, {
-    headers: headers(),
+    headers: headers(storeId),
   });
 
   const data = await res.json();
