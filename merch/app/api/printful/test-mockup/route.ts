@@ -18,9 +18,20 @@ export async function GET(req: Request) {
   const apiKey = process.env.PRINTFUL_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 503 });
 
-  // Use our own Vercel-hosted test image — no redirects, no bot-blocking
+  // Accept ?image= param to test different image sources
   const reqUrl = new URL(req.url);
-  const testImageUrl = `${reqUrl.origin}/api/printful/test-image`;
+  const imageParam = reqUrl.searchParams.get('image') || 'test';
+  let testImageUrl: string;
+  if (imageParam === 'blob') {
+    // Real Cub image already on Vercel Blob
+    testImageUrl = 'https://fjunpxifit7n56gn.public.blob.vercel-storage.com/cubs/QmZsTzg9Y88239r1uU2zkvdBYooJZNteu5NuUwLcFQYoqf-4898.png';
+  } else if (imageParam.startsWith('http')) {
+    // Custom URL passed directly
+    testImageUrl = imageParam;
+  } else {
+    // Default: our tiny self-hosted test image
+    testImageUrl = `${reqUrl.origin}/api/printful/test-image`;
+  }
 
   // Determine store_id
   let storeId: number | null = process.env.PRINTFUL_STORE_ID ? parseInt(process.env.PRINTFUL_STORE_ID) : null;
