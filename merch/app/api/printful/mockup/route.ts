@@ -82,13 +82,14 @@ async function reHostImage(imageUrl: string): Promise<ReHostResult> {
     return { url: null, failedStep: 'download', detail: errors.join(' | ') };
   }
 
-  // Upload to Vercel Blob
+  // Upload to Vercel Blob (allowOverwrite so re-uploads of same Cub don't fail)
   try {
     const filename = m ? `cubs/${m[1].replace(/\//g, '-')}` : `cubs/${Date.now()}.png`;
     const blob = await put(filename, imageBuffer, {
       access: 'public',
       contentType,
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
     console.log('[Blob] uploaded to Vercel Blob:', blob.url);
     blobUrlCache.set(imageUrl, blob.url);
