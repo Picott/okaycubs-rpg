@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>How to Play — OkayCubs: The Honey Chronicles</title>
+  <meta name="description" content="Complete guide to playing OkayCubs: The Honey Chronicles. Learn how to connect your wallet, battle guardians, and progress through eras."/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --obsidian: #07080f; --deep: #0d0f1a; --stratum: #12151f;
+      --gold: #d4af37; --gold2: #f5e06e; --silver: #b8bcc8; --quartz: #e8eaf0;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background: var(--obsidian); color: var(--quartz); font-family: 'Crimson Pro', serif; min-height: 100vh; line-height: 1.8; }
+    .bg { position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse at 20% 0%, #1a0f3c22 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, #3c0f0f22 0%, transparent 60%), linear-gradient(180deg, #07080f 0%, #0a0b12 50%, #0d0508 100%); pointer-events: none; }
+    .container { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+    nav { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid rgba(212,175,55,.15); }
+    nav a { color: var(--gold); text-decoration: none; font-family: 'Cinzel', serif; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; padding: 8px 16px; border: 1px solid rgba(212,175,55,.2); border-radius: 4px; transition: all .3s; }
+    nav a:hover { background: rgba(212,175,55,.08); border-color: rgba(212,175,55,.5); }
+    nav a.active { background: rgba(212,175,55,.12); border-color: var(--gold); }
+    h1 { font-family: 'Cinzel Decorative', serif; color: var(--gold); font-size: 2.2em; text-align: center; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: var(--silver); font-style: italic; font-size: 1.1em; margin-bottom: 40px; }
+    h2 { font-family: 'Cinzel', serif; color: var(--gold2); font-size: 1.5em; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(212,175,55,.15); }
+    h3 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.15em; margin: 24px 0 8px; }
+    p { margin-bottom: 16px; font-size: 1.1em; }
+    .highlight { color: var(--gold2); font-weight: 600; }
+    .step { background: rgba(18,21,31,.8); border: 1px solid rgba(212,175,55,.12); border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .step-number { display: inline-block; background: var(--gold); color: var(--obsidian); font-family: 'Cinzel', serif; font-weight: 700; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; margin-right: 12px; }
+    .tip { border-left: 3px solid var(--gold); padding: 12px 16px; margin: 16px 0; background: rgba(212,175,55,.04); font-style: italic; color: var(--silver); }
+    .stat-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .stat-table th, .stat-table td { text-align: left; padding: 10px 14px; border-bottom: 1px solid rgba(212,175,55,.1); }
+    .stat-table th { font-family: 'Cinzel', serif; color: var(--gold); font-size: .95em; }
+    .stat-table td { color: var(--quartz); }
+    footer { text-align: center; padding: 40px 0 20px; border-top: 1px solid rgba(212,175,55,.1); margin-top: 60px; color: var(--silver); font-size: .9em; }
+    footer a { color: var(--gold); text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="container">
+
+<nav>
+  <a href="/">🎮 Play RPG</a>
+  <a href="//about.html">📜 About</a>
+  <a href="//guide.html" class="active">📖 How to Play</a>
+  <a href="//blog.html">📰 News</a>
+  <a href="//faq.html">❓ FAQ</a>
+  <a href="/">🛍 Merch</a>
+</nav>
+
+<h1>How to Play</h1>
+<p class="subtitle">A complete guide to The Honey Chronicles</p>
+
+<h2>Getting Started</h2>
+
+<div class="step">
+  <h3><span class="step-number">1</span>Get a Phantom Wallet</h3>
+  <p>OkayCubs runs on the Solana blockchain. You'll need a <span class="highlight">Phantom wallet</span> — the most popular Solana wallet. Download it as a browser extension from <span class="highlight">phantom.app</span>. It's free and takes about a minute to set up.</p>
+</div>
+
+<div class="step">
+  <h3><span class="step-number">2</span>Own an OkayCubs NFT</h3>
+  <p>To play, you need at least one OkayCubs NFT in your wallet. You can purchase Cubs on secondary marketplaces like <span class="highlight">Tensor</span> or <span class="highlight">Magic Eden</span>. Each Cub has unique traits that become your battle stats, so choose wisely — or collect several to find your strongest fighter.</p>
+</div>
+
+<div class="step">
+  <h3><span class="step-number">3</span>Connect Your Wallet</h3>
+  <p>Visit the game page and click <span class="highlight">"Connect Phantom Wallet"</span>. The game will verify your NFT holdings on-chain and load all your Cubs. No registration, no passwords, no accounts — just your wallet and your Cubs.</p>
+</div>
+
+<div class="step">
+  <h3><span class="step-number">4</span>Select Your Cub</h3>
+  <p>Your Cubs appear in a grid showing their image and name. Click one to select it for battle. The <span class="highlight">Trait Panel</span> will show your Cub's stats — HP, ATK, DEF, and LCK — derived from their unique NFT traits.</p>
+</div>
+
+<h2>Understanding Stats</h2>
+<p>Every Cub's battle stats are derived from their NFT traits. Different trait categories influence different stats:</p>
+
+<table class="stat-table">
+  <tr><th>Stat</th><th>What It Does</th><th>Influenced By</th></tr>
+  <tr><td><span class="highlight">HP (Health)</span></td><td>How much damage you can take before falling</td><td>Background, fur color, rarity</td></tr>
+  <tr><td><span class="highlight">ATK (Attack)</span></td><td>Base damage dealt with Strike actions</td><td>Headgear, accessories, expression</td></tr>
+  <tr><td><span class="highlight">DEF (Defense)</span></td><td>Damage reduction from enemy attacks</td><td>Clothing, fur pattern, body type</td></tr>
+  <tr><td><span class="highlight">LCK (Luck)</span></td><td>Critical hit chance and dodge probability</td><td>Eyes, mouth, special accessories</td></tr>
+</table>
+
+<div class="tip">
+  Rarer traits generally give higher stats, but a well-rounded Cub can outperform a Cub with one extreme stat. Balance matters in the later eras.
+</div>
+
+<h2>Battle System</h2>
+<p>Combat in The Honey Chronicles is <span class="highlight">turn-based</span>. Each turn, you choose one of three actions:</p>
+
+<div class="step">
+  <h3>⚔️ Strike</h3>
+  <p>A direct attack based on your ATK stat. Damage varies slightly each turn, and your LCK stat gives a chance to land a <span class="highlight">critical hit</span> for double damage. This is your primary offensive tool.</p>
+</div>
+
+<div class="step">
+  <h3>🛡️ Fortify</h3>
+  <p>Raise your defenses for the turn. Reduces incoming damage significantly and can stack with your natural DEF stat. Use this when the enemy is about to unleash a powerful attack — the battle log often gives hints.</p>
+</div>
+
+<div class="step">
+  <h3>🍯 Honey Burst</h3>
+  <p>Your Cub channels the power of the era's honey for a special attack. Honey Bursts deal heavy damage but have a cooldown — you can't use them every turn. The type of honey varies by era and can have bonus effects.</p>
+</div>
+
+<div class="tip">
+  Watch the battle log carefully. Enemy guardians follow patterns — some telegraph their heavy attacks, giving you a chance to Fortify at the right moment. Learning these patterns is key to surviving the later eras.
+</div>
+
+<h2>Progression and Eras</h2>
+<p>The game tracks your <span class="highlight">total victories</span> across all battles. As you accumulate wins, new eras unlock on the World Map:</p>
+
+<table class="stat-table">
+  <tr><th>Era</th><th>Victories Required</th><th>Honey Power</th></tr>
+  <tr><td>🌋 Hadean</td><td>Start</td><td>Magma — raw damage</td></tr>
+  <tr><td>🪨 Archean</td><td>5 wins</td><td>Stone — defense boost</td></tr>
+  <tr><td>🌊 Proterozoic</td><td>15 wins</td><td>Tide — HP regeneration</td></tr>
+  <tr><td>🌿 Paleozoic</td><td>30 wins</td><td>Bloom — speed/venom</td></tr>
+  <tr><td>🦕 Mesozoic</td><td>50 wins</td><td>Titan — brute force</td></tr>
+  <tr><td>❄️ Cenozoic</td><td>75 wins</td><td>Frost — time control</td></tr>
+</table>
+
+<p>Each era has its own pool of enemy guardians with increasing difficulty. Enemies in later eras have higher stats, more complex attack patterns, and special abilities tied to their era's honey.</p>
+
+<h2>Defeat and Revival</h2>
+<p>When your Cub's HP reaches zero, they've <span class="highlight">fallen in battle</span>. You have two choices:</p>
+<p><span class="highlight">Revive:</span> Watch a short ad to restore your Cub to full HP and continue the fight exactly where you left off. This is the only way to recover mid-battle.</p>
+<p><span class="highlight">Retreat:</span> Return to the strata (main screen). Your Cub is fully healed, but the battle progress is lost — you'll face a new random guardian next time.</p>
+
+<h2>Demo Mode</h2>
+<p>Don't have an OkayCubs NFT yet? The game offers a <span class="highlight">Demo Mode</span> with sample Cubs so you can experience the battle system before buying. Demo progress isn't saved, but it gives you a full taste of the combat mechanics and era exploration.</p>
+
+<footer>
+  <p>OkayCubs: The Honey Chronicles &copy; 2024–2026</p>
+  <p><a href="//faq.html">FAQ</a> · <a href="//privacy.html">Privacy Policy</a> · <a href="//terms.html">Terms of Service</a></p>
+</footer>
+
+</div>
+</body>
+</html>

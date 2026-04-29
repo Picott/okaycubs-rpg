@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About — OkayCubs: The Honey Chronicles</title>
+  <meta name="description" content="Learn about OkayCubs: The Honey Chronicles — an NFT-powered RPG where Cubs travel through geological eras in search of primordial honey."/>
+  <meta property="og:title" content="About OkayCubs: The Honey Chronicles"/>
+  <meta property="og:description" content="The lore, the world, and the journey of the OkayCubs through time."/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --obsidian: #07080f;
+      --deep:     #0d0f1a;
+      --stratum:  #12151f;
+      --gold:     #d4af37;
+      --gold2:    #f5e06e;
+      --silver:   #b8bcc8;
+      --quartz:   #e8eaf0;
+      --magma:    #c0392b;
+      --jade:     #2ecc71;
+      --sapphire: #3498db;
+      --amethyst: #9b59b6;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--obsidian);
+      color: var(--quartz);
+      font-family: 'Crimson Pro', serif;
+      min-height: 100vh;
+      line-height: 1.8;
+    }
+    .bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse at 20% 0%, #1a0f3c22 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 100%, #3c0f0f22 0%, transparent 60%),
+                  linear-gradient(180deg, #07080f 0%, #0a0b12 50%, #0d0508 100%);
+      pointer-events: none;
+    }
+    .container {
+      position: relative; z-index: 1;
+      max-width: 800px; margin: 0 auto; padding: 40px 24px 80px;
+    }
+    nav {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      justify-content: center; margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(212,175,55,.15);
+    }
+    nav a {
+      color: var(--gold); text-decoration: none;
+      font-family: 'Cinzel', serif; font-size: 14px;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 8px 16px; border: 1px solid rgba(212,175,55,.2);
+      border-radius: 4px; transition: all .3s;
+    }
+    nav a:hover { background: rgba(212,175,55,.08); border-color: rgba(212,175,55,.5); }
+    nav a.active { background: rgba(212,175,55,.12); border-color: var(--gold); }
+    h1 {
+      font-family: 'Cinzel Decorative', serif;
+      color: var(--gold); font-size: 2.4em;
+      text-align: center; margin-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center; color: var(--silver);
+      font-style: italic; font-size: 1.1em; margin-bottom: 40px;
+    }
+    h2 {
+      font-family: 'Cinzel', serif; color: var(--gold2);
+      font-size: 1.5em; margin: 40px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(212,175,55,.15);
+    }
+    h3 {
+      font-family: 'Cinzel', serif; color: var(--gold);
+      font-size: 1.15em; margin: 24px 0 8px;
+    }
+    p { margin-bottom: 16px; font-size: 1.1em; color: var(--quartz); }
+    .highlight { color: var(--gold2); font-weight: 600; }
+    .era-card {
+      background: rgba(18,21,31,.8);
+      border: 1px solid rgba(212,175,55,.12);
+      border-radius: 8px; padding: 20px; margin: 16px 0;
+    }
+    .era-card h3 { margin-top: 0; }
+    .era-card .era-emoji { font-size: 1.4em; margin-right: 8px; }
+    .lore-quote {
+      border-left: 3px solid var(--gold);
+      padding: 16px 20px; margin: 24px 0;
+      background: rgba(212,175,55,.04);
+      font-style: italic; color: var(--silver);
+    }
+    footer {
+      text-align: center; padding: 40px 0 20px;
+      border-top: 1px solid rgba(212,175,55,.1);
+      margin-top: 60px; color: var(--silver); font-size: .9em;
+    }
+    footer a { color: var(--gold); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="container">
+
+<nav>
+  <a href="/">🎮 Play RPG</a>
+  <a href="//about.html" class="active">📜 About</a>
+  <a href="//guide.html">📖 How to Play</a>
+  <a href="//blog.html">📰 News</a>
+  <a href="//faq.html">❓ FAQ</a>
+  <a href="/">🛍 Merch</a>
+</nav>
+
+<h1>OkayCubs</h1>
+<p class="subtitle">The Honey Chronicles — In Search of the Golden Drop</p>
+
+<h2>The World of OkayCubs</h2>
+<p>
+  OkayCubs: The Honey Chronicles is an NFT-powered RPG built on the Solana blockchain. Players use their OkayCubs NFTs as playable characters, battling through six geological eras of Earth's history in a quest for <span class="highlight">La Miel</span> — the primordial honey that has existed since the dawn of time.
+</p>
+<p>
+  Each Cub is unique, with traits that translate directly into battle stats. Fur color, headgear, accessories, and background all influence a Cub's strength, defense, luck, and HP. No two Cubs fight the same way — your NFT is truly your character.
+</p>
+
+<h2>The Lore</h2>
+
+<div class="lore-quote">
+  "The Okay Bears left without looking back. They disappeared into the depths of the metaverse and never returned. For a long time, the OkayCubs waited."
+</div>
+
+<p>
+  When the <span class="highlight">Okay Bears</span> vanished from the Solana ecosystem, the Cubs they left behind were forced to fend for themselves. But these weren't ordinary cubs. They were resilient, resourceful, and bound together by something the Bears never understood: community.
+</p>
+<p>
+  The Cubs discovered that the key to survival wasn't just moving through space — it was moving through <span class="highlight">time itself</span>. Ancient texts revealed that a substance of immense power had existed in every geological era of Earth: <span class="highlight">La Miel</span>, the primordial honey. Each era's honey carried unique properties — from the raw destructive force of Hadean magma honey to the time-bending power of Cenozoic frost honey.
+</p>
+<p>
+  Now, the Cubs travel era by era, battling the ancient guardians who protect each era's honey. Every victory brings them closer to assembling the complete collection — and preparing for the day when the Bears might return.
+</p>
+
+<div class="lore-quote">
+  "The Bears may return someday. When they do — you'll be ready."
+</div>
+
+<h2>The Six Eras</h2>
+<p>
+  The journey through time spans six geological eras, each with its own environment, enemies, honey type, and challenges. Players begin in the Hadean Era and unlock subsequent eras by accumulating victories.
+</p>
+
+<div class="era-card">
+  <h3><span class="era-emoji">🌋</span>Hadean Era — Magma Honey</h3>
+  <p>The beginning of Earth. Molten rock, constant bombardment, and the first formation of the planet's crust. <span class="highlight">Magma Honey</span> burns with raw power and grants devastating offensive capabilities. Guardians here are primal and fierce — forged from the planet's molten core. Unlocked from the start; 5 victories to advance.</p>
+</div>
+
+<div class="era-card">
+  <h3><span class="era-emoji">🪨</span>Archean Era — Stone Honey</h3>
+  <p>The first continents form, the atmosphere thickens. <span class="highlight">Stone Honey</span> carries the weight of mountains — hardening defenses and granting unshakable endurance. The guardians are ancient, slow but immensely powerful. Requires 15 total victories to unlock.</p>
+</div>
+
+<div class="era-card">
+  <h3><span class="era-emoji">🌊</span>Proterozoic Era — Tide Honey</h3>
+  <p>Oceans dominate the world, the first complex life stirs beneath the waves. <span class="highlight">Tide Honey</span> flows with regenerative power — healing wounds and restoring vitality mid-battle. Guardians emerge from the deep, fluid and relentless. Requires 30 total victories.</p>
+</div>
+
+<div class="era-card">
+  <h3><span class="era-emoji">🌿</span>Paleozoic Era — Bloom Honey</h3>
+  <p>Life explodes across the land. Forests, insects, amphibians — the world pulses with biological energy. <span class="highlight">Bloom Honey</span> grants lightning speed and venomous strikes. The guardians here are fast, unpredictable, and deadly. Requires 50 total victories.</p>
+</div>
+
+<div class="era-card">
+  <h3><span class="era-emoji">🦕</span>Mesozoic Era — Titan Honey</h3>
+  <p>The age of giants. Dinosaurs rule the Earth, and only the strongest survive. <span class="highlight">Titan Honey</span> channels pure brute force — overwhelming enemies with sheer power. The guardians are colossal, each battle a test of endurance. Requires 75 total victories.</p>
+</div>
+
+<div class="era-card">
+  <h3><span class="era-emoji">❄️</span>Cenozoic Era — Frost Honey</h3>
+  <p>Ice ages reshape the planet. Mammals rise, the world grows cold. <span class="highlight">Frost Honey</span> bends time itself — slowing enemies and granting glimpses of the future. The final guardians are cunning and ruthless, testing every skill you've earned. Requires 100 total victories.</p>
+</div>
+
+<h2>What Makes OkayCubs Different</h2>
+<p>
+  Unlike traditional NFT games that require purchasing in-game items or tokens, OkayCubs is <span class="highlight">completely free to play</span> for all OkayCubs NFT holders. Your NFT is your character — no additional purchases needed. The game verifies wallet ownership on-chain through the Solana blockchain, ensuring only real holders can access the full experience.
+</p>
+<p>
+  The game combines classic RPG mechanics — turn-based combat, stat progression, era-based world exploration — with the unique properties of each NFT. Rarer traits mean stronger stats, but strategy matters more than raw power. Every Cub can make it to the Cenozoic Era with the right approach.
+</p>
+<p>
+  The merch store adds another dimension: players can print their Cubs on real-world products like hoodies, joggers, and caps — with Printful generating realistic product mockups using each player's unique Cub image.
+</p>
+
+<h2>The Team</h2>
+<p>
+  OkayCubs: The Honey Chronicles is a community-driven project built by holders, for holders. Born from the OkayCubs Solana NFT collection, the game represents the community's commitment to building real utility and lasting value around their NFTs.
+</p>
+
+<footer>
+  <p>OkayCubs: The Honey Chronicles &copy; 2024–2026</p>
+  <p><a href="//faq.html">FAQ</a> · <a href="//privacy.html">Privacy Policy</a> · <a href="//terms.html">Terms of Service</a></p>
+</footer>
+
+</div>
+</body>
+</html>
