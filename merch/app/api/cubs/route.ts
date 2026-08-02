@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
 
   function proxyImg(url: string): string {
     if (!url) return '';
+    if (url.startsWith('/')) return url; // local static file — serve directly, no proxy needed
     return `${origin}/api/printful/proxy-image?url=${encodeURIComponent(url)}`;
   }
 

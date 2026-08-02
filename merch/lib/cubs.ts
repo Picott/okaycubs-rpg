@@ -13,7 +13,7 @@ export interface Cub {
 
 const HELIUS_KEY = process.env.HELIUS_KEY || 'b5292800-573a-40c5-9104-fa505b84baa9';
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
-const IPFS_GATEWAY = 'https://nftstorage.link/ipfs/';
+const IPFS_GATEWAY = 'https://w3s.link/ipfs/';
 
 // Known OkayCubs IPFS CID — used for featured/sample cubs shown to non-holders
 const CUBS_CID = 'QmZsTzg9Y88239r1uU2zkvdBYooJZNteu5NuUwLcFQYoqf';
