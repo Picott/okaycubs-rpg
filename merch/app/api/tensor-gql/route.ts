@@ -8,17 +8,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ errors: [{ message: 'Tensor key not configured' }] }, { status: 503 });
   }
   const body = await req.text();
-  const res = await fetch('https://api.tensor.so/graphql', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-TENSOR-API-KEY': TENSOR_KEY,
-    },
-    body,
-  });
-  const data = await res.text();
-  return new NextResponse(data, {
-    status: res.status,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  try {
+    const res = await fetch('https://api.tensor.so/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-TENSOR-API-KEY': TENSOR_KEY,
+      },
+      body,
+      signal: AbortSignal.timeout(8_000),
+    });
+    const data = await res.text();
+    return new NextResponse(data, {
+      status: res.status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Tensor unreachable';
+    return NextResponse.json({ errors: [{ message }] }, { status: 502 });
+  }
 }

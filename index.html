@@ -807,6 +807,7 @@ async function fetchCubsTensor(wallet) {
       id:     n.mint?.onchainId || String(i),
       name,
       image:  n.mint?.imageUri  || '',
+      imageCandidates: cubImageCandidates(num, n.mint?.imageUri || ''),
       number: num,
       rarity,
       class:  deriveClass(traits),
@@ -958,17 +959,28 @@ function parseCubs(nfts) {
     const imgUrl  = toHttpUrl(rawUrl);
     const jsonUri = nft.content?.json_uri || null;
 
+    // Helius returns an empty name and no image for OkayCubs — the number lives in the json_uri filename
+    const nameStr = meta.name || '';
+    const num = parseInt(nameStr.replace(/\D/g, ''))
+             || parseInt((jsonUri || '').match(/\/(\d+)\.json(?:[?#]|$)/i)?.[1] ?? '')
+             || parseInt((rawUrl  || '').match(/\/(\d+)\.(?:png|jpe?g|gif|webp)(?:[?#]|$)/i)?.[1] ?? '')
+             || null;
+
     const traits = {};
     attrs.forEach(a => { if (a.trait_type) traits[a.trait_type] = a.value; });
 
-    // Determine rarity from trait count / special traits
     const traitCount = attrs.length;
-    const rarity = traitCount >= 8 ? 'legendary' : traitCount >= 6 ? 'epic' : traitCount >= 4 ? 'rare' : 'common';
+    const rarity = traitCount >= 8 ? 'legendary' : traitCount >= 6 ? 'epic' : traitCount >= 4 ? 'rare' :
+                   traitCount > 0 || !num ? 'common' :
+                   num % 100 === 0 ? 'legendary' : num % 25 === 0 ? 'epic' : num % 5 === 0 ? 'rare' : 'common';
+    const candidates = cubImageCandidates(num, imgUrl);
 
     return {
       id:     nft.id || i,
-      name:    meta.name || `Cub #${i}`,
-      image:   imgUrl,
+      name:    nameStr || (num ? `OkayCub #${num}` : `Cub #${i}`),
+      number:  num,
+      image:   candidates.find(u => u.startsWith('/api/')) || candidates[0] || null,
+      imageCandidates: candidates,
       jsonUri: jsonUri,
       rarity,
       class:   deriveClass(traits),
@@ -1051,6 +1063,7 @@ const IPFS_GATEWAYS = [
 
 function toHttpUrl(url) {
   if (!url) return null;
+  if (url.startsWith('/')) return url;
   if (url.startsWith('ipfs://')) return IPFS_GATEWAYS[0] + url.slice(7);
   if (url.startsWith('ar://'))   return 'https://arweave.net/' + url.slice(5);
   // Strip Helius CDN wrapping. Helius sometimes uses a double-slash:
@@ -1065,6 +1078,28 @@ function toHttpUrl(url) {
   // Only return absolute HTTP(S) URLs — reject relative paths like "35.png"
   if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
   return url;
+}
+
+const CUBS_IMG_CID = 'QmZsTzg9Y88239r1uU2zkvdBYooJZNteu5NuUwLcFQYoqf';
+const proxied = url => `/api/printful/proxy-image?url=${encodeURIComponent(url)}`;
+
+// Same-origin candidates, in order: local static PNG → server-side IPFS proxy by number → proxy of the chain URL.
+// Public IPFS gateways block cross-origin <img> loads (CORP), so the browser never hits them directly.
+function cubImageCandidates(num, directUrl) {
+  const list = [];
+  if (num) list.push(`/cubs/${num}.png`, proxied(`https://w3s.link/ipfs/${CUBS_IMG_CID}/${num}.png`));
+  if (directUrl) list.push(directUrl.startsWith('/') ? directUrl : proxied(directUrl));
+  return list;
+}
+
+function loadImgCascade(imgEl, urls) {
+  let i = 0;
+  imgEl.onload  = () => { imgEl.style.display = ''; imgEl.nextElementSibling.style.display = 'none'; };
+  imgEl.onerror = () => {
+    if (i < urls.length) imgEl.src = urls[i++];
+    else { imgEl.style.display = 'none'; imgEl.nextElementSibling.style.display = 'flex'; }
+  };
+  imgEl.onerror();
 }
 
 async function loadCubImage(imgEl, jsonUri) {
@@ -1127,13 +1162,11 @@ function renderCubs(cubs) {
     card.className = `cub-card r-${cub.rarity}`;
     card.id = `c-${cub.id}`;
     card.onclick = () => selectCub(cub);
-    const hasDirectImg = !!cub.image;
+    const candidates = cub.imageCandidates || (cub.image ? [cub.image] : []);
     card.innerHTML = `
       <div class="cub-img-wrap">
-        <img class="cub-img" src="${cub.image || ''}" alt="${cub.name}"
-          style="${hasDirectImg ? '' : 'display:none'}"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <div class="cub-placeholder" style="${hasDirectImg ? 'display:none' : 'display:flex'}">🐻</div>
+        <img class="cub-img" alt="${cub.name}" style="display:none">
+        <div class="cub-placeholder" style="display:flex">🐻</div>
         <div class="rarity-ring"></div>
       </div>
       <div class="cub-name">${cub.name}</div>
@@ -1142,10 +1175,9 @@ function renderCubs(cubs) {
     `;
     grid.appendChild(card);
 
-    // If no direct image from Helius, fetch from off-chain metadata
-    if (!hasDirectImg && cub.jsonUri) {
-      loadCubImage(card.querySelector('.cub-img'), cub.jsonUri);
-    }
+    const imgEl = card.querySelector('.cub-img');
+    if (candidates.length) loadImgCascade(imgEl, candidates);
+    else if (cub.jsonUri) loadCubImage(imgEl, cub.jsonUri);
   });
 }
 
