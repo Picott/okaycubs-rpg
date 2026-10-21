@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const HELIUS_KEY = process.env.HELIUS_KEY;
+const HELIUS_KEY = process.env.HELIUS_KEY || 'b5292800-573a-40c5-9104-fa505b84baa9';
 
 // Proxy for Helius JSON-RPC — keeps the API key server-side
 export async function POST(req: NextRequest) {
-  if (!HELIUS_KEY) {
-    return NextResponse.json({ error: 'Helius key not configured' }, { status: 503 });
-  }
-  const body = await req.text();
+const body = await req.text();
   const res = await fetch(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
