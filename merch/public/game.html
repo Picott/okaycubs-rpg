@@ -512,6 +512,13 @@
       color:var(--gold); opacity:.35; background:none; border:none; cursor:pointer; transition:opacity .3s;
     }
     .nav-btn:hover { opacity:.7; }
+    .nav-links { flex-wrap:wrap; gap:14px 22px; }
+
+    /* === FOOTER === */
+    .site-footer { text-align:center; padding:40px 0 0; font-family:'Cinzel',serif; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--silver); opacity:.4; }
+    .site-footer a { color:var(--gold); text-decoration:none; }
+    .site-footer a:hover { text-decoration:underline; }
+    .site-footer p + p { margin-top:8px; letter-spacing:1px; text-transform:none; font-family:'Crimson Pro',serif; font-size:12px; font-style:italic; }
 
     /* === CHRONICLE PANEL === */
     .chronicle {
@@ -596,6 +603,10 @@
       border-radius:1px; margin-left:10px; vertical-align:middle; opacity:.7;
     }
   </style>
+  <!-- Google AdSense verification + loader -->
+  <meta name="google-adsense-account" content="ca-pub-8513421744602426">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8513421744602426"
+       crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="bg"></div>
@@ -610,8 +621,12 @@
     <div class="subtitle">In Search of the Golden Drop</div>
     <div class="rule"></div>
     <div class="nav-links">
-      <a href="/" class="nav-link">🛍 Merch Store</a>
-      <button class="nav-btn" onclick="toggleChronicle()">📖 Chronicle</button>
+      <a href="/about.html" class="nav-link">📜 About</a>
+      <a href="/guide.html" class="nav-link">📖 Guide</a>
+      <a href="/blog.html" class="nav-link">📰 News</a>
+      <a href="/faq.html" class="nav-link">❓ FAQ</a>
+      <a href="/" class="nav-link">🛍 Merch</a>
+      <button class="nav-btn" onclick="toggleChronicle()">🍯 Chronicle</button>
     </div>
     <div id="floorPrice" class="floor-price"></div>
     <div class="eras">
@@ -747,6 +762,11 @@
       </div>
     </div>
   </div>
+
+  <footer class="site-footer">
+    <p><a href="/about.html">About</a> · <a href="/guide.html">Guide</a> · <a href="/blog.html">News</a> · <a href="/faq.html">FAQ</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+    <p>OkayCubs: The Honey Chronicles is a fan-made utility for OkayCubs holders. Not affiliated with Okay Bears.</p>
+  </footer>
 
 </div>
 
@@ -1194,13 +1214,16 @@ function toHttpUrl(url) {
 }
 
 const CUBS_IMG_CID = 'QmZsTzg9Y88239r1uU2zkvdBYooJZNteu5NuUwLcFQYoqf';
+// Cub numbers that ship as static PNGs in /cubs — only those skip the proxy
+const LOCAL_CUBS = new Set([35,99,177,432,470,545,783,828,886,903,1038,1156,1355,1369,1667,1775,1827,1829,1910,1948,1956,1975,2030,2055,2097,2133,2156,2169,2219,2223,2309,2333,2378,2395,2402,2409,2421,2493,2559,2849,2988,2993,3027,3076,3102,3148,3228,3232,3241,3276,3409,3446,3593,3604,3649,3707,3727,3818,3876,4240,4257,4474,4494,4515,4574,4587,4618,4776,4882,4884,4903,5014,5048,5110,5136,5181,5200,5216,5279,5311,5383,5407,5472,5492,5496,5498,5531]);
 const proxied = url => `/api/printful/proxy-image?url=${encodeURIComponent(url)}`;
 
 // Same-origin candidates, in order: local static PNG → server-side IPFS proxy by number → proxy of the chain URL.
 // Public IPFS gateways block cross-origin <img> loads (CORP), so the browser never hits them directly.
 function cubImageCandidates(num, directUrl) {
   const list = [];
-  if (num) list.push(`/cubs/${num}.png`, proxied(`https://w3s.link/ipfs/${CUBS_IMG_CID}/${num}.png`));
+  if (num && LOCAL_CUBS.has(num)) list.push(`/cubs/${num}.png`);
+  if (num) list.push(proxied(`https://w3s.link/ipfs/${CUBS_IMG_CID}/${num}.png`));
   if (directUrl) list.push(directUrl.startsWith('/') ? directUrl : proxied(directUrl));
   return list;
 }
