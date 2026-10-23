@@ -1590,18 +1590,24 @@ async function reviveWithSol(cubId, btn) {
     // web3.js expects Node's global Buffer; both files are served from our own domain
     if (!window.Buffer) await loadScript('/vendor/buffer.iife.js');
     if (!window.solanaWeb3) await loadScript('/vendor/solana-web3.iife.min.js');
-    const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = window.solanaWeb3;
+    const { Connection, PublicKey, SystemProgram, ComputeBudgetProgram, Transaction, LAMPORTS_PER_SOL } = window.solanaWeb3;
     const conn = new Connection(location.origin + '/api/helius', 'confirmed');
     const from = window.solana.publicKey;
-    const tx = new Transaction().add(SystemProgram.transfer({
-      fromPubkey: from, toPubkey: new PublicKey(REVIVE.wallet),
-      lamports: Math.round(REVIVE.priceSol * LAMPORTS_PER_SOL),
-    }));
+    // A small priority fee (~0.000004 SOL) so the transfer lands even when the network is busy
+    const tx = new Transaction().add(
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 20_000 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 200_000 }),
+      SystemProgram.transfer({
+        fromPubkey: from, toPubkey: new PublicKey(REVIVE.wallet),
+        lamports: Math.round(REVIVE.priceSol * LAMPORTS_PER_SOL),
+      }),
+    );
     tx.feePayer = from;
     tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
     const { signature } = await window.solana.signAndSendTransaction(tx);
     btn.textContent = '⚡ Confirming…';
     console.log('[revive] sent', signature);
+    addLog(`⚡ Transaction sent — ${signature.slice(0, 8)}… waiting for confirmation`, 'ls');
     await waitForConfirmation(conn, signature, i => { btn.textContent = `⚡ Confirming… ${(i + 1) * 1.5 | 0}s`; });
     btn.textContent = '⚡ Verifying…';
     const r = await api('/api/game/revive', { cubId, method: 'sol', signature });
