@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OkayCubs Sprite Lab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --gold:#d4af37; --gold2:#f5e06e; --silver:#b8bcc8; --quartz:#e8eaf0; --jade:#2ecc71; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:#07080f; color:var(--quartz); font-family:'Crimson Pro',serif; min-height:100vh; }
+    header { text-align:center; padding:26px 16px 10px; }
+    h1 { font-family:'Cinzel',serif; font-size:20px; letter-spacing:4px; color:var(--gold); text-transform:uppercase; }
+    .sub { font-size:14px; font-style:italic; opacity:.5; margin-top:4px; }
+    .lab { display:grid; grid-template-columns:1fr 300px; gap:16px; max-width:1280px; margin:16px auto; padding:0 16px; }
+    .stage { position:relative; border:1px solid rgba(212,175,55,.25); background:#05060b; overflow:hidden; }
+    canvas { display:block; width:100%; height:auto; }
+    .keys { position:absolute; left:12px; bottom:10px; font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; color:var(--gold); opacity:.55; text-transform:uppercase; }
+    .panel { border:1px solid rgba(212,175,55,.25); background:rgba(255,255,255,.02); padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .panel h2 { font-family:'Cinzel',serif; font-size:10px; letter-spacing:4px; text-transform:uppercase; color:var(--gold); opacity:.7; margin-top:6px; }
+    label { display:flex; justify-content:space-between; font-size:13px; opacity:.85; gap:8px; }
+    label span b { color:var(--gold2); font-weight:400; }
+    input[type=range] { width:100%; accent-color:var(--gold); }
+    select, input[type=text] { width:100%; background:#0d0f1a; color:var(--quartz); border:1px solid rgba(212,175,55,.3); padding:6px 8px; font-family:'Crimson Pro',serif; font-size:14px; }
+    .row { display:flex; gap:6px; flex-wrap:wrap; }
+    button { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; text-transform:uppercase; padding:8px 10px; border:1px solid rgba(212,175,55,.45); background:transparent; color:var(--gold); cursor:pointer; }
+    button:hover { background:rgba(212,175,55,.12); }
+    button.primary { border-color:var(--jade); color:var(--jade); }
+    .swatches { display:flex; gap:6px; align-items:center; font-size:12px; opacity:.8; }
+    .sw { width:22px; height:22px; border-radius:4px; border:1px solid rgba(255,255,255,.2); }
+    textarea { width:100%; height:70px; background:#0d0f1a; color:var(--silver); border:1px solid rgba(212,175,55,.2); font-family:monospace; font-size:11px; padding:6px; }
+    .status { font-size:12px; opacity:.6; font-style:italic; min-height:16px; }
+    @media (max-width:900px) { .lab { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Sprite Lab</h1>
+  <div class="sub">Your Cub as a paper chibi — tune the body, feel the controls, then we build the Honey Road around it.</div>
+</header>
+
+<div class="lab">
+  <div class="stage">
+    <canvas id="cv" width="960" height="480"></canvas>
+    <div class="keys">← → run · space / ↑ jump (hold = higher) · X attack · Z dash · H hurt · C cheer</div>
+  </div>
+
+  <div class="panel">
+    <h2>Cub</h2>
+    <select id="cubSelect"></select>
+    <div class="row">
+      <input type="text" id="cubNumber" placeholder="OkayCub # (loads via IPFS proxy)" style="flex:1">
+      <button onclick="loadByNumber()">Load</button>
+    </div>
+    <div class="swatches">Sampled: <div class="sw" id="swBody"></div> body <div class="sw" id="swAccent"></div> accent</div>
+    <div class="status" id="status">loading…</div>
+
+    <h2>Body</h2>
+    <label><span>Size <b id="vSize"></b></span></label>      <input type="range" id="size" min="64" max="150" value="96">
+    <label><span>Head / torso scale <b id="vHead"></b></span></label> <input type="range" id="headScale" min="80" max="130" value="100">
+    <label><span>Leg length <b id="vLeg"></b></span></label>   <input type="range" id="legLen" min="14" max="44" value="26">
+    <label><span>Leg width <b id="vLegW"></b></span></label>   <input type="range" id="legW" min="8" max="20" value="13">
+    <label><span>Arm length <b id="vArm"></b></span></label>   <input type="range" id="armLen" min="14" max="40" value="24">
+    <label><span>Corner radius <b id="vRad"></b></span></label> <input type="range" id="radius" min="10" max="50" value="28">
+    <label><span>Bounce <b id="vBounce"></b></span></label>    <input type="range" id="bounce" min="0" max="200" value="100">
+    <label><span>Weapon</span></label>
+    <select id="weapon"><option value="🍯">🍯 Honey ladle</option><option value="⛏">⛏ Pickaxe</option><option value="🔨">🔨 Hammer</option><option value="🕯">🕯 Torch</option><option value="">None</option></select>
+
+    <h2>Poses</h2>
+    <div class="row">
+      <button onclick="pose('attack')">Attack</button>
+      <button onclick="pose('jump')">Jump</button>
+      <button onclick="pose('hurt')">Hurt</button>
+      <button onclick="pose('cheer')">Cheer</button>
+      <button onclick="pose('dash')">Dash</button>
+    </div>
+
+    <h2>Export</h2>
+    <textarea id="export" readonly></textarea>
+    <button class="primary" onclick="copyExport()">Copy settings</button>
+  </div>
+</div>
+
+<script src="/sprite.js"></script>
+<script>
+const LOCAL_CUBS = [35,99,177,432,470,545,783,828,886,903,1038,1156,1355,1369,1667,1775,1827,1829,1910,1948,1956,1975,2030,2055,2097,2133,2156,2169,2219,2223,2309,2333,2378,2395,2402,2409,2421,2493,2559,2849,2988,2993,3027,3076,3102,3148,3228,3232,3241,3276,3409,3446,3593,3604,3649,3707,3727,3818,3876,4240,4257,4474,4494,4515,4574,4587,4618,4776,4882,4884,4903,5014,5048,5110,5136,5181,5200,5216,5279,5311,5383,5407,5472,5492,5496,5498,5531];
+const CUBS_IMG_CID = 'QmZsTzg9Y88239r1uU2zkvdBYooJZNteu5NuUwLcFQYoqf';
+
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height, GROUND = H - 70;
+const sprite = new CubSprite();
+const ctl = new CubController();
+ctl.x = W / 2;
+let last = performance.now(), dust = [], motion = { vx:0, vy:0, grounded:true };
+
+const sel = document.getElementById('cubSelect');
+LOCAL_CUBS.forEach(n => { const o = document.createElement('option'); o.value = `/cubs/${n}.png`; o.textContent = `OkayCub #${n}`; sel.appendChild(o); });
+sel.onchange = () => loadCub(sel.value);
+function loadByNumber() {
+  const n = parseInt(document.getElementById('cubNumber').value.replace(/\D/g, ''));
+  if (!n) return;
+  loadCub(LOCAL_CUBS.includes(n) ? `/cubs/${n}.png` : `/api/printful/proxy-image?url=${encodeURIComponent(`https://w3s.link/ipfs/${CUBS_IMG_CID}/${n}.png`)}`);
+}
+async function loadCub(src) {
+  const st = document.getElementById('status');
+  st.textContent = 'loading…';
+  try {
+    await sprite.load(src);
+    const c = sprite.colors;
+    document.getElementById('swBody').style.background = `rgb(${c.body.join(',')})`;
+    document.getElementById('swAccent').style.background = `rgb(${c.accent.join(',')})`;
+    st.textContent = 'ready — use the keyboard on the stage';
+  } catch (e) { st.textContent = e.message; }
+}
+
+// ---- controls panel ----
+const ids = ['size','headScale','legLen','legW','armLen','radius','bounce'];
+function readPanel() {
+  const v = id => Number(document.getElementById(id).value);
+  const opts = { size: v('size'), headScale: v('headScale') / 100, legLen: v('legLen'), legW: v('legW'), armLen: v('armLen'), radius: v('radius') / 100, bounce: v('bounce') / 100, weapon: document.getElementById('weapon').value };
+  document.getElementById('vSize').textContent = opts.size;
+  document.getElementById('vHead').textContent = opts.headScale.toFixed(2);
+  document.getElementById('vLeg').textContent = opts.legLen;
+  document.getElementById('vLegW').textContent = opts.legW;
+  document.getElementById('vArm').textContent = opts.armLen;
+  document.getElementById('vRad').textContent = opts.radius.toFixed(2);
+  document.getElementById('vBounce').textContent = opts.bounce.toFixed(2);
+  sprite.setOptions(opts);
+  document.getElementById('export').value = JSON.stringify(opts);
+}
+ids.forEach(id => document.getElementById(id).oninput = readPanel);
+document.getElementById('weapon').onchange = readPanel;
+function copyExport() { navigator.clipboard?.writeText(document.getElementById('export').value); document.getElementById('status').textContent = 'settings copied'; }
+
+function pose(p) {
+  if (p === 'attack') sprite.attack();
+  if (p === 'jump')   { ctl.input.jump = true; ctl.input.jumpHeld = true; setTimeout(() => ctl.input.jumpHeld = false, 260); }
+  if (p === 'hurt')   { sprite.hurt(); ctl.vy = 380; ctl.vx = -sprite.facing * 220; ctl.grounded = false; }
+  if (p === 'cheer')  sprite.cheer();
+  if (p === 'dash')   ctl.input.dash = true;
+}
+
+// ---- keyboard ----
+const KEYS = { ArrowLeft:'left', ArrowRight:'right', a:'left', d:'right' };
+addEventListener('keydown', e => {
+  if (e.target.matches('input,select,textarea')) return;
+  if (KEYS[e.key]) ctl.input[KEYS[e.key]] = true;
+  if ((e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') && !e.repeat) { ctl.input.jump = true; ctl.input.jumpHeld = true; }
+  if (e.key === ' ' || e.key === 'ArrowUp') e.preventDefault();
+  if (e.key.toLowerCase() === 'x' && !e.repeat) sprite.attack();
+  if (e.key.toLowerCase() === 'z' && !e.repeat) ctl.input.dash = true;
+  if (e.key.toLowerCase() === 'h' && !e.repeat) pose('hurt');
+  if (e.key.toLowerCase() === 'c' && !e.repeat) sprite.cheer();
+});
+addEventListener('keyup', e => {
+  if (KEYS[e.key]) ctl.input[KEYS[e.key]] = false;
+  if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') ctl.input.jumpHeld = false;
+});
+
+// ---- stage ----
+function drawBackdrop() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#120714'); g.addColorStop(0.7, '#2a0a0a'); g.addColorStop(1, '#3a1206');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = ctx.createRadialGradient(W * 0.2, H, 10, W * 0.2, H, W * 0.7);
+  r.addColorStop(0, 'rgba(192,57,43,.45)'); r.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = r; ctx.fillRect(0, 0, W, H);
+  // ground
+  ctx.fillStyle = '#1a0d0a'; ctx.fillRect(0, GROUND, W, H - GROUND);
+  ctx.fillStyle = 'rgba(212,175,55,.35)'; ctx.fillRect(0, GROUND, W, 2);
+  ctx.strokeStyle = 'rgba(255,255,255,.04)';
+  for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, GROUND); ctx.lineTo(x - 20, H); ctx.stroke(); }
+}
+function spawnDust(x, n, spread) {
+  for (let i = 0; i < n; i++) dust.push({ x: x + (Math.random() - 0.5) * spread, y: GROUND, vx: (Math.random() - 0.5) * 120, vy: -Math.random() * 90, t: 0.5 });
+}
+function loop(now) {
+  const dt = Math.min(0.033, (now - last) / 1000); last = now;
+  const m = ctl.step(dt);
+  ctl.x = Math.max(60, Math.min(W - 60, ctl.x));
+  if (m.justLanded) spawnDust(ctl.x, 10, 40);
+  if (m.grounded && Math.abs(m.vx) > 200 && Math.random() < 0.3) spawnDust(ctl.x - sprite.facing * 20, 1, 10);
+  sprite.update(dt, m);
+
+  drawBackdrop();
+  for (const d of dust) { d.t -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 200 * dt; ctx.globalAlpha = Math.max(0, d.t * 1.6); ctx.fillStyle = '#c9a45a'; ctx.beginPath(); ctx.arc(d.x, d.y, 3, 0, Math.PI * 2); ctx.fill(); }
+  ctx.globalAlpha = 1; dust = dust.filter(d => d.t > 0);
+  for (const t of ctl.trail) { ctx.globalAlpha = t.t * 1.8; sprite.draw(ctx, t.x, GROUND, 1, t.y); }
+  ctx.globalAlpha = 1;
+  sprite.draw(ctx, ctl.x, GROUND, 1, m.height);
+  requestAnimationFrame(loop);
+}
+readPanel();
+loadCub(sel.value);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
