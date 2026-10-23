@@ -603,6 +603,9 @@
       border-radius:1px; margin-left:10px; vertical-align:middle; opacity:.7;
     }
     /* === HONEY & PROGRESSION === */
+    .sync-badge { font-family:'Cinzel',serif; font-size:8px; letter-spacing:2px; text-transform:uppercase; margin-top:6px; min-height:12px; opacity:.7; }
+    .sync-badge.cloud { color:var(--jade); }
+    .sync-badge.local { color:var(--silver); }
     .honey-count {
       font-family:'Cinzel',serif; font-size:11px; letter-spacing:2px; color:var(--gold2); white-space:nowrap;
       padding:4px 12px; border:1px solid rgba(212,175,55,.3); background:rgba(212,175,55,.06); cursor:help;
@@ -638,6 +641,7 @@
   <meta name="google-adsense-account" content="ca-pub-8513421744602426">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8513421744602426"
        crossorigin="anonymous"></script>
+  <script src="/engine.js"></script>
 </head>
 <body>
 <div class="bg"></div>
@@ -688,6 +692,7 @@
   <div class="wallet-zone">
     <button class="btn-main" id="walletBtn" onclick="connectWallet()">⬡ Connect Phantom Wallet</button>
     <div class="wallet-addr" id="walletAddr"></div>
+    <div class="sync-badge" id="syncBadge"></div>
   </div>
   <div class="status-bar" id="statusBar">✦ Demo Mode — real Cubs load after connecting wallet ✦</div>
 
@@ -818,7 +823,6 @@ const TENSOR_GQL  = '/api/tensor-gql';
 // ─────────────────────────────────────────
 // COOLDOWN CONFIG
 // ─────────────────────────────────────────
-const COOLDOWN_MS  = 30 * 60 * 1000;  // 30 min recovery after defeat
 
 // ─────────────────────────────────────────
 // GAME STATE
@@ -836,10 +840,12 @@ const G = {
   honey: 0, honeyByEra: {}, cubProg: {},
   // HP carried between tag-outs this session: { cubId: hp }
   hpPool: {},
+  // true once the wallet signed in and the server owns the profile
+  server: false,
 };
 
-// Era unlock thresholds (total wins needed)
-const ERA_UNLOCK = { hadean:0, archean:5, proterozoic:15, paleozoic:30, mesozoic:50, cenozoic:75 };
+const { ERA_ORDER, ERA_UNLOCK, ERA_HONEY, ERA_LVL, ERA_ENEMIES, GEO_BURSTS, CLASS_BURSTS, CLASS_AFFINITY,
+        COOLDOWN_MS, MAX_LEVEL, eraIdx, drinkCost, switchCost, reviveCost, infuseCost, xpToNext, deriveClass } = HoneyEngine;
 
 const ERA_META = {
   hadean:      { title:'Magma Honey — Hadean',    sub:'Defeat the fire guardians and claim the honey of destruction', badge:'Hadean',      color:'#9b59b6', arenaTitle:'✦ The Hunt — Magma Honey ✦' },
@@ -848,79 +854,6 @@ const ERA_META = {
   paleozoic:   { title:'Bloom Honey — Paleozoic', sub:'Outrun the reef guardians and claim the honey of speed',     badge:'Paleozoic',   color:'#2ecc71', arenaTitle:'✦ The Hunt — Bloom Honey ✦' },
   mesozoic:    { title:'Titan Honey — Mesozoic',  sub:'Overpower the giant guardians and claim the honey of force', badge:'Mesozoic',    color:'#f39c12', arenaTitle:'✦ The Hunt — Titan Honey ✦' },
   cenozoic:    { title:'Frost Honey — Cenozoic',  sub:'The final drop. Defeat the last guardians. Claim the honey of time.', badge:'Cenozoic', color:'#e74c3c', arenaTitle:'✦ The Hunt — Frost Honey ✦' },
-};
-
-// Era-specific enemy pools (scale in difficulty)
-const ERA_ENEMIES = {
-  hadean: [
-    { name:'Magma Keeper',     emoji:'🌋', cls:'Magma Honey Guardian', hp:80,  atk:22, def:10, xp:10 },
-    { name:'Ember Sentinel',   emoji:'🔥', cls:'Magma Honey Guardian', hp:65,  atk:28, def:8,  xp:12 },
-    { name:'Caldera Warden',   emoji:'👹', cls:'Magma Honey Guardian', hp:140, atk:25, def:18, xp:18 },
-    { name:'Lava Specter',     emoji:'👻', cls:'Magma Honey Guardian', hp:55,  atk:32, def:5,  xp:15 },
-    { name:'Cinder Golem',     emoji:'🗿', cls:'Magma Honey Guardian', hp:75,  atk:19, def:22, xp:12 },
-  ],
-  archean: [
-    { name:'Stone Warden',     emoji:'🗿', cls:'Stone Honey Guardian', hp:160, atk:30, def:35, xp:22 },
-    { name:'Fault Titan',      emoji:'⛰', cls:'Stone Honey Guardian', hp:130, atk:33, def:22, xp:24 },
-    { name:'Crust Shade',      emoji:'🌑', cls:'Stone Honey Guardian', hp:95,  atk:44, def:10, xp:28 },
-    { name:'Obsidian Keeper',  emoji:'🦎', cls:'Stone Honey Guardian', hp:115, atk:38, def:18, xp:26 },
-    { name:'Deep Rock Elder',  emoji:'🪨', cls:'Stone Honey Guardian', hp:180, atk:28, def:40, xp:30 },
-  ],
-  proterozoic: [
-    { name:'Tide Keeper',      emoji:'🌊', cls:'Tide Honey Guardian',  hp:200, atk:35, def:42, xp:32 },
-    { name:'Frost Sentinel',   emoji:'🧊', cls:'Tide Honey Guardian',  hp:110, atk:48, def:12, xp:36 },
-    { name:'Current Warden',   emoji:'🌫', cls:'Tide Honey Guardian',  hp:170, atk:32, def:38, xp:34 },
-    { name:'Ice Colossus',     emoji:'❄',  cls:'Tide Honey Guardian',  hp:155, atk:38, def:30, xp:35 },
-    { name:'Ocean Ancient',    emoji:'🦠', cls:'Tide Honey Guardian',  hp:90,  atk:55, def:8,  xp:40 },
-  ],
-  paleozoic: [
-    { name:'Bloom Keeper',     emoji:'🌿', cls:'Bloom Honey Guardian', hp:240, atk:42, def:45, xp:44 },
-    { name:'Reef Warden',      emoji:'🪸', cls:'Bloom Honey Guardian', hp:220, atk:48, def:40, xp:46 },
-    { name:'Venom Crawler',    emoji:'🦂', cls:'Bloom Honey Guardian', hp:175, atk:52, def:32, xp:42 },
-    { name:'Spore Specter',    emoji:'🌱', cls:'Bloom Honey Guardian', hp:130, atk:64, def:16, xp:52 },
-    { name:'Tide Leviathan',   emoji:'🐚', cls:'Bloom Honey Guardian', hp:190, atk:45, def:50, xp:48 },
-  ],
-  mesozoic: [
-    { name:'Titan Keeper',     emoji:'🦕', cls:'Titan Honey Guardian', hp:290, atk:55, def:52, xp:58 },
-    { name:'Scale Warden',     emoji:'🐉', cls:'Titan Honey Guardian', hp:340, atk:48, def:58, xp:60 },
-    { name:'Apex Sentinel',    emoji:'🦖', cls:'Titan Honey Guardian', hp:210, atk:64, def:38, xp:62 },
-    { name:'Pangaea Colossus', emoji:'🌍', cls:'Titan Honey Guardian', hp:380, atk:58, def:62, xp:65 },
-    { name:'Sky Warden',       emoji:'🦅', cls:'Titan Honey Guardian', hp:240, atk:68, def:30, xp:64 },
-  ],
-  cenozoic: [
-    { name:'Frost Keeper',     emoji:'❄',  cls:'Frost Honey Guardian', hp:360, atk:68, def:62, xp:72 },
-    { name:'Time Warden',      emoji:'⏳', cls:'Frost Honey Guardian', hp:440, atk:62, def:72, xp:78 },
-    { name:'Epoch Sentinel',   emoji:'🌀', cls:'Frost Honey Guardian', hp:520, atk:72, def:68, xp:88 },
-    { name:'The Last Guardian',emoji:'👁', cls:'Frost Honey Guardian', hp:650, atk:78, def:78, xp:100 },
-    { name:'Ice Age Titan',    emoji:'🏔', cls:'Frost Honey Guardian', hp:400, atk:75, def:60, xp:82 },
-  ],
-};
-
-// Keep old ENEMIES as fallback alias
-const ENEMIES = ERA_ENEMIES.hadean;
-
-const GEO_BURSTS = [
-  'Magma Honey Wave','Stone Honey Slam','Tide Honey Surge','Bloom Honey Rush',
-  'Titan Honey Crush','Frost Honey Spike','Golden Burst','Honey Strike',
-  'Amber Flood','Crystal Drop','Primal Honey','The Golden Drop',
-];
-
-// Class-specific special moves
-const CLASS_BURSTS = {
-  'Magma Warden':     ['Magma Honey Wave','Core Honey Eruption','Lava Drop'],
-  'Ember Knight':     ['Ember Honey Barrage','Magma Honey Wave','Fire Drop'],
-  'Glacial Scout':    ['Tide Honey Surge','Frost Honey Spike','Glacial Drop'],
-  'Void Stalker':     ['Shadow Honey Strike','Void Drop','Dark Honey Crush'],
-  'Quartz Sage':      ['Crystal Drop','Tide Honey Surge','Stone Honey Slam'],
-  'Stratum Knight':   ['Stone Honey Slam','Titan Honey Crush','Golden Burst'],
-  'Tidal Rogue':      ['Tide Honey Surge','Amber Flood','Bloom Honey Rush'],
-  'Desert Fossil':    ['Bloom Honey Rush','Amber Flood','Golden Drop'],
-  'Carbonite Ranger': ['Titan Honey Crush','Bloom Honey Rush','Golden Burst'],
-  'Sediment Scout':   ['Stone Honey Slam','Honey Strike','Primal Honey'],
-  'Fossil Rogue':     ['Bloom Honey Rush','Amber Flood','Crystal Drop'],
-  'Crystal Mage':     ['Crystal Drop','Frost Honey Spike','The Golden Drop'],
-  'Tectonic Guard':   ['Stone Honey Slam','Titan Honey Crush','Honey Strike'],
-  'Stratum Keeper':   ['Stone Honey Slam','Primal Honey','Honey Strike'],
 };
 
 // ─────────────────────────────────────────
@@ -1159,26 +1092,6 @@ function parseCubs(nfts) {
   });
 }
 
-function deriveClass(traits, seed = '') {
-  const classes = {
-    'Volcanic':'Magma Warden',    'Lava':'Magma Warden',     'Caldera':'Magma Warden',
-    'Fire':'Ember Knight',        'Flame':'Ember Knight',    'Ember':'Ember Knight',
-    'Ice':'Glacial Scout',        'Frost':'Glacial Scout',   'Arctic':'Glacial Scout',  'Glacial':'Glacial Scout',
-    'Dark':'Void Stalker',        'Shadow':'Void Stalker',   'Obsidian':'Void Stalker', 'Void':'Void Stalker',
-    'Light':'Quartz Sage',        'Crystal':'Quartz Sage',   'Quartz':'Quartz Sage',    'Gem':'Quartz Sage',
-    'Stone':'Stratum Knight',     'Rock':'Stratum Knight',   'Granite':'Stratum Knight','Stratum':'Stratum Knight',
-    'Water':'Tidal Rogue',        'Ocean':'Tidal Rogue',     'River':'Tidal Rogue',     'Tidal':'Tidal Rogue',
-    'Sand':'Desert Fossil',       'Desert':'Desert Fossil',  'Amber':'Desert Fossil',   'Dune':'Desert Fossil',
-    'Forest':'Carbonite Ranger',  'Jungle':'Carbonite Ranger','Moss':'Carbonite Ranger', 'Carbon':'Carbonite Ranger',
-  };
-  const bg = traits['Background'] || traits['background'] || traits['Era'] || traits['era'] || '';
-  for (const [k, v] of Object.entries(classes)) {
-    if (bg.toLowerCase().includes(k.toLowerCase())) return v;
-  }
-  const fallbacks = ['Sediment Scout','Fossil Rogue','Crystal Mage','Tectonic Guard','Magma Warden','Stratum Keeper'];
-  return fallbacks[Math.abs(hash(bg + (traits['Eyes'] || '') + seed)) % fallbacks.length];
-}
-
 // ─────────────────────────────────────────
 // DEMO FALLBACK
 // ─────────────────────────────────────────
@@ -1199,29 +1112,6 @@ function getDemoCubs() {
 // ─────────────────────────────────────────
 // STATS FROM TRAITS
 // ─────────────────────────────────────────
-function hash(s) {
-  let h = 5381;
-  for (let i = 0; i < s.length; i++) h = ((h<<5)+h)^s.charCodeAt(i);
-  return Math.abs(h);
-}
-
-function baseStats(cub) {
-  const rb     = { legendary:30, epic:20, rare:10, common:0 }[cub.rarity] || 0;
-  const t      = cub.traits || {};
-  // Each stat seeded by a different trait → more varied builds per cub
-  const atkSeed = hash((t['Eyes']       || t['Mouth']  || '') + 'atk' + cub.name);
-  const defSeed = hash((t['Fur']        || t['Body']   || '') + 'def' + cub.name);
-  const spdSeed = hash((t['Accessory']  || t['Hat']    || '') + 'spd' + cub.name);
-  const lckSeed = hash((t['Background'] || t['Era']    || '') + 'lck' + cub.name);
-  return {
-    ATK: Math.min(99, 28 + (atkSeed % 45) + rb),
-    DEF: Math.min(99, 22 + (defSeed % 40) + rb),
-    SPD: Math.min(99, 25 + (spdSeed % 42) + rb),
-    LCK: Math.min(99, 18 + (lckSeed % 38) + rb),
-    HP:  120 + rb * 2,
-  };
-}
-
 // ─────────────────────────────────────────
 // LAZY IMAGE LOADER — fetch off-chain metadata when Helius has no image
 // ─────────────────────────────────────────
@@ -1376,21 +1266,36 @@ function statBars(s) {
 // SELECT CUB → BATTLE
 // ─────────────────────────────────────────
 function selectCub(cub) {
+  if (G.busy) return;
   if (isCoolingDown(cub.id)) {
     addLog(`⏳ ${cub.name} is recovering — ${fmtCD(cooldownRemaining(cub.id))} remaining. Revive it with honey or pick another Cub.`, 'ls');
     return;
   }
-  if (G.busy) return;
   if (G.active && G.selected) {
-    if (String(cub.id) === String(G.selected.id)) return;
-    switchCub(cub);
+    if (String(cub.id) !== String(G.selected.id)) doAction('switch', cub.id);
     return;
   }
+  startHunt(cub);
+}
 
+async function startHunt(cub) {
+  G.busy = true;
+  let r;
+  try {
+    if (G.server) r = await api('/api/game/battle/start', { cubId: cub.id });
+    else {
+      r = HoneyEngine.startBattle(profileFromG(), cub, { now: Date.now() });
+      if (!r.ok) throw new Error(errMsg(r.error));
+      r.state = r.p;
+    }
+  } catch (e) {
+    G.busy = false;
+    addLog(`⚠ ${e.message}`, 'le');
+    return;
+  }
+  syncFromProfile(r.state);
+  G.selected = cub;
   enterWithCub(cub);
-  spawnEnemy();
-  setBtns(true);
-  updateCosts();
   const enterFlair = {
     'Magma Warden':     '🌋 hunts for the Magma Honey',
     'Ember Knight':     '🔥 burns a path to the golden drop',
@@ -1402,35 +1307,16 @@ function selectCub(cub) {
     'Desert Fossil':    '⏳ follows the trail of the Bloom Honey',
     'Carbonite Ranger': '🌿 hunts the Titan Honey through megafauna territory',
   };
-  const flair = enterFlair[cub.class] || '🍯 enters the hunt for the golden drop';
-  addLog(`${cub.name} ${flair}…`, 'ls');
+  addLog(`${cub.name} ${enterFlair[cub.class] || '🍯 enters the hunt for the golden drop'}…`, 'ls');
+  await playEvents(r.events);
 }
 
+// UI only — selection highlight, trait panel and the player sprite/plate
 function enterWithCub(cub) {
-  G.selected = cub;
-  G.pMaxHP = getStats(cub).HP;
-  G.pHP = Math.min(G.pMaxHP, G.hpPool[cub.id] ?? G.pMaxHP);
   document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
   document.getElementById(`c-${cub.id}`)?.classList.add('selected');
   showTraits(cub);
   renderPlayer();
-}
-
-// Tag another Cub in mid-battle: costs honey and the turn, the outgoing Cub keeps its HP for later
-function switchCub(cub) {
-  const cost = switchCost(G.currentEra);
-  if (!spendHoney(cost, 'switching Cubs')) return;
-  const prev = G.selected;
-  G.hpPool[prev.id] = G.pHP;
-  G.busy = true;
-  setBtns(false);
-  spriteFx('playerSprite', 'swap-out', 500);
-  setTimeout(() => {
-    enterWithCub(cub);
-    announce(`${cub.name} tags in!`);
-    addLog(`🔄 ${prev.name} falls back — ${cub.name} tags in (🍯 −${cost}).`, 'lp');
-    setTimeout(enemyTurn, 900);
-  }, 450);
 }
 
 function showTraits(cub) {
@@ -1442,86 +1328,40 @@ function showTraits(cub) {
   ).join('');
 }
 
-function spawnEnemy() {
-  const pool = ERA_ENEMIES[G.currentEra] || ERA_ENEMIES.hadean;
-  G.enemy = { ...pool[Math.floor(Math.random() * pool.length)] };
-  G.eHP = G.eMaxHP = G.enemy.hp;
-  G.active = true;
-  renderEnemy();
-  announce(`${G.enemy.emoji} ${G.enemy.name} guards the honey!`, true);
-}
-
 // ─────────────────────────────────────────
-// HONEY ECONOMY · LEVELS · ERA AFFINITY
+// HONEY ECONOMY · LEVELS · ERA AFFINITY — the rules live in /engine.js (shared with the server)
 // ─────────────────────────────────────────
-const ERA_ORDER = ['hadean','archean','proterozoic','paleozoic','mesozoic','cenozoic'];
-const ERA_HONEY = { hadean:'Magma Honey', archean:'Stone Honey', proterozoic:'Tide Honey', paleozoic:'Bloom Honey', mesozoic:'Titan Honey', cenozoic:'Frost Honey' };
-const eraIdx     = era => Math.max(0, ERA_ORDER.indexOf(era));
-const honeyDrop  = era => 4 + eraIdx(era) * 3 + Math.floor(Math.random() * 3);
-const drinkCost  = era => 8 + eraIdx(era) * 4;
-const switchCost = era => 6 + eraIdx(era) * 3;
-const reviveCost = era => 25 + eraIdx(era) * 5;
-const infuseCost = lvl => 12 + lvl * 6;
-const MAX_LEVEL  = 50;
-const xpToNext   = lvl => 25 + lvl * 15;
-
-// Every class thrives in one era and struggles in another
-const CLASS_AFFINITY = {
-  'Magma Warden':     { strong:'hadean',      weak:'proterozoic' },
-  'Ember Knight':     { strong:'hadean',      weak:'cenozoic' },
-  'Stratum Knight':   { strong:'archean',     weak:'paleozoic' },
-  'Tectonic Guard':   { strong:'archean',     weak:'mesozoic' },
-  'Stratum Keeper':   { strong:'archean',     weak:'cenozoic' },
-  'Sediment Scout':   { strong:'archean',     weak:'hadean' },
-  'Tidal Rogue':      { strong:'proterozoic', weak:'hadean' },
-  'Quartz Sage':      { strong:'proterozoic', weak:'mesozoic' },
-  'Desert Fossil':    { strong:'paleozoic',   weak:'proterozoic' },
-  'Fossil Rogue':     { strong:'paleozoic',   weak:'cenozoic' },
-  'Carbonite Ranger': { strong:'mesozoic',    weak:'hadean' },
-  'Void Stalker':     { strong:'mesozoic',    weak:'archean' },
-  'Glacial Scout':    { strong:'cenozoic',    weak:'hadean' },
-  'Crystal Mage':     { strong:'cenozoic',    weak:'paleozoic' },
-};
-function affinity(cub, era = G.currentEra) {
-  const a = CLASS_AFFINITY[cub.class];
-  if (!a) return 0;
-  return a.strong === era ? 1 : a.weak === era ? -1 : 0;
-}
-
-function cubProg(cub) {
-  return G.cubProg[cub.id] || (G.cubProg[cub.id] = { xp:0, lvl:1 });
-}
+function affinity(cub, era = G.currentEra) { return HoneyEngine.affinity(cub.class, era); }
+function getStats(cub) { return HoneyEngine.getStats(cub, getLevel(cub), G.currentEra); }
+function cubProg(cub) { return G.cubProg[cub.id] || (G.cubProg[cub.id] = { xp:0, lvl:1 }); }
 function getLevel(cub) { return cubProg(cub).lvl; }
-function addXP(cub, amount) {
-  const p = cubProg(cub);
-  p.xp += amount;
-  let ups = 0;
-  while (p.lvl < MAX_LEVEL && p.xp >= xpToNext(p.lvl)) { p.xp -= xpToNext(p.lvl); p.lvl++; ups++; }
-  saveProgress();
-  return ups;
-}
+function cubById(id) { return G.cubs.find(c => String(c.id) === String(id)); }
+function cubName(id) { return cubById(id)?.name || `Cub ${id}`; }
 
-// Level and era affinity scale the trait-derived base stats
-function getStats(cub) {
-  const base = baseStats(cub), lvl = getLevel(cub), aff = affinity(cub);
-  const mult = (1 + 0.04 * (lvl - 1)) * (aff === 1 ? 1.2 : aff === -1 ? 0.85 : 1);
-  const sc = v => Math.min(160, Math.round(v * mult));
-  return { ATK: sc(base.ATK), DEF: sc(base.DEF), SPD: sc(base.SPD), LCK: sc(base.LCK), HP: base.HP + 8 * (lvl - 1) };
+// The engine works on a plain profile object; G mirrors it for the UI
+function profileFromG() {
+  return {
+    honey: G.honey, honeyByEra: G.honeyByEra, wins: G.wins, era: G.currentEra,
+    cubProg: G.cubProg, cooldowns: G.cooldowns, hpPool: G.hpPool,
+    battle: G.active && G.selected
+      ? { cubId: G.selected.id, pHP: G.pHP, pMaxHP: G.pMaxHP, enemy: G.enemy, eHP: G.eHP, eMaxHP: G.eMaxHP, defending: false }
+      : null,
+  };
 }
-
-function addHoney(amount, era = G.currentEra) {
-  G.honey = Math.max(0, G.honey + amount);
-  if (amount > 0) G.honeyByEra[era] = (G.honeyByEra[era] || 0) + amount;
-  saveProgress();
-  updateHoney(true);
-}
-function spendHoney(amount, what) {
-  if (G.honey < amount) { addLog(`🍯 Not enough honey for ${what} — need ${amount}, you have ${G.honey}.`, 'le'); return false; }
-  G.honey -= amount;
-  saveProgress();
+function syncFromProfile(p) {
+  G.honey = p.honey || 0; G.honeyByEra = p.honeyByEra || {}; G.wins = p.wins || 0; G.currentEra = p.era || 'hadean';
+  G.cubProg = p.cubProg || {}; G.cooldowns = p.cooldowns || {}; G.hpPool = p.hpPool || {};
+  const b = p.battle, cub = b && cubById(b.cubId);
+  if (b && b.enemy && cub) {
+    G.active = true; G.selected = cub;
+    G.pHP = b.pHP; G.pMaxHP = b.pMaxHP; G.enemy = b.enemy; G.eHP = b.eHP; G.eMaxHP = b.eMaxHP;
+  } else {
+    G.active = false;
+  }
+  if (!G.server) saveProgress();
   updateHoney();
-  return true;
 }
+
 function updateHoney(bump) {
   const el = document.getElementById('honeyCount');
   if (!el) return;
@@ -1537,11 +1377,10 @@ function updateCosts() {
   const s = document.getElementById('switchHint');
   if (s) s.textContent = G.active ? `Click another ready Cub to tag it in — costs 🍯 ${switchCost(era)} and the turn` : '';
   document.querySelectorAll('.cub-btn.infuse').forEach(b => {
-    const cub = G.cubs.find(c => String(c.id) === b.dataset.cub);
+    const cub = cubById(b.dataset.cub);
     if (cub) b.textContent = `Infuse 🍯 ${infuseCost(getLevel(cub))}`;
   });
 }
-function cubName(id) { return G.cubs.find(c => String(c.id) === String(id))?.name || `Cub ${id}`; }
 
 // Helius returns no attributes for OkayCubs — pull them from the Pinata metadata (same-origin via proxy, cached)
 async function hydrateTraits(cub) {
@@ -1589,30 +1428,106 @@ function refreshCard(cub) {
   const body = card.querySelector('.cub-body');
   if (body) body.innerHTML = cardBodyHTML(cub);
 }
-function infuseCub(cubId) {
-  const cub = G.cubs.find(c => String(c.id) === String(cubId));
-  if (!cub) return;
-  const p = cubProg(cub);
-  if (p.lvl >= MAX_LEVEL) return;
-  if (!spendHoney(infuseCost(p.lvl), 'infusing')) return;
-  p.lvl++; p.xp = 0;
-  saveProgress();
+async function infuseCub(cubId) {
+  const cub = cubById(cubId);
+  if (!cub || G.busy) return;
+  try {
+    if (G.server) { const r = await api('/api/game/cub/infuse', { cubId }); syncFromProfile(r.state); }
+    else { const r = HoneyEngine.infuse(profileFromG(), cub); if (!r.ok) throw new Error(errMsg(r.error)); syncFromProfile(r.p); }
+  } catch (e) { addLog(`🍯 ${e.message}`, 'le'); return; }
   refreshCard(cub);
-  addLog(`✨ ${cub.name} is infused with honey — Lv ${p.lvl}!`, 'lp');
-  if (G.selected && String(G.selected.id) === String(cub.id)) {
-    G.pMaxHP = getStats(cub).HP;
-    G.pHP = Math.min(G.pMaxHP, G.pHP + 8);
-    renderPlayer();
-  }
+  addLog(`✨ ${cub.name} is infused with honey — Lv ${getLevel(cub)}!`, 'lp');
+  if (G.selected && String(G.selected.id) === String(cub.id)) renderPlayer();
 }
 
 // ─────────────────────────────────────────
-// REVIVE — honey or SOL (verified on-chain by /api/game/revive)
+// SERVER SYNC — wallet-signed profile; falls back to local progress when unavailable
+// ─────────────────────────────────────────
+const ERR_MSG = {
+  honey:'Not enough honey.', cooling:'That Cub is still recovering.', full:'Already at full health.',
+  not_owner:'Your wallet does not own that Cub.', not_owner_target:'Your wallet does not own that Cub.', busy:'Hold on — the last move is still resolving.',
+  no_battle:'Pick a Cub to start the hunt.', locked:'That era is still locked.', max:'Max level reached.',
+  nonce_expired:'Sign-in expired — try again.', bad_signature:'Signature rejected.',
+  payment_not_verified:'Payment could not be verified.', signature_used:'That payment was already used.',
+  payments_not_configured:'SOL payments are not configured yet.', unauthorized:'Session expired — reconnect your wallet.',
+  server_error:'The server stumbled — try again.',
+};
+function errMsg(code) { return ERR_MSG[code] || code || 'Something went wrong'; }
+
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: body ? 'POST' : 'GET',
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: 'same-origin',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) {
+    const code = data.error || String(res.status);
+    throw Object.assign(new Error(errMsg(code)), { code, detail: data.detail });
+  }
+  return data;
+}
+function setSync(mode, text) {
+  const el = document.getElementById('syncBadge');
+  if (!el) return;
+  el.className = `sync-badge ${mode}`;
+  el.textContent = text;
+}
+function goLocal(reason) {
+  G.server = false;
+  setSync('local', `💾 ${reason} — progress saved on this device`);
+}
+
+async function signIn(addr) {
+  // Reuse an existing session cookie when it belongs to this wallet
+  try {
+    const prof = await api('/api/game/profile');
+    if (prof.wallet === addr) return adoptServerProfile(prof.state);
+  } catch (e) {
+    if (e.code === 'not_configured') return goLocal('Server sync is not set up yet');
+  }
+  try {
+    setStatus('Sign the message in Phantom to sync your hunt…', '');
+    const { nonce, message } = await api('/api/game/auth/nonce');
+    const signed = await window.solana.signMessage(new TextEncoder().encode(message), 'utf8');
+    const bytes = signed.signature || signed;
+    const signature = btoa(String.fromCharCode(...bytes));
+    await api('/api/game/auth/verify', { wallet: addr, nonce, signature });
+    const prof = await api('/api/game/profile');
+    adoptServerProfile(prof.state);
+  } catch (e) {
+    console.warn('[sign-in]', e);
+    goLocal(e.code === 'not_configured' ? 'Server sync is not set up yet' : 'Sign-in skipped');
+    setStatus(`✦ ${G.cubs.length} OkayCubs loaded ✦`, 'good');
+  }
+}
+function adoptServerProfile(state) {
+  G.server = true;
+  syncFromProfile(state);
+  renderCubs(G.cubs);
+  applyEraTexts(G.currentEra);
+  applyEraTheme(G.currentEra);
+  updateWorldMap();
+  updateProgBar();
+  if (G.active && G.selected) {
+    enterWithCub(G.selected);
+    renderEnemy();
+    setBtns(true);
+    addLog('⚔ Resuming your hunt where you left it…', 'ls');
+  }
+  updateCosts();
+  setSync('cloud', '☁ Hunt synced to your wallet');
+  setStatus(`✦ ${G.cubs.length} OkayCubs · progress synced ✦`, 'good');
+}
+
+// ─────────────────────────────────────────
+// REVIVE — honey, or SOL verified on-chain by the server (each signature usable once)
 // ─────────────────────────────────────────
 const REVIVE = { priceSol: 0.01, wallet: null, loaded: false };
 
 function cooldownOverlayHTML(cubId) {
-  const sol = G.connected && window.solana?.publicKey
+  const sol = G.server && window.solana?.publicKey
     ? `<button class="cub-btn sol" onclick="event.stopPropagation();reviveWithSol('${cubId}',this)">⚡ ${REVIVE.priceSol} SOL</button>` : '';
   return `
     <div class="cub-cooldown">
@@ -1623,18 +1538,18 @@ function cooldownOverlayHTML(cubId) {
       </div>
     </div>`;
 }
-function clearCooldown(cubId) {
-  delete G.cooldowns[cubId];
-  delete G.hpPool[cubId];
-  saveProgress();
+function afterRevive(cubId) {
   const card = document.getElementById(`c-${cubId}`);
   if (card) refreshCardCooldown(cubId, card);
   updateRosterStatus();
 }
-function reviveWithHoney(cubId) {
+async function reviveWithHoney(cubId) {
   if (!isCoolingDown(cubId)) return;
-  if (!spendHoney(reviveCost(G.currentEra), 'reviving')) return;
-  clearCooldown(cubId);
+  try {
+    if (G.server) { const r = await api('/api/game/revive', { cubId, method: 'honey' }); syncFromProfile(r.state); }
+    else { const r = HoneyEngine.reviveWithHoney(profileFromG(), cubId, Date.now()); if (!r.ok) throw new Error(errMsg(r.error)); syncFromProfile(r.p); }
+  } catch (e) { addLog(`🍯 ${e.message}`, 'le'); return; }
+  afterRevive(cubId);
   addLog(`🍯 Honey revives ${cubName(cubId)} — back in the hunt!`, 'lp');
 }
 async function loadReviveConfig() {
@@ -1664,7 +1579,7 @@ async function waitForConfirmation(conn, signature) {
   throw new Error('Confirmation timed out — if SOL left your wallet, reload and try again');
 }
 async function reviveWithSol(cubId, btn) {
-  if (!isCoolingDown(cubId)) return;
+  if (!isCoolingDown(cubId) || !G.server) return;
   if (!window.solana?.publicKey) { addLog('⚡ Connect Phantom to revive with SOL.', 'le'); return; }
   const label = btn.textContent;
   btn.disabled = true; btn.textContent = '⚡ Signing…';
@@ -1684,10 +1599,9 @@ async function reviveWithSol(cubId, btn) {
     const { signature } = await window.solana.signAndSendTransaction(tx);
     btn.textContent = '⚡ Confirming…';
     await waitForConfirmation(conn, signature);
-    const res = await fetch('/api/game/revive', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ signature, cubId }) });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'Payment could not be verified');
-    clearCooldown(cubId);
+    const r = await api('/api/game/revive', { cubId, method: 'sol', signature });
+    syncFromProfile(r.state);
+    afterRevive(cubId);
     addLog(`⚡ ${cubName(cubId)} revived with SOL — back in the hunt!`, 'lp');
   } catch (e) {
     console.warn('[revive]', e);
@@ -1699,8 +1613,6 @@ async function reviveWithSol(cubId, btn) {
 // ─────────────────────────────────────────
 // BATTLE STAGE — rendering
 // ─────────────────────────────────────────
-const ERA_LVL = { hadean:[1,5], archean:[6,15], proterozoic:[16,30], paleozoic:[31,50], mesozoic:[51,75], cenozoic:[76,100] };
-
 // Reuse the portrait that already loaded in the roster card so the battle never shows a broken image
 function cubPortrait(c) {
   const cardImg = document.querySelector(`#c-${CSS.escape(String(c.id))} .cub-img`);
@@ -1910,156 +1822,154 @@ function applyEraTheme(era) {
 }
 
 // ─────────────────────────────────────────
-// BATTLE LOGIC
+// BATTLE LOGIC — the engine (local or on the server) resolves the exchange, the stage animates its events
 // ─────────────────────────────────────────
-function act(action) {
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+function act(action) { doAction(action); }
+
+async function doAction(action, switchTo) {
   if (!G.active || !G.selected || G.busy) return;
-  const stats = getStats(G.selected);
-  const cub   = G.selected;
-  G.defending = false;
   G.busy = true;
   setBtns(false);
-
-  if (action === 'drink') {
-    const cost = drinkCost(G.currentEra);
-    if (G.pHP >= G.pMaxHP) { addLog(`🍯 ${cub.name} is already at full health.`, 'ls'); G.busy = false; setBtns(true); return; }
-    if (!spendHoney(cost, 'drinking honey')) { G.busy = false; setBtns(true); return; }
-    const heal = Math.floor(G.pMaxHP * 0.4);
-    G.pHP = Math.min(G.pMaxHP, G.pHP + heal);
-    announce(`${cub.name} drinks ${ERA_HONEY[G.currentEra]}`);
-    spriteFx('playerSprite', 'shield', 750);
-    honeyBurst('playerSprite', 24, 3);
-    showDmg('playerSprite', heal, 'heal');
-    addLog(`🍯 ${cub.name} drinks honey — +${heal} HP (🍯 −${cost})`, 'lp');
-    updatePlayer();
-    setTimeout(enemyTurn, 800);
-    return;
-  }
-
-  if (action === 'def') {
-    G.defending = true;
-    const shield = Math.floor(stats.DEF * .5);
-    announce(`${cub.name} fortifies`);
-    spriteFx('playerSprite', 'shield', 750);
-    showDmg('playerSprite', shield, 'def');
-    addLog(`🛡 ${cub.name} fortifies — DEF +${shield}`, 'lp');
-    setTimeout(enemyTurn, 800);
-    return;
-  }
-
-  let dmg, crit = false, burst = null;
-  if (action === 'atk') {
-    crit = Math.random() < stats.LCK / 200;
-    dmg  = Math.floor(stats.ATK * 0.4 + Math.random() * 15);
-    if (crit) dmg = Math.floor(dmg * 1.8);
-    announce(crit ? `${cub.name} — Critical Strike!` : `${cub.name} strikes!`);
-  } else {
-    const pool = CLASS_BURSTS[cub.class] || GEO_BURSTS;
-    burst = pool[Math.floor(Math.random() * pool.length)];
-    dmg   = Math.floor(stats.ATK * .6 + stats.LCK * .3 + Math.random() * 20);
-    announce(`✦ ${burst} ✦`);
-  }
-
-  spriteFx('playerSprite', 'lunge-ne', 450);
-  setTimeout(() => {
-    G.eHP = Math.max(0, G.eHP - dmg);
-    spriteFx('enemySprite', 'hit', 500);
-    if (burst) {
-      stageFlash(); stageShake(true);
-      fxAt('enemySprite', 'burst-ring', 750);
-      honeyBurst('enemySprite', 40, 5);
-      addLog(`✦ ${cub.name} unleashes ${burst} for ${dmg}!`, 'lp');
-    } else {
-      fxAt('enemySprite', crit ? 'slash crit' : 'slash', 400);
-      if (crit) stageFlash(true);
-      stageShake(crit);
-      addLog(`⚔ ${cub.name} strikes for ${dmg}${crit ? ' 💥 CRITICAL!' : ''}!`, 'lp');
+  let r;
+  try {
+    if (G.server) r = await api('/api/game/battle/action', { action, switchTo });
+    else {
+      const cubs = {};
+      G.cubs.forEach(c => { cubs[c.id] = c; });
+      r = HoneyEngine.resolveAction(profileFromG(), cubs, action, { now: Date.now(), switchTo });
+      if (!r.ok) throw new Error(errMsg(r.error));
+      r.state = r.p;
     }
-    showDmg('enemySprite', dmg, burst ? 'spc' : crit ? 'crit' : 'atk');
-    updateEnemy();
-    if (G.eHP <= 0) { victory(); return; }
-    setTimeout(enemyTurn, 800);
-  }, 270);
-}
-
-function enemyTurn() {
-  const cub = G.selected, stats = getStats(cub), e = G.enemy;
-  const rawDmg = Math.floor(e.atk * .6 + Math.random() * 12);
-  const red    = G.defending ? Math.floor(rawDmg * .35) : rawDmg;
-  const final  = Math.max(1, red - Math.floor(stats.DEF * .2));
-  announce(`${e.emoji} ${e.name} retaliates`, true);
-  spriteFx('enemySprite', 'lunge-sw', 450);
-  setTimeout(() => {
-    G.pHP = Math.max(0, G.pHP - final);
-    spriteFx('playerSprite', 'hit', 500);
-    fxAt('playerSprite', 'slash enemy', 400);
-    stageShake(false);
-    showDmg('playerSprite', final, 'hit');
-    addLog(`${e.emoji} ${e.name} retaliates for ${final}${G.defending ? ' (blocked!)' : ''}!`, 'le');
-    updatePlayer();
-    if (G.pHP <= 0) { defeat(cub); return; }
+  } catch (e) {
+    addLog(`⚠ ${e.message}`, 'le');
+    if (e.code === 'no_battle' || e.code === 'not_owner') { G.active = false; G.selected = null; resetBattle(); }
     G.busy = false;
-    setBtns(true);
-  }, 270);
-}
-
-function victory() {
-  // Lock out immediately — prevents repeated clicks awarding extra wins during the delay
-  G.active = false;
-  G.busy = false;
-  spriteFx('enemySprite', 'dying', 1000);
-  const cub = G.selected, era = G.currentEra;
-  const xpGain = G.enemy.xp || 10;
-  const drop   = honeyDrop(era);
-  G.wins++;
-  const prevWins = G.wins - 1;
-  const ups = addXP(cub, xpGain);
-  addHoney(drop, era);
-  refreshCard(cub);
-  setTimeout(() => {
-    honeyBurst('enemySprite', 56, 6);
-    announce(`🍯 +${drop} ${ERA_HONEY[era]} · +${xpGain} XP`);
-    addLog(`🍯 Guardian defeated! +${drop} ${ERA_HONEY[era]} · +${xpGain} XP (${G.wins} wins)`, 'ls');
-    checkEraUnlocks(prevWins);
-    updateProgBar();
-    if (ups) {
-      setTimeout(() => {
-        announce(`✨ ${cub.name} reached Lv ${getLevel(cub)}!`);
-        addLog(`✨ Level up! ${cub.name} is now Lv ${getLevel(cub)} — stats grow stronger.`, 'lp');
-        G.pMaxHP = getStats(cub).HP;
-        G.pHP = Math.min(G.pMaxHP, G.pHP + 8 * ups);
-        renderPlayer();
-      }, 1200);
-    }
-    setTimeout(() => {
-      spawnEnemy();
-      addLog('⚔ Another guardian steps forward to defend the honey…', 'ls');
-      setBtns(true);
-    }, ups ? 2600 : 1500);
-  }, 450);
-}
-
-function defeat(cub) {
-  spriteFx('playerSprite', 'fainted', 1000);
-  announce(`💀 ${cub.name} has fallen`, true);
-  // Apply cooldown to the defeated cub; it comes back at full HP
-  setCooldown(cub.id);
-  delete G.hpPool[cub.id];
-  const card = document.getElementById(`c-${cub.id}`);
-  if (card) {
-    card.classList.add('on-cooldown');
-    if (!card.querySelector('.cub-cooldown')) card.insertAdjacentHTML('beforeend', cooldownOverlayHTML(cub.id));
+    if (G.active) setBtns(true);
+    return;
   }
-  updateRosterStatus();
-  const nextReady = G.cubs.find(c => c.id !== cub.id && !isCoolingDown(c.id));
-  addLog(`💀 ${cub.name} has fallen — 30 min to recover, or revive it with 🍯 ${reviveCost(G.currentEra)}.${nextReady ? ` Send in ${nextReady.name}!` : ' All Cubs are recovering…'}`, 'ls');
+  const actor = G.selected;
+  syncFromProfile(r.state);
+  G.selected = actor;            // the animation decides when the UI changes Cubs
+  await playEvents(r.events);
+}
+
+async function playEvents(events) {
+  G.busy = true;
   setBtns(false);
-  G.active = false;
+  let actor = G.selected;
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
+    if (e.t === 'spawn') {
+      G.enemy = e.enemy; G.eHP = e.eHP; G.eMaxHP = e.eMaxHP;
+      renderEnemy();
+      announce(`${e.enemy.emoji} ${e.enemy.name} guards the honey!`, true);
+      if (i > 0) addLog('⚔ Another guardian steps forward to defend the honey…', 'ls');
+      await wait(700);
+
+    } else if (e.t === 'player' && (e.action === 'atk' || e.action === 'spc')) {
+      announce(e.burst ? `✦ ${e.burst} ✦` : e.crit ? `${actor.name} — Critical Strike!` : `${actor.name} strikes!`);
+      spriteFx('playerSprite', 'lunge-ne', 450);
+      await wait(270);
+      spriteFx('enemySprite', 'hit', 500);
+      if (e.burst) {
+        stageFlash(); stageShake(true);
+        fxAt('enemySprite', 'burst-ring', 750);
+        honeyBurst('enemySprite', 40, 5);
+        addLog(`✦ ${actor.name} unleashes ${e.burst} for ${e.dmg}!`, 'lp');
+      } else {
+        fxAt('enemySprite', e.crit ? 'slash crit' : 'slash', 400);
+        if (e.crit) stageFlash(true);
+        stageShake(e.crit);
+        addLog(`⚔ ${actor.name} strikes for ${e.dmg}${e.crit ? ' 💥 CRITICAL!' : ''}!`, 'lp');
+      }
+      showDmg('enemySprite', e.dmg, e.burst ? 'spc' : e.crit ? 'crit' : 'atk');
+      G.eHP = e.eHP; updateEnemy();
+      await wait(e.eHP <= 0 ? 200 : 800);
+
+    } else if (e.t === 'player' && e.action === 'def') {
+      announce(`${actor.name} fortifies`);
+      spriteFx('playerSprite', 'shield', 750);
+      showDmg('playerSprite', e.shield, 'def');
+      addLog(`🛡 ${actor.name} fortifies — DEF +${e.shield}`, 'lp');
+      await wait(800);
+
+    } else if (e.t === 'player' && e.action === 'drink') {
+      announce(`${actor.name} drinks ${e.honeyName}`);
+      spriteFx('playerSprite', 'shield', 750);
+      honeyBurst('playerSprite', 24, 3);
+      showDmg('playerSprite', e.heal, 'heal');
+      G.pHP = e.pHP; G.pMaxHP = e.pMaxHP; updatePlayer(); updateHoney();
+      addLog(`🍯 ${actor.name} drinks honey — +${e.heal} HP (🍯 −${e.cost})`, 'lp');
+      await wait(800);
+
+    } else if (e.t === 'player' && e.action === 'switch') {
+      const prev = actor, next = cubById(e.to);
+      spriteFx('playerSprite', 'swap-out', 500);
+      await wait(450);
+      G.selected = next; actor = next;
+      G.pHP = e.pHP; G.pMaxHP = e.pMaxHP;
+      enterWithCub(next);
+      updateHoney();
+      announce(`${next.name} tags in!`);
+      addLog(`🔄 ${prev.name} falls back — ${next.name} tags in (🍯 −${e.cost}).`, 'lp');
+      await wait(900);
+
+    } else if (e.t === 'enemy') {
+      const en = G.enemy;
+      announce(`${en.emoji} ${en.name} retaliates`, true);
+      spriteFx('enemySprite', 'lunge-sw', 450);
+      await wait(270);
+      spriteFx('playerSprite', 'hit', 500);
+      fxAt('playerSprite', 'slash enemy', 400);
+      stageShake(false);
+      showDmg('playerSprite', e.dmg, 'hit');
+      G.pHP = e.pHP; updatePlayer();
+      addLog(`${en.emoji} ${en.name} retaliates for ${e.dmg}${e.blocked ? ' (blocked!)' : ''}!`, 'le');
+      await wait(350);
+
+    } else if (e.t === 'victory') {
+      spriteFx('enemySprite', 'dying', 1000);
+      await wait(450);
+      honeyBurst('enemySprite', 56, 6);
+      announce(`🍯 +${e.honey} ${e.honeyName} · +${e.xp} XP`);
+      addLog(`🍯 Guardian defeated! +${e.honey} ${e.honeyName} · +${e.xp} XP (${e.wins} wins)`, 'ls');
+      updateHoney(true);
+      refreshCard(actor);
+      announceUnlocks(e.unlocked);
+      updateProgBar();
+      if (e.ups) {
+        await wait(1200);
+        announce(`✨ ${actor.name} reached Lv ${e.lvl}!`);
+        addLog(`✨ Level up! ${actor.name} is now Lv ${e.lvl} — stats grow stronger.`, 'lp');
+        G.pHP = e.pHP; G.pMaxHP = e.pMaxHP;
+        renderPlayer();
+        await wait(1400);
+      } else {
+        await wait(1500);
+      }
+
+    } else if (e.t === 'defeat') {
+      spriteFx('playerSprite', 'fainted', 1000);
+      announce(`💀 ${actor.name} has fallen`, true);
+      const card = document.getElementById(`c-${actor.id}`);
+      if (card) {
+        card.classList.add('on-cooldown');
+        if (!card.querySelector('.cub-cooldown')) card.insertAdjacentHTML('beforeend', cooldownOverlayHTML(actor.id));
+      }
+      updateRosterStatus();
+      const nextReady = G.cubs.find(c => String(c.id) !== String(actor.id) && !isCoolingDown(c.id));
+      addLog(`💀 ${actor.name} has fallen — 30 min to recover, or revive it with 🍯 ${reviveCost(G.currentEra)}.${nextReady ? ` Send in ${nextReady.name}!` : ' All Cubs are recovering…'}`, 'ls');
+      G.active = false; G.selected = null;
+      document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
+      updateCosts();
+      await wait(2500);
+      resetBattle();
+    }
+  }
   G.busy = false;
-  G.selected = null;
-  document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
-  updateCosts();
-  setTimeout(resetBattle, 2500);
+  if (G.active) { setBtns(true); updateCosts(); }
 }
 
 function resetBattle() {
@@ -2069,13 +1979,13 @@ function resetBattle() {
   document.getElementById('enemySlot').innerHTML  = '<div class="empty-slot">Awaiting<br/>challenger…</div>';
 }
 
-// Keyboard commands: 1 Strike · 2 Fortify · 3 Honey Burst
+// Keyboard commands: 1 Strike · 2 Fortify · 3 Honey Burst · 4 Drink
 document.addEventListener('keydown', e => {
   if (e.target.closest('input,textarea')) return;
   const action = { '1':'atk', '2':'def', '3':'spc', '4':'drink' }[e.key];
   if (!action) return;
   const btn = document.getElementById({ atk:'btnA', def:'btnD', spc:'btnS', drink:'btnH' }[action]);
-  if (btn && !btn.disabled) act(action);
+  if (btn && !btn.disabled) doAction(action);
 });
 
 // ─────────────────────────────────────────
@@ -2121,6 +2031,7 @@ async function connectWallet() {
       G.cubs = cubs;
       loadReviveConfig();
       renderCubs(cubs);
+      signIn(addr);
     } catch(e) {
       setStatus(`Wallet error: ${e?.message || e?.code || JSON.stringify(e)}`, 'bad');
       console.error('Wallet connect error:', e);
@@ -2156,6 +2067,7 @@ function showLoader(on) {
 // PROGRESSION & ERA SYSTEM
 // ─────────────────────────────────────────
 function saveProgress() {
+  if (G.server) return;
   try {
     localStorage.setItem('okaycubs_progress', JSON.stringify({
       wins: G.wins, era: G.currentEra, cooldowns: G.cooldowns,
@@ -2247,14 +2159,8 @@ function isEraUnlocked(era) {
   return G.wins >= (ERA_UNLOCK[era] || 0);
 }
 
-function checkEraUnlocks(prevWins) {
-  const eras = ['archean','proterozoic','paleozoic','mesozoic','cenozoic'];
-  eras.forEach(era => {
-    const threshold = ERA_UNLOCK[era];
-    if (prevWins < threshold && G.wins >= threshold) {
-      showEraToast(era);
-    }
-  });
+function announceUnlocks(eras) {
+  (eras || []).forEach(showEraToast);
   updateWorldMap();
 }
 
@@ -2267,28 +2173,38 @@ function showEraToast(era) {
   setTimeout(() => el.remove(), 3500);
 }
 
-function selectEra(era) {
-  if (!isEraUnlocked(era)) {
-    const needed = ERA_UNLOCK[era];
-    addLog(`🔒 ${ERA_META[era].badge} Era locked — ${needed - G.wins} more wins needed`, 'ls');
-    return;
-  }
-  G.currentEra = era;
-  saveProgress();
-  const meta = ERA_META[era];
+function applyEraTexts(era) {
+  const meta = ERA_META[era] || ERA_META.hadean;
   document.getElementById('arenaTitle').textContent = meta.arenaTitle;
   document.getElementById('arenaName').innerHTML = `${meta.title} <span class="era-badge" style="color:${meta.color}">${meta.badge}</span>`;
   document.getElementById('arenaSub').textContent = meta.sub;
+}
+
+async function selectEra(era) {
+  if (G.busy) return;
+  if (!isEraUnlocked(era)) {
+    addLog(`🔒 ${ERA_META[era].badge} Era locked — ${ERA_UNLOCK[era] - G.wins} more wins needed`, 'ls');
+    return;
+  }
+  let r;
+  try {
+    if (G.server) r = await api('/api/game/era', { era });
+    else {
+      r = HoneyEngine.selectEra(profileFromG(), era, G.selected, {});
+      if (!r.ok) throw new Error(errMsg(r.error));
+      r.state = r.p;
+    }
+  } catch (e) { addLog(`⚠ ${e.message}`, 'le'); return; }
+  syncFromProfile(r.state);
+  applyEraTexts(era);
   applyEraTheme(era);
   updateWorldMap();
   G.cubs.forEach(refreshCard);
   updateCosts();
-  if (G.selected) {
-    G.pMaxHP = getStats(G.selected).HP;
-    G.pHP = Math.min(G.pHP, G.pMaxHP);
+  if (G.active && G.selected) {
     renderPlayer();
-    spawnEnemy();
-    addLog(`⛏ Entered ${meta.title} — new threats emerge from the deep…`, 'ls');
+    addLog(`⛏ Entered ${ERA_META[era].title} — new threats emerge from the deep…`, 'ls');
+    await playEvents(r.events);
   }
 }
 
@@ -2399,10 +2315,7 @@ function toggleChronicle() {
   } catch(e) {}
 
   // Apply saved era
-  const meta = ERA_META[G.currentEra] || ERA_META.hadean;
-  document.getElementById('arenaTitle').textContent = meta.arenaTitle;
-  document.getElementById('arenaName').innerHTML = `${meta.title} <span class="era-badge" style="color:${meta.color}">${meta.badge}</span>`;
-  document.getElementById('arenaSub').textContent = meta.sub;
+  applyEraTexts(G.currentEra);
   Stage.start();
   applyEraTheme(G.currentEra);
 
