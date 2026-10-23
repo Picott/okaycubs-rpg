@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Connection, PublicKey } from '@solana/web3.js';
-import { validateTransfer } from '@solana/pay';
-import BigNumber from 'bignumber.js';
+import { Connection, LAMPORTS_PER_SOL, type ParsedInstruction } from '@solana/web3.js';
 import { kv } from '@/lib/kv';
 import { Engine, jsonError, requireSession, withProfile } from '@/lib/gameStore';
 
@@ -13,16 +11,24 @@ const RPC_ENDPOINT =
 const MERCHANT_WALLET = process.env.MERCHANT_SOLANA_WALLET;
 const PRICE_SOL = Number(process.env.REVIVE_PRICE_SOL || '0.01');
 
-// Confirms that `signature` paid at least the revive price to the merchant wallet.
+// Confirms that `signature` is a successful transaction containing a system transfer of at least the
+// revive price to the merchant wallet. Reads the instructions rather than balance deltas, so paying
+// from the merchant wallet itself (a self-transfer) verifies too.
 async function verifyPayment(signature: string): Promise<string | null> {
   const connection = new Connection(RPC_ENDPOINT, 'confirmed');
-  let lastError = 'Payment not found';
+  const need = Math.round(PRICE_SOL * LAMPORTS_PER_SOL);
+  let lastError = 'Payment not found yet';
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      await validateTransfer(connection, signature,
-        { recipient: new PublicKey(MERCHANT_WALLET!), amount: new BigNumber(PRICE_SOL) },
-        { commitment: 'confirmed' });
-      return null;
+      const tx = await connection.getParsedTransaction(signature, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
+      if (!tx) throw new Error('Transaction not found yet');
+      if (tx.meta?.err) return 'Transaction failed on-chain';
+      const paid = tx.transaction.message.instructions.some(ix => {
+        const p = (ix as ParsedInstruction).parsed;
+        return (ix as ParsedInstruction).program === 'system' && p?.type === 'transfer'
+          && p.info?.destination === MERCHANT_WALLET && Number(p.info?.lamports || 0) >= need;
+      });
+      return paid ? null : `No transfer of ${PRICE_SOL} SOL to the treasury found in that transaction`;
     } catch (e) {
       lastError = e instanceof Error ? e.message : String(e);
       await new Promise(r => setTimeout(r, 1200));

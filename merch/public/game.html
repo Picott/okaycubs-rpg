@@ -1568,15 +1568,16 @@ function loadScript(src) {
     document.head.appendChild(s);
   });
 }
-async function waitForConfirmation(conn, signature) {
+async function waitForConfirmation(conn, signature, onTick) {
   for (let i = 0; i < 40; i++) {
-    const { value } = await conn.getSignatureStatuses([signature]);
+    const { value } = await conn.getSignatureStatuses([signature], { searchTransactionHistory: true });
     const st = value?.[0];
     if (st?.err) throw new Error('Transaction failed on-chain');
     if (st && (st.confirmationStatus === 'confirmed' || st.confirmationStatus === 'finalized')) return;
+    if (onTick) onTick(i);
     await new Promise(r => setTimeout(r, 1500));
   }
-  throw new Error('Confirmation timed out — if SOL left your wallet, reload and try again');
+  throw new Error(`Confirmation timed out — check the transaction ${signature.slice(0, 8)}… in Phantom and try again`);
 }
 async function reviveWithSol(cubId, btn) {
   if (!isCoolingDown(cubId) || !G.server) return;
@@ -1600,7 +1601,9 @@ async function reviveWithSol(cubId, btn) {
     tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
     const { signature } = await window.solana.signAndSendTransaction(tx);
     btn.textContent = '⚡ Confirming…';
-    await waitForConfirmation(conn, signature);
+    console.log('[revive] sent', signature);
+    await waitForConfirmation(conn, signature, i => { btn.textContent = `⚡ Confirming… ${(i + 1) * 1.5 | 0}s`; });
+    btn.textContent = '⚡ Verifying…';
     const r = await api('/api/game/revive', { cubId, method: 'sol', signature });
     syncFromProfile(r.state);
     afterRevive(cubId);
