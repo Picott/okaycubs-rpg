@@ -1,9 +1,26 @@
 // Minimal Upstash Redis REST client — no SDK needed.
 // Works with the Vercel Marketplace integration (KV_REST_API_*) or a direct Upstash DB (UPSTASH_REDIS_REST_*).
-const URL   = process.env.UPSTASH_REDIS_REST_URL   || process.env.KV_REST_API_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+// The Vercel integration may add a custom prefix (e.g. STORAGE_KV_REST_API_URL), so match by suffix.
+function findCredentials(): { url: string; token: string } | null {
+  const direct = {
+    url:   process.env.UPSTASH_REDIS_REST_URL   || process.env.KV_REST_API_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN,
+  };
+  if (direct.url && direct.token) return { url: direct.url, token: direct.token };
+  for (const [key, value] of Object.entries(process.env)) {
+    const m = key.match(/^(.*)(KV_REST_API_URL|UPSTASH_REDIS_REST_URL|REDIS_REST_URL)$/);
+    if (!m || !value) continue;
+    const token = process.env[`${m[1]}${m[2].replace(/_URL$/, '_TOKEN')}`];
+    if (token) return { url: value, token };
+  }
+  return null;
+}
+const creds = findCredentials();
+const URL = creds?.url, TOKEN = creds?.token;
 
-export const kvConfigured = !!(URL && TOKEN);
+export const kvConfigured = !!creds;
+// Names only (never values) — lets /api/game/config explain a misconfiguration
+export const kvEnvHints = Object.keys(process.env).filter(k => /REDIS|KV_|UPSTASH/i.test(k)).sort();
 
 async function cmd<T>(...args: (string | number)[]): Promise<T> {
   if (!URL || !TOKEN) throw new Error('KV not configured');
