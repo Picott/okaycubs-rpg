@@ -1586,7 +1586,9 @@ async function reviveWithSol(cubId, btn) {
   try {
     await loadReviveConfig();
     if (!REVIVE.wallet) throw new Error('Revive payments are not configured yet');
-    if (!window.solanaWeb3) await loadScript('https://unpkg.com/@solana/web3.js@1.95.4/lib/index.iife.min.js');
+    // web3.js expects Node's global Buffer; both files are served from our own domain
+    if (!window.Buffer) await loadScript('/vendor/buffer.iife.js');
+    if (!window.solanaWeb3) await loadScript('/vendor/solana-web3.iife.min.js');
     const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = window.solanaWeb3;
     const conn = new Connection(location.origin + '/api/helius', 'confirmed');
     const from = window.solana.publicKey;
