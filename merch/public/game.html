@@ -175,7 +175,7 @@
     .cub-card.on-cooldown .cub-placeholder { filter:grayscale(1) brightness(.35); }
     .cub-cooldown {
       position:absolute; inset:0; border-radius:inherit;
-      background:rgba(0,0,0,.78); display:flex; flex-direction:column;
+      background:rgba(4,5,9,.93); backdrop-filter:blur(3px); display:flex; flex-direction:column;
       align-items:center; justify-content:center; z-index:10; gap:3px;
     }
     .cd-label { font-family:'Cinzel',serif; font-size:8px; letter-spacing:2px; color:#e74c3c; text-transform:uppercase; opacity:.85; }
@@ -414,7 +414,7 @@
       border:1px solid rgba(212,175,55,.25); backdrop-filter:blur(8px); box-shadow:0 -10px 40px rgba(0,0,0,.45);
     }
     .cmd-title { font-family:'Cinzel',serif; font-size:8px; letter-spacing:5px; text-transform:uppercase; color:var(--gold); opacity:.5; text-align:center; margin-bottom:10px; }
-    .btns { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .btns { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
     .battle-btn {
       position:relative; display:flex; flex-direction:column; align-items:center; gap:4px;
       padding:12px 10px 10px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:2px; text-transform:uppercase;
@@ -495,7 +495,7 @@
       .f-plate { min-width:0; max-width:none; padding:8px 10px; }
       .f-name { font-size:11px; }
       .move-banner { font-size:13px; white-space:normal; width:92%; padding:8px 12px; }
-      .btns { grid-template-columns:1fr; gap:6px; }
+      .btns { grid-template-columns:1fr 1fr; gap:6px; }
       .battle-btn { flex-direction:row; justify-content:center; gap:10px; padding:10px; }
       .cmd-box { margin:8px 10px 12px; }
     }
@@ -602,6 +602,37 @@
       text-transform:uppercase; padding:3px 10px; border:1px solid currentColor;
       border-radius:1px; margin-left:10px; vertical-align:middle; opacity:.7;
     }
+    /* === HONEY & PROGRESSION === */
+    .honey-count {
+      font-family:'Cinzel',serif; font-size:11px; letter-spacing:2px; color:var(--gold2); white-space:nowrap;
+      padding:4px 12px; border:1px solid rgba(212,175,55,.3); background:rgba(212,175,55,.06); cursor:help;
+    }
+    .honey-count.bump { animation:honeyBump .6s ease; }
+    @keyframes honeyBump { 30%{ transform:scale(1.18); box-shadow:0 0 18px rgba(245,224,110,.55); } }
+    .cub-meta { display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+    .cub-lvl  { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; color:var(--gold); }
+    .cub-aff  { font-family:'Cinzel',serif; font-size:7px; letter-spacing:1px; padding:2px 7px; border:1px solid currentColor; opacity:.7; text-transform:uppercase; }
+    .cub-aff.now { opacity:1; box-shadow:0 0 10px currentColor; }
+    .xp-bg   { height:3px; background:rgba(255,255,255,.05); border-radius:2px; overflow:hidden; margin:0 0 10px; }
+    .xp-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); transition:width .6s ease; }
+    .cub-actions { display:flex; gap:6px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+    .cub-btn {
+      font-family:'Cinzel',serif; font-size:8px; letter-spacing:1px; padding:5px 10px; border:1px solid rgba(212,175,55,.4);
+      background:rgba(0,0,0,.3); color:var(--gold); cursor:pointer; text-transform:uppercase; transition:all .2s;
+    }
+    .cub-btn:hover:not(:disabled) { background:rgba(212,175,55,.15); }
+    .cub-btn:disabled { opacity:.3; cursor:not-allowed; }
+    .cub-btn.sol { border-color:rgba(153,69,255,.6); color:#c4a1ff; }
+    .cub-btn.sol:hover:not(:disabled) { background:rgba(153,69,255,.18); }
+    .switch-hint { font-family:'Crimson Pro',serif; font-style:italic; font-size:12px; text-align:center; color:var(--silver); opacity:.5; margin-top:10px; min-height:14px; }
+    .f-aff { font-size:8px; letter-spacing:1px; margin-left:6px; opacity:1; }
+    .f-aff.up { color:#7cf29e; } .f-aff.down { color:#ff8a7a; }
+    .bb-drk { border-color:var(--gold); color:var(--gold2); }
+    .bb-drk:hover:not(:disabled) { background:rgba(212,175,55,.15); box-shadow:0 0 22px rgba(212,175,55,.3); }
+    .dmg-heal { color:#7cf29e; font-size:28px; }
+    .f-sprite.swap-out { animation:swapOut .45s ease forwards; }
+    @keyframes swapOut { to{ opacity:0; transform:translateX(-60px) scale(.8); filter:blur(4px); } }
+
   </style>
   <!-- Google AdSense verification + loader -->
   <meta name="google-adsense-account" content="ca-pub-8513421744602426">
@@ -665,6 +696,7 @@
     <span class="prog-label" id="progEraLabel">Hadean Era</span>
     <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
     <span class="prog-wins" id="progWinsLabel">0 wins</span>
+    <span class="honey-count" id="honeyCount" title="Defeat guardians to collect honey">🍯 0</span>
   </div>
 
   <!-- LOADER -->
@@ -707,8 +739,10 @@
         <div class="btns">
           <button class="battle-btn bb-atk" id="btnA" onclick="act('atk')" disabled><span class="cmd-key">1</span>⚔ Strike<small>Physical · scales with ATK</small></button>
           <button class="battle-btn bb-def" id="btnD" onclick="act('def')" disabled><span class="cmd-key">2</span>🛡 Fortify<small>Block 65% of the next hit</small></button>
-          <button class="battle-btn bb-spc" id="btnS" onclick="act('spc')" disabled><span class="cmd-key">3</span>🍯 Honey Burst<small>Special · ATK + LCK</small></button>
+          <button class="battle-btn bb-spc" id="btnS" onclick="act('spc')" disabled><span class="cmd-key">3</span>✦ Honey Burst<small>Special · ATK + LCK</small></button>
+          <button class="battle-btn bb-drk" id="btnH" onclick="act('drink')" disabled><span class="cmd-key">4</span>🍯 Drink<small id="drinkHint">Heal 40% · costs honey</small></button>
         </div>
+        <div class="switch-hint" id="switchHint"></div>
       </div>
     </div>
     <div class="log" id="log"><div class="log-line ls">🍯 Select a Cub to begin the hunt for Magma Honey...</div></div>
@@ -785,7 +819,6 @@ const TENSOR_GQL  = '/api/tensor-gql';
 // COOLDOWN CONFIG
 // ─────────────────────────────────────────
 const COOLDOWN_MS  = 30 * 60 * 1000;  // 30 min recovery after defeat
-const AD_SKIP_MS   = 10 * 60 * 1000;  // each ad watched = 10 min off
 
 // ─────────────────────────────────────────
 // GAME STATE
@@ -799,6 +832,10 @@ const G = {
   wins: 0, currentEra: 'hadean',
   // Cooldowns: { cubId: expiryTimestamp }
   cooldowns: {},
+  // Honey economy + per-cub progression
+  honey: 0, honeyByEra: {}, cubProg: {},
+  // HP carried between tag-outs this session: { cubId: hp }
+  hpPool: {},
 };
 
 // Era unlock thresholds (total wins needed)
@@ -943,7 +980,7 @@ async function fetchCubsTensor(wallet) {
       imageCandidates: cubImageCandidates(num, n.mint?.imageUri || ''),
       number: num,
       rarity,
-      class:  deriveClass(traits),
+      class:  deriveClass(traits, name),
       traits,
     };
   });
@@ -1116,13 +1153,13 @@ function parseCubs(nfts) {
       imageCandidates: candidates,
       jsonUri: jsonUri,
       rarity,
-      class:   deriveClass(traits),
+      class:   deriveClass(traits, nameStr || String(num || i)),
       traits
     };
   });
 }
 
-function deriveClass(traits) {
+function deriveClass(traits, seed = '') {
   const classes = {
     'Volcanic':'Magma Warden',    'Lava':'Magma Warden',     'Caldera':'Magma Warden',
     'Fire':'Ember Knight',        'Flame':'Ember Knight',    'Ember':'Ember Knight',
@@ -1139,7 +1176,7 @@ function deriveClass(traits) {
     if (bg.toLowerCase().includes(k.toLowerCase())) return v;
   }
   const fallbacks = ['Sediment Scout','Fossil Rogue','Crystal Mage','Tectonic Guard','Magma Warden','Stratum Keeper'];
-  return fallbacks[Math.abs(hash(bg + (traits['Eyes'] || ''))) % fallbacks.length];
+  return fallbacks[Math.abs(hash(bg + (traits['Eyes'] || '') + seed)) % fallbacks.length];
 }
 
 // ─────────────────────────────────────────
@@ -1168,7 +1205,7 @@ function hash(s) {
   return Math.abs(h);
 }
 
-function getStats(cub) {
+function baseStats(cub) {
   const rb     = { legendary:30, epic:20, rare:10, common:0 }[cub.rarity] || 0;
   const t      = cub.traits || {};
   // Each stat seeded by a different trait → more varied builds per cub
@@ -1181,7 +1218,7 @@ function getStats(cub) {
     DEF: Math.min(99, 22 + (defSeed % 40) + rb),
     SPD: Math.min(99, 25 + (spdSeed % 42) + rb),
     LCK: Math.min(99, 18 + (lckSeed % 38) + rb),
-    HP:  100 + rb * 2,
+    HP:  120 + rb * 2,
   };
 }
 
@@ -1301,7 +1338,6 @@ function renderCubs(cubs) {
   );
 
   cubs.forEach(cub => {
-    const stats   = getStats(cub);
     const cooling = isCoolingDown(cub.id);
     const card    = document.createElement('div');
     card.className = `cub-card r-${cub.rarity}${cooling ? ' on-cooldown' : ''}`;
@@ -1314,29 +1350,24 @@ function renderCubs(cubs) {
         <div class="cub-placeholder" style="display:flex">🐻</div>
         <div class="rarity-ring"></div>
       </div>
-      <div class="cub-name">${cub.name}</div>
-      <div class="cub-class">${cub.class}</div>
-      ${statBars(stats)}
-      ${cooling ? `
-      <div class="cub-cooldown">
-        <div class="cd-label">Recovering</div>
-        <div class="cd-timer" data-cub-id="${cub.id}">${fmtCD(cooldownRemaining(cub.id))}</div>
-        <button class="cd-ad-btn" onclick="event.stopPropagation();watchAd('${cub.id}',this)">▶ Watch Ad −10 min</button>
-      </div>` : ''}
+      <div class="cub-body">${cardBodyHTML(cub)}</div>
+      ${cooling ? cooldownOverlayHTML(cub.id) : ''}
     `;
     grid.appendChild(card);
 
     const imgEl = card.querySelector('.cub-img');
     if (candidates.length) loadImgCascade(imgEl, candidates);
     else if (cub.jsonUri) loadCubImage(imgEl, cub.jsonUri);
+    hydrateTraits(cub);
   });
+  updateHoney();
 }
 
 function statBars(s) {
   return ['ATK','DEF','SPD','LCK'].map(k => `
     <div class="stat-row s-${k.toLowerCase()}">
       <span class="stat-lbl">${k}</span>
-      <div class="stat-bg"><div class="stat-fill" style="width:${s[k]}%"></div></div>
+      <div class="stat-bg"><div class="stat-fill" style="width:${Math.min(100, s[k])}%"></div></div>
       <span class="stat-num">${s[k]}</span>
     </div>`).join('');
 }
@@ -1346,22 +1377,20 @@ function statBars(s) {
 // ─────────────────────────────────────────
 function selectCub(cub) {
   if (isCoolingDown(cub.id)) {
-    addLog(`⏳ ${cub.name} is recovering — ${fmtCD(cooldownRemaining(cub.id))} remaining. Pick another Cub or watch an ad.`, 'ls');
+    addLog(`⏳ ${cub.name} is recovering — ${fmtCD(cooldownRemaining(cub.id))} remaining. Revive it with honey or pick another Cub.`, 'ls');
     return;
   }
-  if (G.active || G.busy) return; // mid-battle, don't switch
+  if (G.busy) return;
+  if (G.active && G.selected) {
+    if (String(cub.id) === String(G.selected.id)) return;
+    switchCub(cub);
+    return;
+  }
 
-  G.selected = cub;
-  const stats = getStats(cub);
-  G.pHP = G.pMaxHP = stats.HP;
-
-  document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById(`c-${cub.id}`)?.classList.add('selected');
-
-  showTraits(cub);
-  renderPlayer();
+  enterWithCub(cub);
   spawnEnemy();
   setBtns(true);
+  updateCosts();
   const enterFlair = {
     'Magma Warden':     '🌋 hunts for the Magma Honey',
     'Ember Knight':     '🔥 burns a path to the golden drop',
@@ -1375,6 +1404,33 @@ function selectCub(cub) {
   };
   const flair = enterFlair[cub.class] || '🍯 enters the hunt for the golden drop';
   addLog(`${cub.name} ${flair}…`, 'ls');
+}
+
+function enterWithCub(cub) {
+  G.selected = cub;
+  G.pMaxHP = getStats(cub).HP;
+  G.pHP = Math.min(G.pMaxHP, G.hpPool[cub.id] ?? G.pMaxHP);
+  document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`c-${cub.id}`)?.classList.add('selected');
+  showTraits(cub);
+  renderPlayer();
+}
+
+// Tag another Cub in mid-battle: costs honey and the turn, the outgoing Cub keeps its HP for later
+function switchCub(cub) {
+  const cost = switchCost(G.currentEra);
+  if (!spendHoney(cost, 'switching Cubs')) return;
+  const prev = G.selected;
+  G.hpPool[prev.id] = G.pHP;
+  G.busy = true;
+  setBtns(false);
+  spriteFx('playerSprite', 'swap-out', 500);
+  setTimeout(() => {
+    enterWithCub(cub);
+    announce(`${cub.name} tags in!`);
+    addLog(`🔄 ${prev.name} falls back — ${cub.name} tags in (🍯 −${cost}).`, 'lp');
+    setTimeout(enemyTurn, 900);
+  }, 450);
 }
 
 function showTraits(cub) {
@@ -1396,13 +1452,254 @@ function spawnEnemy() {
 }
 
 // ─────────────────────────────────────────
+// HONEY ECONOMY · LEVELS · ERA AFFINITY
+// ─────────────────────────────────────────
+const ERA_ORDER = ['hadean','archean','proterozoic','paleozoic','mesozoic','cenozoic'];
+const ERA_HONEY = { hadean:'Magma Honey', archean:'Stone Honey', proterozoic:'Tide Honey', paleozoic:'Bloom Honey', mesozoic:'Titan Honey', cenozoic:'Frost Honey' };
+const eraIdx     = era => Math.max(0, ERA_ORDER.indexOf(era));
+const honeyDrop  = era => 4 + eraIdx(era) * 3 + Math.floor(Math.random() * 3);
+const drinkCost  = era => 8 + eraIdx(era) * 4;
+const switchCost = era => 6 + eraIdx(era) * 3;
+const reviveCost = era => 25 + eraIdx(era) * 5;
+const infuseCost = lvl => 12 + lvl * 6;
+const MAX_LEVEL  = 50;
+const xpToNext   = lvl => 25 + lvl * 15;
+
+// Every class thrives in one era and struggles in another
+const CLASS_AFFINITY = {
+  'Magma Warden':     { strong:'hadean',      weak:'proterozoic' },
+  'Ember Knight':     { strong:'hadean',      weak:'cenozoic' },
+  'Stratum Knight':   { strong:'archean',     weak:'paleozoic' },
+  'Tectonic Guard':   { strong:'archean',     weak:'mesozoic' },
+  'Stratum Keeper':   { strong:'archean',     weak:'cenozoic' },
+  'Sediment Scout':   { strong:'archean',     weak:'hadean' },
+  'Tidal Rogue':      { strong:'proterozoic', weak:'hadean' },
+  'Quartz Sage':      { strong:'proterozoic', weak:'mesozoic' },
+  'Desert Fossil':    { strong:'paleozoic',   weak:'proterozoic' },
+  'Fossil Rogue':     { strong:'paleozoic',   weak:'cenozoic' },
+  'Carbonite Ranger': { strong:'mesozoic',    weak:'hadean' },
+  'Void Stalker':     { strong:'mesozoic',    weak:'archean' },
+  'Glacial Scout':    { strong:'cenozoic',    weak:'hadean' },
+  'Crystal Mage':     { strong:'cenozoic',    weak:'paleozoic' },
+};
+function affinity(cub, era = G.currentEra) {
+  const a = CLASS_AFFINITY[cub.class];
+  if (!a) return 0;
+  return a.strong === era ? 1 : a.weak === era ? -1 : 0;
+}
+
+function cubProg(cub) {
+  return G.cubProg[cub.id] || (G.cubProg[cub.id] = { xp:0, lvl:1 });
+}
+function getLevel(cub) { return cubProg(cub).lvl; }
+function addXP(cub, amount) {
+  const p = cubProg(cub);
+  p.xp += amount;
+  let ups = 0;
+  while (p.lvl < MAX_LEVEL && p.xp >= xpToNext(p.lvl)) { p.xp -= xpToNext(p.lvl); p.lvl++; ups++; }
+  saveProgress();
+  return ups;
+}
+
+// Level and era affinity scale the trait-derived base stats
+function getStats(cub) {
+  const base = baseStats(cub), lvl = getLevel(cub), aff = affinity(cub);
+  const mult = (1 + 0.04 * (lvl - 1)) * (aff === 1 ? 1.2 : aff === -1 ? 0.85 : 1);
+  const sc = v => Math.min(160, Math.round(v * mult));
+  return { ATK: sc(base.ATK), DEF: sc(base.DEF), SPD: sc(base.SPD), LCK: sc(base.LCK), HP: base.HP + 8 * (lvl - 1) };
+}
+
+function addHoney(amount, era = G.currentEra) {
+  G.honey = Math.max(0, G.honey + amount);
+  if (amount > 0) G.honeyByEra[era] = (G.honeyByEra[era] || 0) + amount;
+  saveProgress();
+  updateHoney(true);
+}
+function spendHoney(amount, what) {
+  if (G.honey < amount) { addLog(`🍯 Not enough honey for ${what} — need ${amount}, you have ${G.honey}.`, 'le'); return false; }
+  G.honey -= amount;
+  saveProgress();
+  updateHoney();
+  return true;
+}
+function updateHoney(bump) {
+  const el = document.getElementById('honeyCount');
+  if (!el) return;
+  el.textContent = `🍯 ${G.honey}`;
+  el.title = ERA_ORDER.filter(e => G.honeyByEra[e]).map(e => `${ERA_HONEY[e]}: ${G.honeyByEra[e]}`).join(' · ') || 'Defeat guardians to collect honey';
+  if (bump) restartClass(el, 'bump', 600);
+  updateCosts();
+}
+function updateCosts() {
+  const era = G.currentEra;
+  const d = document.getElementById('drinkHint');
+  if (d) d.textContent = `Heal 40% · 🍯 ${drinkCost(era)}`;
+  const s = document.getElementById('switchHint');
+  if (s) s.textContent = G.active ? `Click another ready Cub to tag it in — costs 🍯 ${switchCost(era)} and the turn` : '';
+  document.querySelectorAll('.cub-btn.infuse').forEach(b => {
+    const cub = G.cubs.find(c => String(c.id) === b.dataset.cub);
+    if (cub) b.textContent = `Infuse 🍯 ${infuseCost(getLevel(cub))}`;
+  });
+}
+function cubName(id) { return G.cubs.find(c => String(c.id) === String(id))?.name || `Cub ${id}`; }
+
+// Helius returns no attributes for OkayCubs — pull them from the Pinata metadata (same-origin via proxy, cached)
+async function hydrateTraits(cub) {
+  if (!cub.jsonUri || Object.keys(cub.traits || {}).length) return;
+  const key = `okaycubs_meta_${cub.number || cub.id}`;
+  let meta = null;
+  try { meta = JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) {}
+  if (!meta) {
+    try {
+      const res = await fetch(proxied(cub.jsonUri));
+      if (!res.ok) return;
+      const json = await res.json();
+      meta = { attributes: json.attributes || [] };
+      try { localStorage.setItem(key, JSON.stringify(meta)); } catch(e) {}
+    } catch(e) { return; }
+  }
+  if (!meta.attributes?.length) return;
+  cub.traits = {};
+  meta.attributes.forEach(a => { const k = a.trait_type || a.traitType; if (k) cub.traits[k] = String(a.value); });
+  cub.class = deriveClass(cub.traits, cub.name);
+  refreshCard(cub);
+  if (G.selected && String(G.selected.id) === String(cub.id)) showTraits(cub);
+}
+
+function cardBodyHTML(cub) {
+  const stats = getStats(cub), p = cubProg(cub), aff = CLASS_AFFINITY[cub.class], now = affinity(cub);
+  const xpPct = p.lvl >= MAX_LEVEL ? 100 : Math.floor(p.xp / xpToNext(p.lvl) * 100);
+  const affChip = aff
+    ? `<span class="cub-aff${now === 1 ? ' now' : ''}" style="color:${ERA_META[aff.strong].color}" title="Strong in ${ERA_META[aff.strong].badge} · weak in ${ERA_META[aff.weak].badge}">⚡ ${ERA_META[aff.strong].badge}</span>`
+    : '';
+  return `
+    <div class="cub-name">${cub.name}</div>
+    <div class="cub-class">${cub.class}</div>
+    <div class="cub-meta"><span class="cub-lvl">Lv ${p.lvl}</span>${affChip}</div>
+    <div class="xp-bg" title="${p.xp} / ${xpToNext(p.lvl)} XP"><div class="xp-fill" style="width:${xpPct}%"></div></div>
+    ${statBars(stats)}
+    <div class="cub-actions">
+      <button class="cub-btn infuse" data-cub="${cub.id}" onclick="event.stopPropagation();infuseCub('${cub.id}')"${p.lvl >= MAX_LEVEL ? ' disabled' : ''}>Infuse 🍯 ${infuseCost(p.lvl)}</button>
+    </div>`;
+}
+function refreshCard(cub) {
+  const card = document.getElementById(`c-${cub.id}`);
+  if (!card) return;
+  card.className = card.className.replace(/\br-\w+/, `r-${cub.rarity}`);
+  const body = card.querySelector('.cub-body');
+  if (body) body.innerHTML = cardBodyHTML(cub);
+}
+function infuseCub(cubId) {
+  const cub = G.cubs.find(c => String(c.id) === String(cubId));
+  if (!cub) return;
+  const p = cubProg(cub);
+  if (p.lvl >= MAX_LEVEL) return;
+  if (!spendHoney(infuseCost(p.lvl), 'infusing')) return;
+  p.lvl++; p.xp = 0;
+  saveProgress();
+  refreshCard(cub);
+  addLog(`✨ ${cub.name} is infused with honey — Lv ${p.lvl}!`, 'lp');
+  if (G.selected && String(G.selected.id) === String(cub.id)) {
+    G.pMaxHP = getStats(cub).HP;
+    G.pHP = Math.min(G.pMaxHP, G.pHP + 8);
+    renderPlayer();
+  }
+}
+
+// ─────────────────────────────────────────
+// REVIVE — honey or SOL (verified on-chain by /api/game/revive)
+// ─────────────────────────────────────────
+const REVIVE = { priceSol: 0.01, wallet: null, loaded: false };
+
+function cooldownOverlayHTML(cubId) {
+  const sol = G.connected && window.solana?.publicKey
+    ? `<button class="cub-btn sol" onclick="event.stopPropagation();reviveWithSol('${cubId}',this)">⚡ ${REVIVE.priceSol} SOL</button>` : '';
+  return `
+    <div class="cub-cooldown">
+      <div class="cd-label">Recovering</div>
+      <div class="cd-timer" data-cub-id="${cubId}">${fmtCD(cooldownRemaining(cubId))}</div>
+      <div class="cub-actions">
+        <button class="cub-btn" onclick="event.stopPropagation();reviveWithHoney('${cubId}')">🍯 ${reviveCost(G.currentEra)} Revive</button>${sol}
+      </div>
+    </div>`;
+}
+function clearCooldown(cubId) {
+  delete G.cooldowns[cubId];
+  delete G.hpPool[cubId];
+  saveProgress();
+  const card = document.getElementById(`c-${cubId}`);
+  if (card) refreshCardCooldown(cubId, card);
+  updateRosterStatus();
+}
+function reviveWithHoney(cubId) {
+  if (!isCoolingDown(cubId)) return;
+  if (!spendHoney(reviveCost(G.currentEra), 'reviving')) return;
+  clearCooldown(cubId);
+  addLog(`🍯 Honey revives ${cubName(cubId)} — back in the hunt!`, 'lp');
+}
+async function loadReviveConfig() {
+  if (REVIVE.loaded) return;
+  try {
+    const d = await (await fetch('/api/game/config')).json();
+    REVIVE.wallet = d.merchantWallet || null;
+    if (d.revivePriceSol) REVIVE.priceSol = d.revivePriceSol;
+  } catch(e) {}
+  REVIVE.loaded = true;
+}
+function loadScript(src) {
+  return new Promise((ok, err) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = ok; s.onerror = () => err(new Error('Could not load the Solana library'));
+    document.head.appendChild(s);
+  });
+}
+async function waitForConfirmation(conn, signature) {
+  for (let i = 0; i < 40; i++) {
+    const { value } = await conn.getSignatureStatuses([signature]);
+    const st = value?.[0];
+    if (st?.err) throw new Error('Transaction failed on-chain');
+    if (st && (st.confirmationStatus === 'confirmed' || st.confirmationStatus === 'finalized')) return;
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  throw new Error('Confirmation timed out — if SOL left your wallet, reload and try again');
+}
+async function reviveWithSol(cubId, btn) {
+  if (!isCoolingDown(cubId)) return;
+  if (!window.solana?.publicKey) { addLog('⚡ Connect Phantom to revive with SOL.', 'le'); return; }
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = '⚡ Signing…';
+  try {
+    await loadReviveConfig();
+    if (!REVIVE.wallet) throw new Error('Revive payments are not configured yet');
+    if (!window.solanaWeb3) await loadScript('https://unpkg.com/@solana/web3.js@1.95.4/lib/index.iife.min.js');
+    const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = window.solanaWeb3;
+    const conn = new Connection(location.origin + '/api/helius', 'confirmed');
+    const from = window.solana.publicKey;
+    const tx = new Transaction().add(SystemProgram.transfer({
+      fromPubkey: from, toPubkey: new PublicKey(REVIVE.wallet),
+      lamports: Math.round(REVIVE.priceSol * LAMPORTS_PER_SOL),
+    }));
+    tx.feePayer = from;
+    tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
+    const { signature } = await window.solana.signAndSendTransaction(tx);
+    btn.textContent = '⚡ Confirming…';
+    await waitForConfirmation(conn, signature);
+    const res = await fetch('/api/game/revive', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ signature, cubId }) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Payment could not be verified');
+    clearCooldown(cubId);
+    addLog(`⚡ ${cubName(cubId)} revived with SOL — back in the hunt!`, 'lp');
+  } catch (e) {
+    console.warn('[revive]', e);
+    addLog(`⚡ Revive cancelled: ${e?.message || e}`, 'le');
+    btn.disabled = false; btn.textContent = label;
+  }
+}
+
+// ─────────────────────────────────────────
 // BATTLE STAGE — rendering
 // ─────────────────────────────────────────
 const ERA_LVL = { hadean:[1,5], archean:[6,15], proterozoic:[16,30], paleozoic:[31,50], mesozoic:[51,75], cenozoic:[76,100] };
-
-function cubLevel(stats) {
-  return Math.max(1, Math.round((stats.ATK + stats.DEF + stats.SPD + stats.LCK) / 18));
-}
 
 // Reuse the portrait that already loaded in the roster card so the battle never shows a broken image
 function cubPortrait(c) {
@@ -1422,13 +1719,13 @@ function plateHTML(name, cls, lvl) {
 }
 
 function renderPlayer() {
-  const c = G.selected, src = cubPortrait(c);
+  const c = G.selected, src = cubPortrait(c), aff = affinity(c);
   const sprite = src
     ? `<img src="${src}" alt="${c.name}" onerror="this.outerHTML='<div class=&quot;sprite-emoji&quot;>🐻</div>'">`
     : '<div class="sprite-emoji">🐻</div>';
   document.getElementById('playerSlot').innerHTML = `
     <div class="f-sprite-wrap"><div class="f-platform"></div><div class="f-sprite spawn" id="playerSprite">${sprite}</div></div>
-    ${plateHTML(c.name, c.class, cubLevel(getStats(c)))}`;
+    ${plateHTML(c.name, c.class + (aff === 1 ? ' <span class="f-aff up">▲ strong here</span>' : aff === -1 ? ' <span class="f-aff down">▼ weak here</span>' : ''), getLevel(c))}`;
   setTimeout(() => document.getElementById('playerSprite')?.classList.remove('spawn'), 700);
   syncHP('playerSlot', G.pHP, G.pMaxHP);
 }
@@ -1459,7 +1756,7 @@ function updatePlayer() { if (G.selected) syncHP('playerSlot', G.pHP, G.pMaxHP);
 function updateEnemy()  { if (G.enemy)    syncHP('enemySlot',  G.eHP, G.eMaxHP); }
 
 function setBtns(on) {
-  ['btnA','btnD','btnS'].forEach(id => document.getElementById(id).disabled = !on);
+  ['btnA','btnD','btnS','btnH'].forEach(id => document.getElementById(id).disabled = !on);
 }
 
 function addLog(msg, cls='ls') {
@@ -1510,7 +1807,7 @@ function showDmg(spriteId, amount, type) {
   const { x, y } = spritePos(spriteId);
   const el = document.createElement('div');
   el.className = `dmg-num dmg-${type}`;
-  el.textContent = type === 'def' ? `🛡 +${amount}` : `-${amount}`;
+  el.textContent = type === 'def' ? `🛡 +${amount}` : type === 'heal' ? `+${amount}` : `-${amount}`;
   el.style.left = (x + Math.random() * 36 - 18) + 'px';
   el.style.top  = y + 'px';
   document.getElementById('fxLayer').appendChild(el);
@@ -1623,6 +1920,22 @@ function act(action) {
   G.busy = true;
   setBtns(false);
 
+  if (action === 'drink') {
+    const cost = drinkCost(G.currentEra);
+    if (G.pHP >= G.pMaxHP) { addLog(`🍯 ${cub.name} is already at full health.`, 'ls'); G.busy = false; setBtns(true); return; }
+    if (!spendHoney(cost, 'drinking honey')) { G.busy = false; setBtns(true); return; }
+    const heal = Math.floor(G.pMaxHP * 0.4);
+    G.pHP = Math.min(G.pMaxHP, G.pHP + heal);
+    announce(`${cub.name} drinks ${ERA_HONEY[G.currentEra]}`);
+    spriteFx('playerSprite', 'shield', 750);
+    honeyBurst('playerSprite', 24, 3);
+    showDmg('playerSprite', heal, 'heal');
+    addLog(`🍯 ${cub.name} drinks honey — +${heal} HP (🍯 −${cost})`, 'lp');
+    updatePlayer();
+    setTimeout(enemyTurn, 800);
+    return;
+  }
+
   if (action === 'def') {
     G.defending = true;
     const shield = Math.floor(stats.DEF * .5);
@@ -1673,7 +1986,7 @@ function enemyTurn() {
   const cub = G.selected, stats = getStats(cub), e = G.enemy;
   const rawDmg = Math.floor(e.atk * .6 + Math.random() * 12);
   const red    = G.defending ? Math.floor(rawDmg * .35) : rawDmg;
-  const final  = Math.max(1, red - Math.floor(stats.DEF * .12));
+  const final  = Math.max(1, red - Math.floor(stats.DEF * .2));
   announce(`${e.emoji} ${e.name} retaliates`, true);
   spriteFx('enemySprite', 'lunge-sw', 450);
   setTimeout(() => {
@@ -1695,57 +2008,63 @@ function victory() {
   G.active = false;
   G.busy = false;
   spriteFx('enemySprite', 'dying', 1000);
+  const cub = G.selected, era = G.currentEra;
   const xpGain = G.enemy.xp || 10;
+  const drop   = honeyDrop(era);
   G.wins++;
-  saveProgress();
   const prevWins = G.wins - 1;
+  const ups = addXP(cub, xpGain);
+  addHoney(drop, era);
+  refreshCard(cub);
   setTimeout(() => {
     honeyBurst('enemySprite', 56, 6);
-    announce(`🍯 Honey claimed! +${xpGain} XP`);
-    addLog(`🍯 Guardian defeated! The honey is yours. (+${xpGain} XP · ${G.wins} wins)`, 'ls');
+    announce(`🍯 +${drop} ${ERA_HONEY[era]} · +${xpGain} XP`);
+    addLog(`🍯 Guardian defeated! +${drop} ${ERA_HONEY[era]} · +${xpGain} XP (${G.wins} wins)`, 'ls');
     checkEraUnlocks(prevWins);
     updateProgBar();
+    if (ups) {
+      setTimeout(() => {
+        announce(`✨ ${cub.name} reached Lv ${getLevel(cub)}!`);
+        addLog(`✨ Level up! ${cub.name} is now Lv ${getLevel(cub)} — stats grow stronger.`, 'lp');
+        G.pMaxHP = getStats(cub).HP;
+        G.pHP = Math.min(G.pMaxHP, G.pHP + 8 * ups);
+        renderPlayer();
+      }, 1200);
+    }
     setTimeout(() => {
       spawnEnemy();
       addLog('⚔ Another guardian steps forward to defend the honey…', 'ls');
       setBtns(true);
-    }, 1500);
+    }, ups ? 2600 : 1500);
   }, 450);
 }
 
 function defeat(cub) {
   spriteFx('playerSprite', 'fainted', 1000);
   announce(`💀 ${cub.name} has fallen`, true);
-  // Apply cooldown to the defeated cub
+  // Apply cooldown to the defeated cub; it comes back at full HP
   setCooldown(cub.id);
+  delete G.hpPool[cub.id];
   const card = document.getElementById(`c-${cub.id}`);
   if (card) {
     card.classList.add('on-cooldown');
-    card.querySelector('.cub-img')?.style && (card.querySelector('.cub-img').style.filter = 'grayscale(1) brightness(.35)');
-    card.querySelector('.cub-placeholder') && (card.querySelector('.cub-placeholder').style.filter = 'grayscale(1) brightness(.35)');
-    if (!card.querySelector('.cub-cooldown')) {
-      card.insertAdjacentHTML('beforeend', `
-        <div class="cub-cooldown">
-          <div class="cd-label">Recovering</div>
-          <div class="cd-timer" data-cub-id="${cub.id}">${fmtCD(COOLDOWN_MS)}</div>
-          <button class="cd-ad-btn" onclick="event.stopPropagation();watchAd('${cub.id}',this)">▶ Watch Ad −10 min</button>
-        </div>`);
-    }
+    if (!card.querySelector('.cub-cooldown')) card.insertAdjacentHTML('beforeend', cooldownOverlayHTML(cub.id));
   }
   updateRosterStatus();
   const nextReady = G.cubs.find(c => c.id !== cub.id && !isCoolingDown(c.id));
-  addLog(`💀 ${cub.name} has fallen and needs 30 min to recover.${nextReady ? ` Send in ${nextReady.name}!` : ' All Cubs are recovering…'}`, 'ls');
+  addLog(`💀 ${cub.name} has fallen — 30 min to recover, or revive it with 🍯 ${reviveCost(G.currentEra)}.${nextReady ? ` Send in ${nextReady.name}!` : ' All Cubs are recovering…'}`, 'ls');
   setBtns(false);
   G.active = false;
   G.busy = false;
   G.selected = null;
   document.querySelectorAll('.cub-card').forEach(c => c.classList.remove('selected'));
+  updateCosts();
   setTimeout(resetBattle, 2500);
 }
 
 function resetBattle() {
   const nextReady = G.cubs.find(c => !isCoolingDown(c.id));
-  addLog(nextReady ? `🐻 Pick your next Cub to continue the hunt…` : '⏳ All Cubs are recovering. Watch an ad or wait…', 'ls');
+  addLog(nextReady ? `🐻 Pick your next Cub to continue the hunt…` : '⏳ All Cubs are recovering. Revive one with honey or wait…', 'ls');
   document.getElementById('playerSlot').innerHTML = '<div class="empty-slot">Select a Cub<br/>to enter battle</div>';
   document.getElementById('enemySlot').innerHTML  = '<div class="empty-slot">Awaiting<br/>challenger…</div>';
 }
@@ -1753,9 +2072,9 @@ function resetBattle() {
 // Keyboard commands: 1 Strike · 2 Fortify · 3 Honey Burst
 document.addEventListener('keydown', e => {
   if (e.target.closest('input,textarea')) return;
-  const action = { '1':'atk', '2':'def', '3':'spc' }[e.key];
+  const action = { '1':'atk', '2':'def', '3':'spc', '4':'drink' }[e.key];
   if (!action) return;
-  const btn = document.getElementById({ atk:'btnA', def:'btnD', spc:'btnS' }[action]);
+  const btn = document.getElementById({ atk:'btnA', def:'btnD', spc:'btnS', drink:'btnH' }[action]);
   if (btn && !btn.disabled) act(action);
 });
 
@@ -1800,6 +2119,7 @@ async function connectWallet() {
       }
 
       G.cubs = cubs;
+      loadReviveConfig();
       renderCubs(cubs);
     } catch(e) {
       setStatus(`Wallet error: ${e?.message || e?.code || JSON.stringify(e)}`, 'bad');
@@ -1838,7 +2158,8 @@ function showLoader(on) {
 function saveProgress() {
   try {
     localStorage.setItem('okaycubs_progress', JSON.stringify({
-      wins: G.wins, era: G.currentEra, cooldowns: G.cooldowns
+      wins: G.wins, era: G.currentEra, cooldowns: G.cooldowns,
+      honey: G.honey, honeyByEra: G.honeyByEra, cubProg: G.cubProg,
     }));
   } catch(e) {}
 }
@@ -1848,13 +2169,16 @@ function loadProgress() {
     const saved = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}');
     G.wins      = saved.wins || 0;
     G.currentEra = saved.era || 'hadean';
+    G.honey      = saved.honey || 0;
+    G.honeyByEra = saved.honeyByEra || {};
+    G.cubProg    = saved.cubProg || {};
     // Load cooldowns, drop any already expired
     const now = Date.now();
     G.cooldowns = {};
     Object.entries(saved.cooldowns || {}).forEach(([id, exp]) => {
       if (exp > now) G.cooldowns[id] = exp;
     });
-  } catch(e) { G.wins = 0; G.currentEra = 'hadean'; G.cooldowns = {}; }
+  } catch(e) { G.wins = 0; G.currentEra = 'hadean'; G.cooldowns = {}; G.honey = 0; G.honeyByEra = {}; G.cubProg = {}; }
 }
 
 // ─────────────────────────────────────────
@@ -1879,22 +2203,6 @@ function setCooldown(cubId) {
   saveProgress();
 }
 
-function watchAd(cubId, btn) {
-  if (!isCoolingDown(cubId)) return;
-  btn.disabled = true;
-  btn.textContent = '▶ Watching…';
-  setTimeout(() => {
-    G.cooldowns[cubId] = Math.max(Date.now(), G.cooldowns[cubId] - AD_SKIP_MS);
-    saveProgress();
-    // If cooldown expired after reduction, clean it up
-    if (!isCoolingDown(cubId)) delete G.cooldowns[cubId];
-    updateRosterStatus();
-    const card = document.getElementById(`c-${cubId}`);
-    if (card) refreshCardCooldown(cubId, card);
-    addLog(`📺 Ad watched — cooldown reduced by 10 min for Cub #${cubId}`, 'ls');
-  }, 3000);
-}
-
 function refreshCardCooldown(cubId, card) {
   const overlay = card.querySelector('.cub-cooldown');
   if (!isCoolingDown(cubId)) {
@@ -1906,8 +2214,6 @@ function refreshCardCooldown(cubId, card) {
   if (overlay) {
     const timer = overlay.querySelector('.cd-timer');
     if (timer) timer.textContent = fmtCD(cooldownRemaining(cubId));
-    const adBtn = overlay.querySelector('.cd-ad-btn');
-    if (adBtn) adBtn.disabled = false, adBtn.textContent = '▶ Watch Ad −10 min';
   }
 }
 
@@ -1975,7 +2281,12 @@ function selectEra(era) {
   document.getElementById('arenaSub').textContent = meta.sub;
   applyEraTheme(era);
   updateWorldMap();
+  G.cubs.forEach(refreshCard);
+  updateCosts();
   if (G.selected) {
+    G.pMaxHP = getStats(G.selected).HP;
+    G.pHP = Math.min(G.pHP, G.pMaxHP);
+    renderPlayer();
     spawnEnemy();
     addLog(`⛏ Entered ${meta.title} — new threats emerge from the deep…`, 'ls');
   }
