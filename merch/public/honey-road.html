@@ -109,6 +109,7 @@ setInterval(() => { if (road && road.started && !road.paused && !road.finished) 
 async function init() {
   document.getElementById('hudTitle').textContent = L.title;
   document.getElementById('introTitle').textContent = `${L.title} · ${CUB.name}`;
+  document.getElementById('introText').textContent = L.intro;
   document.getElementById('hudHoney').textContent = `🍯 0 / ${TOTAL_HONEY}`;
   try { await sprite.load(CUB.img); } catch (e) { await sprite.load('/cubs/35.png'); }
   // is this run going to count? (server profile when signed in, local profile otherwise)
@@ -118,8 +119,9 @@ async function init() {
     if (res.ok) prof = (await res.json()).state;
     else { const p = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}'); prof = Object.assign(HoneyEngine.newProfile(), { wins: p.wins || 0, roads: p.roads || {} }); }
     if (prof && !HoneyEngine.roadAvailable(prof, ERA)) {
-      const need = HoneyEngine.ERA_UNLOCK[L.next] - (prof.wins || 0);
-      document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ffb347">Practice run</strong> — win ${need} more hunt${need === 1 ? '' : 's'} in the arena and this road will count towards unlocking the ${L.next[0].toUpperCase() + L.next.slice(1)} era.`;
+      const road = HoneyEngine.ROADS[ERA], need = Math.max(0, road.wins - (prof.wins || 0));
+      const why = !HoneyEngine.isEraUnlocked(prof, ERA) ? `unlock the ${ERA[0].toUpperCase() + ERA.slice(1)} era first (finish the previous Honey Road)` : `win ${need} more hunt${need === 1 ? '' : 's'} in the arena`;
+      document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ffb347">Practice run</strong> — ${why} and this road will count${L.next ? ` towards unlocking the ${L.next[0].toUpperCase() + L.next.slice(1)} era` : ''}.`;
     }
   } catch (e) {}
   road = new HoneyRoad(cv, sprite, ERA, {
@@ -164,7 +166,9 @@ async function showResult({ timeMs, honey }) {
     } else throw new Error(data.error === 'locked' ? 'This road is not unlocked yet — win more hunts first.' : (data.error || 'could not save'));
     const best = state.roads?.[ERA]?.best;
     document.getElementById('rBest').textContent = best ? fmt(best) : '—';
-    txt.innerHTML = `+${honey} ${L.honeyName} added to your pot (🍯 ${state.honey}).` + (unlocked.length ? `<br><strong style="color:#7fdbff">⛏ ${unlocked.map(e => e[0].toUpperCase() + e.slice(1)).join(', ')} era unlocked!</strong>` : '');
+    txt.innerHTML = `+${honey} ${L.honeyName} added to your pot (🍯 ${state.honey}).`
+      + (unlocked.length ? `<br><strong style="color:#7fdbff">⛏ ${unlocked.map(e => e[0].toUpperCase() + e.slice(1)).join(', ')} era unlocked!</strong>` : '')
+      + (!L.next ? `<br><strong style="color:#f5e06e">✦ You claimed The Golden Drop. The Honey Chronicles are complete — for now.</strong>` : '');
   } catch (e) { txt.textContent = `Run finished, but it was not saved: ${e.message}`; }
 }
 

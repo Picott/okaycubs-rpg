@@ -14,7 +14,14 @@
   const COOLDOWN_MS = 30 * 60 * 1000;
   const MAX_LEVEL   = 50;
   // Honey Roads: the wins threshold of the NEXT era unlocks the road; finishing the road unlocks the era
-  const ROADS = { hadean: { next:'archean', maxHoney: 26, minTimeMs: 9000 } };
+  const ROADS = {
+    hadean:      { next:'archean',     wins:5,   maxHoney: 36, minTimeMs: 9000 },
+    archean:     { next:'proterozoic', wins:15,  maxHoney: 36, minTimeMs: 10000 },
+    proterozoic: { next:'paleozoic',   wins:30,  maxHoney: 36, minTimeMs: 10000 },
+    paleozoic:   { next:'mesozoic',    wins:50,  maxHoney: 36, minTimeMs: 11000 },
+    mesozoic:    { next:'cenozoic',    wins:75,  maxHoney: 36, minTimeMs: 11000 },
+    cenozoic:    { next:null,          wins:100, maxHoney: 36, minTimeMs: 12000 },
+  };
 
   const ERA_ENEMIES = {
     hadean: [
@@ -173,7 +180,7 @@
   }
   function prog(p, id) { return p.cubProg[id] || (p.cubProg[id] = { xp:0, lvl:1 }); }
   function isCoolingDown(p, id, now) { return !!p.cooldowns[id] && p.cooldowns[id] > now; }
-  function roadAvailable(p, era) { const r = ROADS[era]; return !!r && p.wins >= (ERA_UNLOCK[r.next] || 0); }
+  function roadAvailable(p, era) { const r = ROADS[era]; return !!r && isEraUnlocked(p, era) && p.wins >= r.wins; }
   function roadDone(p, era) { return !!(p.roads && p.roads[era] && p.roads[era].runs > 0); }
   function isEraUnlocked(p, era) {
     if (p.wins < (ERA_UNLOCK[era] || 0)) return false;
@@ -191,7 +198,7 @@
     const first = r.runs === 0;
     r.runs++; r.best = r.best == null ? timeMs : Math.min(r.best, timeMs); r.honey += honey; r.lastAt = now || Date.now();
     p.honey += honey; p.honeyByEra[era] = (p.honeyByEra[era] || 0) + honey;
-    const unlocked = first && isEraUnlocked(p, road.next) ? [road.next] : [];
+    const unlocked = first && road.next && isEraUnlocked(p, road.next) ? [road.next] : [];
     return { ok:true, unlocked, first, p };
   }
   function fail(error) { return { ok:false, error }; }

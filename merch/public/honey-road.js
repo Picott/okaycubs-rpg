@@ -9,36 +9,112 @@
   const PLAYER_W = 34, PLAYER_H = 74;
 
   // ---------- level data ----------
-  // x grows to the right, y grows down; the floor top is GROUND_Y. Gaps in `ground` are lava.
+  // x grows to the right, y grows down; the floor top is GROUND_Y. Gaps in `ground` are the era's hazard.
+  // `ice: true` on a ground segment / platform makes it slippery. Honey is auto-placed unless listed.
   const LEVELS = {
     hadean: {
-      title: 'Magma Road', honeyName: 'Magma Honey', next: 'archean', length: 3600,
-      palette: { skyTop: '#140612', skyBottom: '#4a1208', far: '#2a0a12', mid: '#1b0909', rock: '#241412', rockTop: '#5a3a2c', lava: '#ff6a1a', ember: ['#ff6b35', '#f1c40f', '#ff3b1f'] },
+      title: 'Magma Road', honeyName: 'Magma Honey', next: 'archean', length: 3600, hazard: 'lava',
+      intro: 'Run the molten road, dodge the Ember Sentinels, gather every drop of Magma Honey and reach the portal to the Archean era.',
+      palette: { skyTop: '#140612', skyBottom: '#4a1208', far: '#2a0a12', mid: '#1b0909', rock: '#241412', rockTop: '#5a3a2c', ember: ['#ff6b35', '#f1c40f', '#ff3b1f'], glow: 'rgba(255,90,30,.25)' },
       ground: [[0, 900], [1020, 1500], [1700, 2320], [2440, 3600]],
-      platforms: [
-        { x: 640, y: 372, w: 150 }, { x: 1180, y: 352, w: 120 }, { x: 1330, y: 268, w: 110 },
-        { x: 2080, y: 330, w: 130 }, { x: 2650, y: 360, w: 140 }, { x: 2860, y: 280, w: 120 }, { x: 3050, y: 360, w: 130 },
-      ],
+      platforms: [{ x: 640, y: 372, w: 150 }, { x: 1180, y: 352, w: 120 }, { x: 1330, y: 268, w: 110 }, { x: 2080, y: 330, w: 130 }, { x: 2650, y: 360, w: 140 }, { x: 2860, y: 280, w: 120 }, { x: 3050, y: 360, w: 130 }],
       crumble: [{ x: 1545, y: 392, w: 110 }, { x: 1880, y: 372, w: 130 }, { x: 2340, y: 400, w: 90 }],
-      enemies: [
-        { type: 'ember', x: 520, range: [400, 760] }, { type: 'ember', x: 1150, range: [1040, 1450] },
-        { type: 'golem', x: 1850, range: [1720, 2050] }, { type: 'ember', x: 2560, range: [2460, 2780] },
-        { type: 'ember', x: 2950, range: [2820, 3150] }, { type: 'golem', x: 3250, range: [3180, 3420] },
-      ],
-      honey: [
-        [220, 430], [300, 400], [380, 430], [680, 320], [730, 300], [780, 320], [960, 300], [1100, 430], [1230, 300], [1380, 215],
-        [1430, 215], [1600, 330], [1760, 430], [1930, 320], [2140, 280], [2200, 430], [2380, 340], [2520, 430], [2700, 310], [2750, 310],
-        [2900, 230], [2950, 230], [3100, 310], [3200, 430], [3300, 400], [3360, 430],
-      ],
-      checkpoints: [1080, 2480],
-      portal: 3500,
+      enemies: [{ type: 'ember', x: 520, range: [400, 760] }, { type: 'ember', x: 1150, range: [1040, 1450] }, { type: 'golem', x: 1850, range: [1720, 2050] }, { type: 'ember', x: 2560, range: [2460, 2780] }, { type: 'ember', x: 2950, range: [2820, 3150] }, { type: 'golem', x: 3250, range: [3180, 3420] }],
+      honey: [[220, 430], [300, 400], [380, 430], [680, 320], [730, 300], [780, 320], [960, 300], [1100, 430], [1230, 300], [1380, 215], [1430, 215], [1600, 330], [1760, 430], [1930, 320], [2140, 280], [2200, 430], [2380, 340], [2520, 430], [2700, 310], [2750, 310], [2900, 230], [2950, 230], [3100, 310], [3200, 430], [3300, 400], [3360, 430]],
+      checkpoints: [1080, 2480], portal: 3500,
+    },
+    archean: {
+      title: 'Stone Road', honeyName: 'Stone Honey', next: 'proterozoic', length: 4000, hazard: 'chasm',
+      intro: 'The crust has hardened into cliffs and bottomless faults. Ride the drifting slabs, outrun the Crust Shades and claim the Stone Honey.',
+      palette: { skyTop: '#070b16', skyBottom: '#1c2a3f', far: '#101a2a', mid: '#0b121d', rock: '#1f2733', rockTop: '#5b6b80', ember: ['#8fa3bf', '#3498db', '#dfe7f2'], glow: 'rgba(52,152,219,.22)' },
+      ground: [[0, 700], [860, 1300], [1560, 1900], [2240, 2700], [2900, 3200], [3420, 4000]],
+      platforms: [{ x: 560, y: 360, w: 120 }, { x: 1120, y: 340, w: 110 }, { x: 1740, y: 350, w: 120 }, { x: 2460, y: 330, w: 120 }, { x: 2600, y: 240, w: 100 }, { x: 3000, y: 350, w: 120 }, { x: 3560, y: 340, w: 130 }],
+      crumble: [{ x: 1960, y: 390, w: 100 }, { x: 3260, y: 400, w: 90 }],
+      movers: [{ x: 720, y: 400, w: 110, dx: 50, dy: 0, period: 3 }, { x: 1380, y: 380, w: 110, dx: 0, dy: 70, period: 3.4 }, { x: 2070, y: 360, w: 110, dx: 60, dy: 40, period: 4 }, { x: 2760, y: 400, w: 100, dx: 40, dy: 0, period: 2.6 }, { x: 3300, y: 330, w: 100, dx: 0, dy: 80, period: 3.2 }],
+      enemies: [{ type: 'shade', x: 420, range: [300, 640] }, { type: 'rockgolem', x: 1050, range: [900, 1250] }, { type: 'shade', x: 1700, range: [1580, 1860] }, { type: 'shade', x: 2400, range: [2260, 2660] }, { type: 'rockgolem', x: 3050, range: [2920, 3180] }, { type: 'shade', x: 3650, range: [3460, 3850] }, { type: 'rockgolem', x: 3800, range: [3700, 3900] }],
+      checkpoints: [900, 2280, 3460], portal: 3900,
+    },
+    proterozoic: {
+      title: 'Tide Road', honeyName: 'Tide Honey', next: 'paleozoic', length: 4200, hazard: 'water',
+      intro: 'The first oceans froze over the road. Everything slides — plan your jumps, stomp the Frost Sentinels and bring back the Tide Honey.',
+      palette: { skyTop: '#031016', skyBottom: '#0b3a40', far: '#0a2a30', mid: '#061c22', rock: '#163a44', rockTop: '#a8e6cf', ember: ['#7fdbff', '#a8e6cf', '#ffffff'], glow: 'rgba(26,188,156,.25)' },
+      ground: [[0, 760, true], [900, 1400, true], [1640, 2000], [2200, 2800, true], [3000, 3400, true], [3600, 4200, true]],
+      platforms: [{ x: 620, y: 350, w: 120, ice: true }, { x: 1180, y: 330, w: 110 }, { x: 1440, y: 400, w: 100, ice: true }, { x: 1800, y: 340, w: 120 }, { x: 2060, y: 380, w: 90 }, { x: 2460, y: 340, w: 120, ice: true }, { x: 2620, y: 250, w: 100 }, { x: 3160, y: 350, w: 120, ice: true }, { x: 3440, y: 390, w: 100 }, { x: 3800, y: 340, w: 130 }],
+      crumble: [{ x: 2860, y: 400, w: 90 }],
+      movers: [{ x: 3480, y: 320, w: 100, dx: 0, dy: 70, period: 3 }],
+      enemies: [{ type: 'frost', x: 480, range: [330, 700] }, { type: 'ancient', x: 1100, range: [950, 1350] }, { type: 'frost', x: 1750, range: [1660, 1960] }, { type: 'frost', x: 2400, range: [2240, 2760] }, { type: 'ancient', x: 2650, range: [2500, 2800] }, { type: 'frost', x: 3200, range: [3020, 3380] }, { type: 'ancient', x: 3850, range: [3640, 4100] }, { type: 'frost', x: 3950, range: [3700, 4100] }],
+      checkpoints: [940, 2240, 3640], portal: 4100,
+    },
+    paleozoic: {
+      title: 'Bloom Road', honeyName: 'Bloom Honey', next: 'mesozoic', length: 4400, hazard: 'venom',
+      intro: 'Life explodes across the reef. Bounce off the giant mushrooms, watch the venom pools and outrun every crawler to the Bloom Honey.',
+      palette: { skyTop: '#06140a', skyBottom: '#1c3d14', far: '#0f2a12', mid: '#091c0c', rock: '#1d2e14', rockTop: '#5f8f3a', ember: ['#a3ff8f', '#f1c40f', '#2ecc71'], glow: 'rgba(46,204,113,.22)' },
+      ground: [[0, 680], [840, 1240], [1480, 1900], [2120, 2560], [2760, 3200], [3440, 3800], [3960, 4400]],
+      platforms: [{ x: 1020, y: 330, w: 110 }, { x: 1700, y: 330, w: 110 }, { x: 1860, y: 240, w: 100 }, { x: 2300, y: 350, w: 120 }, { x: 2940, y: 320, w: 120 }, { x: 3100, y: 230, w: 100 }, { x: 3600, y: 340, w: 110 }, { x: 4100, y: 330, w: 130 }],
+      crumble: [{ x: 1280, y: 400, w: 100 }, { x: 2600, y: 400, w: 90 }, { x: 3840, y: 400, w: 90 }],
+      springs: [{ x: 620 }, { x: 1420 }, { x: 2070 }, { x: 2700 }, { x: 3380 }, { x: 3900 }],
+      enemies: [{ type: 'crawler', x: 400, range: [250, 620] }, { type: 'specter', x: 1000, range: [880, 1200] }, { type: 'crawler', x: 1600, range: [1500, 1860] }, { type: 'crawler', x: 2300, range: [2140, 2520] }, { type: 'specter', x: 2900, range: [2780, 3160] }, { type: 'crawler', x: 3600, range: [3460, 3760] }, { type: 'specter', x: 4100, range: [3980, 4300] }, { type: 'crawler', x: 4200, range: [4000, 4320] }],
+      checkpoints: [880, 2160, 3480], portal: 4300,
+    },
+    mesozoic: {
+      title: 'Titan Road', honeyName: 'Titan Honey', next: 'cenozoic', length: 4600, hazard: 'tar',
+      intro: 'The age of giants. Apex Sentinels charge the moment they see you and Sky Wardens dive from above — keep moving and seize the Titan Honey.',
+      palette: { skyTop: '#160b03', skyBottom: '#5a2e0a', far: '#2e1708', mid: '#1c0e05', rock: '#2a1a0e', rockTop: '#8a5a2a', ember: ['#f39c12', '#ff9f43', '#ffe08a'], glow: 'rgba(243,156,18,.25)' },
+      ground: [[0, 800], [980, 1500], [1700, 2200], [2420, 2900], [3080, 3600], [3820, 4600]],
+      platforms: [{ x: 640, y: 350, w: 120 }, { x: 860, y: 380, w: 100 }, { x: 1240, y: 330, w: 120 }, { x: 1560, y: 390, w: 110 }, { x: 1960, y: 330, w: 120 }, { x: 2280, y: 380, w: 110 }, { x: 2660, y: 340, w: 120 }, { x: 2960, y: 400, w: 100 }, { x: 3300, y: 330, w: 130 }, { x: 3680, y: 380, w: 110 }, { x: 4100, y: 330, w: 130 }, { x: 4300, y: 240, w: 100 }],
+      crumble: [{ x: 1040, y: 400, w: 90 }, { x: 2500, y: 400, w: 90 }, { x: 3900, y: 400, w: 90 }],
+      movers: [{ x: 2100, y: 300, w: 100, dx: 0, dy: 90, period: 3.2 }, { x: 3480, y: 380, w: 100, dx: 60, dy: 0, period: 2.8 }],
+      enemies: [{ type: 'raptor', x: 500, range: [300, 760] }, { type: 'sky', x: 1200, range: [1000, 1480] }, { type: 'raptor', x: 1900, range: [1720, 2180] }, { type: 'sky', x: 2600, range: [2440, 2880] }, { type: 'raptor', x: 3300, range: [3100, 3580] }, { type: 'sky', x: 3400, range: [3100, 3580] }, { type: 'raptor', x: 4200, range: [3860, 4480] }, { type: 'sky', x: 4300, range: [4000, 4500] }],
+      checkpoints: [1020, 2460, 3860], portal: 4500,
+    },
+    cenozoic: {
+      title: 'Frost Road', honeyName: 'Frost Honey', next: null, length: 5000, hazard: 'ice',
+      intro: 'The last road. Ice, drifting floes and the Time Wardens stand between you and the Golden Drop — the honey that bends time itself.',
+      palette: { skyTop: '#060a14', skyBottom: '#1f3348', far: '#162638', mid: '#0d1826', rock: '#24344a', rockTop: '#dfe9f5', ember: ['#ffffff', '#aed6f1', '#e74c3c'], glow: 'rgba(174,214,241,.22)' },
+      ground: [[0, 700, true], [880, 1300, true], [1520, 1900], [2120, 2600, true], [2840, 3200, true], [3440, 3900], [4120, 5000, true]],
+      platforms: [{ x: 540, y: 340, w: 120, ice: true }, { x: 1100, y: 330, w: 110 }, { x: 1700, y: 340, w: 120, ice: true }, { x: 1960, y: 390, w: 90 }, { x: 2360, y: 330, w: 120 }, { x: 2520, y: 240, w: 100, ice: true }, { x: 3000, y: 340, w: 120 }, { x: 3600, y: 330, w: 120, ice: true }, { x: 3760, y: 240, w: 100 }, { x: 4300, y: 340, w: 130 }, { x: 4600, y: 300, w: 120, ice: true }],
+      crumble: [{ x: 1340, y: 400, w: 90 }, { x: 2660, y: 400, w: 90 }, { x: 3960, y: 400, w: 90 }],
+      movers: [{ x: 740, y: 380, w: 100, dx: 50, dy: 0, period: 2.8 }, { x: 1980, y: 300, w: 100, dx: 0, dy: 90, period: 3 }, { x: 3260, y: 360, w: 100, dx: 70, dy: 30, period: 3.6 }, { x: 4000, y: 320, w: 100, dx: 0, dy: 70, period: 2.6 }],
+      springs: [{ x: 1600 }, { x: 3500 }],
+      enemies: [{ type: 'keeper', x: 420, range: [280, 660] }, { type: 'warden', x: 1100, range: [920, 1260] }, { type: 'keeper', x: 1700, range: [1560, 1860] }, { type: 'keeper', x: 2300, range: [2160, 2560] }, { type: 'warden', x: 3000, range: [2880, 3160] }, { type: 'keeper', x: 3650, range: [3480, 3860] }, { type: 'warden', x: 4400, range: [4160, 4700] }, { type: 'keeper', x: 4700, range: [4500, 4850] }, { type: 'warden', x: 4800, range: [4600, 4900] }],
+      checkpoints: [920, 2160, 3480, 4160], portal: 4900,
     },
   };
 
-  const ENEMY_TYPES = {
-    ember: { emoji: '🔥', hp: 1, speed: 95, w: 44, h: 52, stompable: true, name: 'Ember Sentinel' },
-    golem: { emoji: '🗿', hp: 2, speed: 42, w: 56, h: 66, stompable: false, name: 'Cinder Golem' },
+  const HAZARDS = {
+    lava:  { top: '#ffb347', mid: '#ff6a1a', deep: '#6a1202', foam: 'rgba(255,230,150,.35)', name: 'lava' },
+    chasm: { top: '#0b1220', mid: '#05080f', deep: '#000000', foam: 'rgba(120,150,200,.12)', name: 'the fault' },
+    water: { top: '#7fdbff', mid: '#1a8fa8', deep: '#062a33', foam: 'rgba(255,255,255,.45)', name: 'freezing water' },
+    venom: { top: '#b8ff6a', mid: '#4caf2a', deep: '#123a0a', foam: 'rgba(230,255,160,.4)', name: 'venom' },
+    tar:   { top: '#5a3a1a', mid: '#1c1208', deep: '#000000', foam: 'rgba(255,170,80,.25)', name: 'tar' },
+    ice:   { top: '#e8f6ff', mid: '#8ec5e8', deep: '#1b4a6b', foam: 'rgba(255,255,255,.6)', name: 'glacial water' },
   };
+
+  const ENEMY_TYPES = {
+    ember:     { emoji: '🔥', hp: 1, speed: 95,  w: 44, h: 52, stompable: true,  name: 'Ember Sentinel' },
+    golem:     { emoji: '🗿', hp: 2, speed: 42,  w: 56, h: 66, stompable: false, name: 'Cinder Golem' },
+    shade:     { emoji: '🌑', hp: 1, speed: 135, w: 44, h: 48, stompable: true,  name: 'Crust Shade' },
+    rockgolem: { emoji: '🪨', hp: 3, speed: 36,  w: 60, h: 62, stompable: false, name: 'Deep Rock Elder' },
+    frost:     { emoji: '🧊', hp: 1, speed: 85,  w: 46, h: 50, stompable: true,  name: 'Frost Sentinel' },
+    ancient:   { emoji: '🦠', hp: 2, speed: 60,  w: 48, h: 50, stompable: true,  fly: true, name: 'Ocean Ancient' },
+    crawler:   { emoji: '🦂', hp: 1, speed: 150, w: 48, h: 44, stompable: true,  name: 'Venom Crawler' },
+    specter:   { emoji: '🌱', hp: 2, speed: 55,  w: 44, h: 50, stompable: true,  fly: true, name: 'Spore Specter' },
+    raptor:    { emoji: '🦖', hp: 3, speed: 60,  w: 64, h: 70, stompable: false, charge: true, name: 'Apex Sentinel' },
+    sky:       { emoji: '🦅', hp: 1, speed: 110, w: 52, h: 48, stompable: true,  fly: true, name: 'Sky Warden' },
+    keeper:    { emoji: '❄',  hp: 2, speed: 75,  w: 48, h: 50, stompable: true,  name: 'Frost Keeper' },
+    warden:    { emoji: '⏳', hp: 3, speed: 50,  w: 52, h: 64, stompable: false, charge: true, name: 'Time Warden' },
+  };
+
+  // Auto-place honey: a drop every ~190px of safe floor, plus a pair above every platform. Capped at 36.
+  function autoHoney(L) {
+    const out = [];
+    for (const [a, b] of L.ground) for (let x = a + 150; x < b - 100; x += 190) { if (Math.abs(x - L.portal) > 160) out.push([x, 432]); }
+    for (const p of [...L.platforms, ...(L.crumble || []), ...(L.movers || [])]) { out.push([p.x + p.w / 2 - 22, p.y - 56], [p.x + p.w / 2 + 22, p.y - 56]); }
+    out.sort((p, q) => p[0] - q[0]);
+    if (out.length > 36) { const step = out.length / 36; return Array.from({ length: 36 }, (_, i) => out[Math.floor(i * step)]); }
+    return out;
+  }
+  for (const L of Object.values(LEVELS)) { if (!L.honey) L.honey = autoHoney(L); L.movers = L.movers || []; L.springs = L.springs || []; L.crumble = L.crumble || []; }
 
   // ---------- game ----------
   class HoneyRoad {
@@ -57,11 +133,13 @@
       const L = this.L;
       this.p = { x: 80, y: GROUND_Y, vx: 0, vy: 0, grounded: true, facing: 1, coyote: 0, buffer: 0, dashT: 0, dashCd: 0, dashDir: 1,
                  hp: 3, inv: 0, honey: 0, checkpoint: 80, dead: 0, attackT: 0, stunned: 0,
-                 jumpsLeft: 1, burst: 0, burstStreak: 0, primed: 0, burstFx: 0 };
-      this.solids = L.ground.map(([a, b]) => ({ x: a, y: GROUND_Y, w: b - a, h: FLOOR_H, type: 'ground' }));
+                 jumpsLeft: 1, burst: 0, burstStreak: 0, primed: 0, burstFx: 0, onRect: null };
+      this.solids = L.ground.map(([a, b, ice]) => ({ x: a, y: GROUND_Y, w: b - a, h: FLOOR_H, type: 'ground', ice: !!ice }));
       this.platforms = L.platforms.map(p => ({ ...p, h: 18, type: 'platform' }));
+      this.movers = L.movers.map(m => ({ ...m, h: 18, type: 'mover', cx: m.x, cy: m.y, dx0: 0, dy0: 0 }));
+      this.springs = L.springs.map(sp => ({ x: sp.x, y: GROUND_Y, t: 0 }));
       this.crumbles = L.crumble.map(p => ({ ...p, h: 18, type: 'crumble', timer: 0, fall: 0, gone: false }));
-      this.enemies = L.enemies.map(e => ({ ...ENEMY_TYPES[e.type], type: e.type, x: e.x, y: GROUND_Y, range: e.range, dir: 1, hpLeft: ENEMY_TYPES[e.type].hp, dead: 0, hit: 0, bob: Math.random() * 6 }));
+      this.enemies = L.enemies.map(e => ({ ...ENEMY_TYPES[e.type], type: e.type, x: e.x, y: GROUND_Y, range: e.range, dir: 1, hpLeft: ENEMY_TYPES[e.type].hp, dead: 0, hit: 0, bob: Math.random() * 6, chargeT: 0, restT: 0 }));
       this.honey = L.honey.map(([x, y]) => ({ x, y, taken: false, t: Math.random() * 6 }));
       this.checkpoints = L.checkpoints.map(x => ({ x, lit: false }));
       this.particles = []; this.floats = []; this.trail = []; this.rings = [];
@@ -90,7 +168,18 @@
     float(x, y, text, color) { this.floats.push({ x, y, text, color, t: 1 }); }
 
     // ---------- physics ----------
-    rects() { return [...this.solids, ...this.platforms, ...this.crumbles.filter(c => !c.gone).map(c => ({ ...c, y: c.y + c.fall }))]; }
+    rects() { return [...this.solids, ...this.platforms, ...this.movers, ...this.crumbles.filter(c => !c.gone).map(c => ({ ...c, y: c.y + c.fall }))]; }
+
+    // drifting slabs: sinusoidal paths; whoever stands on one is carried along
+    stepMovers() {
+      const t = this.time;
+      for (const m of this.movers) {
+        const nx = m.cx + Math.sin(t * Math.PI * 2 / m.period) * m.dx, ny = m.cy + Math.sin(t * Math.PI * 2 / m.period) * m.dy;
+        m.dx0 = nx - m.x; m.dy0 = ny - m.y; m.x = nx; m.y = ny;
+      }
+      const p = this.p;
+      if (p.grounded && p.onRect && p.onRect.type === 'mover') { p.x += p.onRect.dx0; p.y += p.onRect.dy0; }
+    }
 
     stepPlayer(dt) {
       const p = this.p, i = this.input, P = PHYS;
@@ -121,9 +210,10 @@
         p.dashT -= dt; p.vx = p.dashDir * P.dashSpeed; if (p.vy > 0) p.vy = 0;
         this.trail.push({ x: p.x, y: p.y, t: .22 });
       } else {
-        const ctl = p.grounded ? 1 : P.airControl;
+        const ice = p.grounded && p.onRect && p.onRect.ice;
+        const ctl = p.grounded ? (ice ? 0.5 : 1) : P.airControl;
         if (dir !== 0) { p.vx += dir * P.accel * ctl * dt; p.facing = dir; }
-        else if (p.grounded) { const f = P.friction * dt; p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f; }
+        else if (p.grounded) { const f = P.friction * (ice ? 0.1 : 1) * dt; p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f; }
         else p.vx *= 1 - 0.6 * dt;
         p.vx = clamp(p.vx, -P.maxSpeed, P.maxSpeed);
       }
@@ -150,22 +240,30 @@
       // vertical move
       const prevFeet = p.y;
       p.y += p.vy * dt;
-      let landed = false;
+      let landed = false, onRect = null;
       for (const r of this.rects()) {
         const oneWay = r.type !== 'ground';
         if (!this.overlaps(p, r)) continue;
         if (p.vy >= 0 && prevFeet <= r.y + 1) {                 // landing from above
-          p.y = r.y; p.vy = 0; landed = true;
+          p.y = r.y; p.vy = 0; landed = true; onRect = r;
           if (r.type === 'crumble') { const c = this.crumbles.find(c => c.x === r.x); if (c && c.timer === 0) c.timer = 0.001; }
         } else if (!oneWay && p.vy < 0) {                        // bumping a ceiling
           p.y = r.y + r.h + PLAYER_H; p.vy = 0;
         }
       }
       if (landed && !p.grounded) justLanded = true;
-      p.grounded = landed;
+      p.grounded = landed; p.onRect = landed ? (onRect.type === 'mover' ? this.movers.find(m => m.cx === onRect.cx) || onRect : onRect) : null;
 
-      // lava / falling off the world
-      if (p.y > GROUND_Y + 60 && p.dead <= 0) this.die('lava');
+      // springs: giant mushrooms that launch the cub
+      if (p.grounded) for (const sp of this.springs) {
+        if (Math.abs(p.x - sp.x) < 36 && Math.abs(p.y - sp.y) < 4) {
+          p.vy = -P.jumpVel * 1.5; p.grounded = false; p.jumpsLeft = 1; sp.t = 0.35; justJumped = true;
+          this.burst(sp.x, sp.y - 20, ['#ff8fa3', '#ffd6e0', '#f5e06e'], 12, 120);
+        }
+      }
+
+      // the era's hazard / falling off the world
+      if (p.y > GROUND_Y + 60 && p.dead <= 0) this.die(this.L.hazard);
 
       return { vx: p.vx, vy: p.vy, grounded: p.grounded, justJumped, justLanded, dashing: p.dashT > 0, height: 0 };
     }
@@ -178,13 +276,15 @@
       const p = this.p;
       p.dead = 1.1; p.hp = 0; p.vx = 0; p.vy = 0;
       this.sprite.hurt(); this.shake = 0.5;
-      this.burst(p.x, p.y - 30, cause === 'lava' ? ['#ff6a1a', '#ffb347', '#ff3b1f'] : ['#fff', '#ff8a7a'], 26, 220);
+      const hz = HAZARDS[cause];
+      this.burst(p.x, p.y - 30, hz ? [hz.top, hz.mid, '#fff'] : ['#fff', '#ff8a7a'], 26, 220);
       this.hooks.onDeath?.(cause);
     }
     respawn() {
       const p = this.p;
       p.x = p.checkpoint; p.y = GROUND_Y; p.vx = 0; p.vy = 0; p.hp = 3; p.inv = 1.5; p.grounded = true;
       this.crumbles.forEach(c => { c.gone = false; c.fall = 0; c.timer = 0; });
+      p.onRect = null;
       this.hooks.onRespawn?.();
     }
     damage(from) {
@@ -207,8 +307,16 @@
         if (e.dead > 0) { e.dead -= dt; continue; }
         if (e.hpLeft <= 0) continue;
         e.hit = Math.max(0, e.hit - dt);
-        e.x += e.dir * e.speed * dt;
-        if (e.x < e.range[0]) { e.x = e.range[0]; e.dir = 1; } if (e.x > e.range[1]) { e.x = e.range[1]; e.dir = -1; }
+        let speed = e.speed;
+        if (e.charge) {
+          if (e.chargeT > 0) { e.chargeT -= dt; speed *= 3.2; if (e.chargeT <= 0) e.restT = 1.4; }
+          else if (e.restT > 0) { e.restT -= dt; speed = 0; }
+          else if (p.dead <= 0 && Math.abs(p.x - e.x) < 300 && Math.abs(p.y - e.y) < 90) { e.chargeT = 1.0; e.dir = p.x < e.x ? -1 : 1; this.float(e.x, e.y - e.h - 10, '!', '#ff8a7a'); this.shake = Math.max(this.shake, 0.15); }
+        }
+        e.x += e.dir * speed * dt;
+        if (e.fly) e.y = GROUND_Y - 100 + Math.sin(this.time * 2 + e.bob) * 48;
+        if (e.x < e.range[0]) { e.x = e.range[0]; e.dir = 1; if (e.chargeT > 0) { e.chargeT = 0; e.restT = 1.2; } }
+        if (e.x > e.range[1]) { e.x = e.range[1]; e.dir = -1; if (e.chargeT > 0) { e.chargeT = 0; e.restT = 1.2; } }
         if (p.dead > 0) continue;
         const hitX = Math.abs(e.x - p.x) < (e.w + PLAYER_W) / 2, hitY = p.y > e.y - e.h && p.y - PLAYER_H < e.y;
         // player attack hitbox in front of the cub during the swing
@@ -232,6 +340,7 @@
           this.float(h.x, h.y - 20, '+1 🍯', '#ffe27a'); this.hooks.onHoney?.(p.honey);
         }
       }
+      for (const sp of this.springs) sp.t = Math.max(0, sp.t - dt);
       for (const c of this.checkpoints) if (!c.lit && p.x > c.x) { c.lit = true; p.checkpoint = c.x; this.float(c.x, GROUND_Y - 120, 'Checkpoint', '#7cf29e'); this.hooks.onCheckpoint?.(); }
       if (!this.finished && p.x > this.L.portal - 10 && p.dead <= 0) this.finish();
     }
@@ -268,6 +377,7 @@
       const dt = Math.min(0.033, (now - this.last) / 1000); this.last = now;
       if (!this.paused && !this.finished && this.started) {
         this.time += dt;
+        this.stepMovers();
         const m = this.stepPlayer(dt);
         this.stepWorld(dt);
         this.sprite.update(dt, m);
@@ -307,7 +417,7 @@
       // far volcanoes (parallax)
       ctx.fillStyle = pal.far;
       for (let i = -1; i < 8; i++) { const bx = i * 520 - (this.cam.x * 0.2) % 520; ctx.beginPath(); ctx.moveTo(bx, 430); ctx.lineTo(bx + 180, 170 + (i % 3) * 40); ctx.lineTo(bx + 230, 200); ctx.lineTo(bx + 400, 430); ctx.closePath(); ctx.fill(); }
-      const glow = ctx.createRadialGradient(W * 0.5, 460, 20, W * 0.5, 460, 520); glow.addColorStop(0, 'rgba(255,90,30,.25)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+      const glow = ctx.createRadialGradient(W * 0.5, 460, 20, W * 0.5, 460, 520); glow.addColorStop(0, pal.glow || 'rgba(255,90,30,.25)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
       // mid spires
       ctx.fillStyle = pal.mid;
@@ -320,15 +430,18 @@
       ctx.save();
       const sx = this.shake > 0 ? (Math.random() - .5) * 14 * this.shake : 0, sy = this.shake > 0 ? (Math.random() - .5) * 10 * this.shake : 0;
       ctx.translate(-this.cam.x + sx, -this.cam.y + sy);
-      // lava under everything
+      // the era's hazard under everything
+      const hz = HAZARDS[L.hazard] || HAZARDS.lava;
       const lavaY = GROUND_Y + 36, t = performance.now() / 1000;
-      const lg = ctx.createLinearGradient(0, lavaY, 0, lavaY + 160); lg.addColorStop(0, '#ffb347'); lg.addColorStop(0.25, pal.lava); lg.addColorStop(1, '#6a1202');
+      const lg = ctx.createLinearGradient(0, lavaY, 0, lavaY + 160); lg.addColorStop(0, hz.top); lg.addColorStop(0.25, hz.mid); lg.addColorStop(1, hz.deep);
       ctx.fillStyle = lg; ctx.fillRect(this.cam.x - 50, lavaY, W + 100, Math.max(200, H));
-      ctx.fillStyle = 'rgba(255,230,150,.35)';
+      ctx.fillStyle = hz.foam;
       for (let x = Math.floor(this.cam.x / 40) * 40; x < this.cam.x + W + 40; x += 40) { const h = 4 + Math.sin(t * 2 + x * 0.05) * 3; ctx.fillRect(x, lavaY - h, 24, h + 2); }
       // ground blocks
       for (const r of this.solids) this.drawBlock(r, pal);
       for (const r of this.platforms) this.drawSlab(r, pal, 0);
+      for (const m of this.movers) this.drawSlab(m, pal, 0, true);
+      for (const sp of this.springs) this.drawSpring(sp);
       for (const c of this.crumbles) if (!c.gone) { const shakeX = c.timer > 0 && c.timer < 0.7 ? (Math.random() - .5) * 4 : 0; this.drawSlab({ ...c, x: c.x + shakeX, y: c.y + c.fall }, pal, c.timer); }
       // checkpoints + portal
       for (const c of this.checkpoints) this.drawTotem(c, t);
@@ -371,12 +484,22 @@
       for (let x = r.x + 30; x < r.x + r.w; x += 70) { ctx.beginPath(); ctx.moveTo(x, r.y + 20); ctx.lineTo(x + 12, r.y + 60); ctx.lineTo(x - 6, r.y + 110); ctx.stroke(); }
       ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(r.x, r.y + r.h - 30, r.w, 30);
     }
-    drawSlab(r, pal, cracked) {
+    drawSlab(r, pal, cracked, mover) {
       const ctx = this.ctx;
       ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(r.x + 4, r.y + 6, r.w, r.h);
       ctx.fillStyle = cracked ? '#3a2420' : pal.rock; ctx.fillRect(r.x, r.y, r.w, r.h);
-      ctx.fillStyle = cracked ? '#7a4a30' : pal.rockTop; ctx.fillRect(r.x, r.y, r.w, 6);
+      ctx.fillStyle = r.ice ? '#e8f6ff' : cracked ? '#7a4a30' : pal.rockTop; ctx.fillRect(r.x, r.y, r.w, 6);
+      if (r.ice) { ctx.fillStyle = 'rgba(200,235,255,.35)'; ctx.fillRect(r.x, r.y + 6, r.w, 5); }
+      if (mover) { ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); ctx.fillStyle = 'rgba(255,255,255,.18)'; for (let x = r.x + 8; x < r.x + r.w - 6; x += 16) ctx.fillRect(x, r.y + r.h - 5, 8, 2); }
       if (cracked) { ctx.strokeStyle = 'rgba(255,200,120,.6)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(r.x + 10, r.y + 4); ctx.lineTo(r.x + r.w * 0.4, r.y + 14); ctx.lineTo(r.x + r.w * 0.7, r.y + 6); ctx.lineTo(r.x + r.w - 8, r.y + 15); ctx.stroke(); }
+    }
+    drawSpring(sp) {
+      const ctx = this.ctx, sq = sp.t > 0 ? 1 - sp.t * 1.4 : 1;
+      ctx.save(); ctx.translate(sp.x, sp.y); ctx.scale(1 / Math.max(0.6, sq), Math.max(0.5, sq));
+      ctx.fillStyle = '#e8d9b5'; ctx.fillRect(-9, -26, 18, 26);
+      ctx.fillStyle = '#ff6b8a'; ctx.beginPath(); ctx.ellipse(0, -28, 34, 16, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#ffe0e8'; for (const [dx, dy] of [[-16, -32], [4, -36], [20, -30]]) { ctx.beginPath(); ctx.arc(dx, dy, 4, 0, 7); ctx.fill(); }
+      ctx.restore();
     }
     drawTotem(c, t) {
       const ctx = this.ctx, x = c.x, y = GROUND_Y;
@@ -394,7 +517,7 @@
       }
       const g = ctx.createRadialGradient(x, y, 5, x, y, 60); g.addColorStop(0, 'rgba(127,219,255,.45)'); g.addColorStop(1, 'rgba(52,152,219,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, 44, 66, 0, 0, 7); ctx.fill();
-      ctx.font = 'bold 11px Cinzel, serif'; ctx.fillStyle = '#7fdbff'; ctx.textAlign = 'center'; ctx.fillText('ARCHEAN', x, y + 100);
+      ctx.font = 'bold 11px Cinzel, serif'; ctx.fillStyle = this.L.next ? '#7fdbff' : '#f5e06e'; ctx.textAlign = 'center'; ctx.fillText(this.L.next ? this.L.next.toUpperCase() : '✦ THE GOLDEN DROP ✦', x, y + 100);
     }
     drawHoney(h, t) {
       const ctx = this.ctx, y = h.y + Math.sin(t * 3 + h.t) * 5;
@@ -408,11 +531,14 @@
       const ctx = this.ctx;
       if (e.hpLeft <= 0 && e.dead <= 0) return;
       ctx.save(); ctx.translate(e.x, e.y);
-      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 4, e.w * 0.5, 7, 0, 0, 7); ctx.fill();
+      if (e.fly) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, GROUND_Y - e.y + 4, e.w * 0.35, 5, 0, 0, 7); ctx.fill(); }
+      else { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 4, e.w * 0.5, 7, 0, 0, 7); ctx.fill(); }
+      if (e.chargeT > 0) ctx.filter = 'drop-shadow(0 0 10px #ff6b35)';
       if (e.dead > 0) { ctx.globalAlpha = e.dead / 0.6; ctx.scale(1 + (0.6 - e.dead), 1 - (0.6 - e.dead) * 0.8); }
       ctx.scale(e.dir, 1);
       ctx.font = `${e.h}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       if (e.hit > 0 && Math.floor(e.hit * 20) % 2 === 0) ctx.filter = 'brightness(3)';
+      if (e.restT > 0) ctx.globalAlpha *= 0.85;
       ctx.fillText(e.emoji, 0, Math.sin(t * 6 + e.bob) * 3);
       ctx.restore();
       if (e.hp > 1 && e.hpLeft > 0) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(e.x - 20, e.y - e.h - 14, 40, 5); ctx.fillStyle = '#e74c3c'; ctx.fillRect(e.x - 20, e.y - e.h - 14, 40 * e.hpLeft / e.hp, 5); }
@@ -421,4 +547,5 @@
 
   root.HoneyRoad = HoneyRoad;
   root.HONEY_ROAD_LEVELS = LEVELS;
+  root.HONEY_ROAD_HAZARDS = HAZARDS;
 })(typeof self !== 'undefined' ? self : this);

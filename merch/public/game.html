@@ -775,6 +775,7 @@
         <div class="z-desc">The crust solidifies. <strong>Stone Honey</strong> crystallizes inside the deep faults — hardness, defense, unyielding endurance. The golems that guard it have never moved, never yielded.</div>
         <div class="z-lvl" id="zlvl-archean">LVL 6–15 · Locked</div>
         <div class="z-prog" id="zprog-archean">5 wins to unlock</div>
+        <div class="z-road" id="zroad-archean"></div>
       </div>
       <div class="zone z-p locked" id="zone-proterozoic" onclick="selectEra('proterozoic')">
         <span class="z-icon" id="zicon-proterozoic">🔒</span>
@@ -782,6 +783,7 @@
         <div class="z-desc">The first oceans breathe. <strong>Tide Honey</strong> flows through the primordial seas — regeneration, life, healing in every drop. The frost guardians froze it long ago and will not thaw.</div>
         <div class="z-lvl" id="zlvl-proterozoic">LVL 16–30 · Locked</div>
         <div class="z-prog" id="zprog-proterozoic">15 wins to unlock</div>
+        <div class="z-road" id="zroad-proterozoic"></div>
       </div>
       <div class="zone z-l locked" id="zone-paleozoic" onclick="selectEra('paleozoic')">
         <span class="z-icon" id="zicon-paleozoic">🔒</span>
@@ -789,6 +791,7 @@
         <div class="z-desc">Life explodes in every direction. <strong>Bloom Honey</strong> hides in the ancient reefs — speed, venom, the rush of evolution. Every creature here is fighting to be the first to reach it.</div>
         <div class="z-lvl" id="zlvl-paleozoic">LVL 31–50 · Locked</div>
         <div class="z-prog" id="zprog-paleozoic">30 wins to unlock</div>
+        <div class="z-road" id="zroad-paleozoic"></div>
       </div>
       <div class="zone z-m locked" id="zone-mesozoic" onclick="selectEra('mesozoic')">
         <span class="z-icon" id="zicon-mesozoic">🔒</span>
@@ -796,6 +799,7 @@
         <div class="z-desc">The age of giants. <strong>Titan Honey</strong> runs through the veins of the megafauna — brute force, overwhelming power. The largest guardians in history stand between you and the drop.</div>
         <div class="z-lvl" id="zlvl-mesozoic">LVL 51–75 · Locked</div>
         <div class="z-prog" id="zprog-mesozoic">50 wins to unlock</div>
+        <div class="z-road" id="zroad-mesozoic"></div>
       </div>
       <div class="zone z-c locked" id="zone-cenozoic" onclick="selectEra('cenozoic')">
         <span class="z-icon" id="zicon-cenozoic">🔒</span>
@@ -803,6 +807,7 @@
         <div class="z-desc">The modern era — and the last honey. <strong>Frost Honey</strong> bends time itself — control, precision, the power to stop a moment. Only the most legendary Cubs reach this drop.</div>
         <div class="z-lvl" id="zlvl-cenozoic">LVL 76–100 · Locked</div>
         <div class="z-prog" id="zprog-cenozoic">75 wins to unlock</div>
+        <div class="z-road" id="zroad-cenozoic"></div>
       </div>
     </div>
   </div>
@@ -2267,7 +2272,7 @@ function updateWorldMap() {
       const avail = HoneyEngine.roadAvailable(profileFromG(), era), rec = G.roads[era];
       roadEl.innerHTML = avail
         ? `<button class="road-btn" onclick="event.stopPropagation();openRoad('${era}')">🏃 Honey Road${rec?.best ? ` · best ${(rec.best / 1000).toFixed(1)}s` : ''}</button>`
-        : (HoneyEngine.ROADS[era] ? `<span class="road-locked">🏃 Road opens at ${ERA_UNLOCK[HoneyEngine.ROADS[era].next]} wins</span>` : '');
+        : (HoneyEngine.ROADS[era] ? `<span class="road-locked">🏃 Road opens at ${HoneyEngine.ROADS[era].wins} wins</span>` : '');
     }
   });
   // Update era badges in header
