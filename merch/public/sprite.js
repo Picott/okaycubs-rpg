@@ -197,12 +197,26 @@
       ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
     }
 
-    // a flat paw at the end of a leg, pointing forward (the sprite faces +x before flipping)
-    paw(ctx, x, y, color) {
-      const o = this.o, w = o.legW * 2.1 * o.pawSize, h = o.legW * 1.15 * o.pawSize;
-      ctx.beginPath(); ctx.ellipse(x + w * 0.22, y, w / 2, h / 2, 0, 0, Math.PI * 2);
-      ctx.lineWidth = o.outline * 2; ctx.strokeStyle = shade(this.colors.body, -0.55); ctx.stroke();
+    // a clawed paw: rounded pad with three claws at the front. `dir` is the angle the claws point at
+    // (0 = forward, the sprite faces +x before flipping; hands pass the forearm direction)
+    paw(ctx, x, y, color, dir = 0) {
+      const o = this.o, w = o.legW * 2.0 * o.pawSize, h = o.legW * 1.2 * o.pawSize;
+      const outline = shade(this.colors.body, -0.55), nail = shade(this.colors.body, 0.62);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(dir);
+      // claws first so the pad overlaps their base
+      for (const off of [-0.38, 0, 0.38]) {
+        const bx = w * 0.28, by = off * h * 0.75, len = h * 0.8;
+        ctx.beginPath(); ctx.moveTo(bx, by - h * 0.17); ctx.quadraticCurveTo(bx + len * 1.1, by - h * 0.04, bx + len, by + h * 0.05); ctx.lineTo(bx, by + h * 0.17); ctx.closePath();
+        ctx.lineWidth = o.outline * 1.6; ctx.strokeStyle = outline; ctx.lineJoin = 'round'; ctx.stroke();
+        ctx.fillStyle = nail; ctx.fill();
+      }
+      ctx.beginPath(); ctx.ellipse(w * 0.1, 0, w / 2, h / 2, 0, 0, Math.PI * 2);
+      ctx.lineWidth = o.outline * 2; ctx.strokeStyle = outline; ctx.stroke();
       ctx.fillStyle = color; ctx.fill();
+      // toe creases
+      ctx.strokeStyle = shade(this.colors.body, -0.3); ctx.lineWidth = 1.2;
+      for (const off of [-0.19, 0.19]) { ctx.beginPath(); ctx.moveTo(w * 0.25, off * h); ctx.lineTo(w * 0.5, off * h * 1.3); ctx.stroke(); }
+      ctx.restore();
     }
 
     // x, yGround: the point between the feet, in world/screen pixels
@@ -268,7 +282,7 @@
       if (o.forearms) {
         const hx = -faX + Math.sin(faB) * o.forearmLen, hy = faY + Math.cos(faB) * o.forearmLen;
         this.capsule(ctx, -faX, faY, hx, hy, o.forearmW, dark);
-        this.paw(ctx, hx, hy, dark);
+        this.paw(ctx, hx, hy, dark, Math.atan2(Math.cos(faB), Math.sin(faB)));
       }
 
       // hips: a rounded block in the fur colour with a belt band, tucked under the bust
@@ -312,7 +326,7 @@
       } else if (o.forearms) {
         handX = faX + Math.sin(faF) * o.forearmLen; handY = faY + Math.cos(faF) * o.forearmLen;
         this.capsule(ctx, faX, faY, handX, handY, o.forearmW, body);
-        this.paw(ctx, handX, handY, body);
+        this.paw(ctx, handX, handY, body, Math.atan2(Math.cos(faF), Math.sin(faF)));
         weaponAngle = faF + Math.PI / 2 + (swing != null ? 0.3 : -0.2);
       } else {
         // the art's own hand sits at the lower front of the bust; the tool swings from there
