@@ -7,7 +7,8 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const DEFAULTS = { size: 96, radius: 0.28, legLen: 34, legW: 9, pawSize: 1, arms: false, armLen: 24, armW: 11, headScale: 1, bounce: 1, outline: 3, weapon: '🍯' };
+  const DEFAULTS = { size: 96, radius: 0.28, legLen: 34, legW: 9, pawSize: 1, hipH: 18, hipW: 0.82, bustLift: 0,
+                     forearms: true, forearmLen: 16, forearmW: 9, arms: false, armLen: 24, armW: 11, headScale: 1, bounce: 1, outline: 3, weapon: '🍯' };
   const PHYS = { accel: 2200, maxSpeed: 330, friction: 2600, airControl: 0.65, gravity: 2000, jumpVel: 640, jumpCut: 240,
                  coyote: 0.1, buffer: 0.12, dashSpeed: 640, dashTime: 0.14, dashCooldown: 0.55 };
 
@@ -225,7 +226,9 @@
       ctx.rotate(this.lean);
       ctx.scale(this.squash.x, this.squash.y);
 
-      const torsoBottom = -legLen + 6;          // legs tuck a little under the torso
+      const hipH = o.hipH;
+      const hipY = -legLen + hipH * 0.45;                // where the legs attach (bottom of the hips)
+      const torsoBottom = hipY - hipH * 0.9 - o.bustLift; // the bust rests on the hips
       // torso box: cut-outs are normalised by height so every cub stands the same size
       const th = this.cutout ? S * 1.15 : S, tw = this.cutout ? th / this.maskAspect : S;
       const breathe = Math.sin(this.t * 2.2) * 0.012;
@@ -245,14 +248,38 @@
         swing = p;
       }
 
-      const hipX = tw * 0.22, hipY = torsoBottom + 2;
+      const hipX = tw * 0.22;
       const shX = tw * 0.44, shY = torsoBottom - th * 0.3;
+      const faX = tw * 0.36, faY = torsoBottom - th * 0.1;   // forearms continue the art's arms from the bust's lower sides
+      let faF, faB;
+      if (airborne)      { faF = 2.3; faB = -2.3; }
+      else               { faF = -legF * 0.5; faB = -legB * 0.5; }
+      if (cheer)         { faF = 2.6 + Math.sin(this.t * 14) * 0.2; faB = -2.6 - Math.sin(this.t * 14) * 0.2; }
+      if (this.attackT > 0) {
+        const p = 1 - this.attackT / 0.34;
+        faF = p < 0.35 ? lerp(-0.3, -2.2, p / 0.35) : lerp(-2.2, 1.6, (p - 0.35) / 0.65);
+      }
 
       // back limbs
       const bFootX = -hipX + Math.sin(legB) * legLen, bFootY = hipY + Math.cos(legB) * legLen;
       this.capsule(ctx, -hipX, hipY, bFootX, bFootY, o.legW, dark);
       this.paw(ctx, bFootX, bFootY, dark);
       if (o.arms) this.capsule(ctx, -shX, shY, -shX + Math.sin(armB) * o.armLen, shY + Math.cos(armB) * o.armLen, o.armW, dark);
+      if (o.forearms) {
+        const hx = -faX + Math.sin(faB) * o.forearmLen, hy = faY + Math.cos(faB) * o.forearmLen;
+        this.capsule(ctx, -faX, faY, hx, hy, o.forearmW, dark);
+        this.paw(ctx, hx, hy, dark);
+      }
+
+      // hips: a rounded block in the fur colour with a belt band, tucked under the bust
+      {
+        const hw = tw * o.hipW, top = hipY - hipH, r = Math.min(hipH * 0.5, hw * 0.25);
+        roundRectPath(ctx, -hw / 2, top, hw, hipH * 1.1, r);
+        ctx.lineWidth = o.outline * 2; ctx.strokeStyle = shade(this.colors.body, -0.55); ctx.stroke();
+        ctx.fillStyle = body; ctx.fill();
+        ctx.fillStyle = shade(this.colors.body, -0.25);
+        ctx.fillRect(-hw / 2 + 2, top + hipH * 0.35, hw - 4, hipH * 0.28);
+      }
 
       // torso: the NFT cut-out
       ctx.save();
@@ -282,6 +309,11 @@
         handX = shX + Math.sin(armF) * o.armLen; handY = shY + Math.cos(armF) * o.armLen;
         this.capsule(ctx, shX, shY, handX, handY, o.armW, body);
         weaponAngle = armF + Math.PI / 2 + (swing != null ? 0.4 : -0.3);
+      } else if (o.forearms) {
+        handX = faX + Math.sin(faF) * o.forearmLen; handY = faY + Math.cos(faF) * o.forearmLen;
+        this.capsule(ctx, faX, faY, handX, handY, o.forearmW, body);
+        this.paw(ctx, handX, handY, body);
+        weaponAngle = faF + Math.PI / 2 + (swing != null ? 0.3 : -0.2);
       } else {
         // the art's own hand sits at the lower front of the bust; the tool swings from there
         handX = tw * 0.4; handY = torsoBottom - th * 0.1;

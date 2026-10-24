@@ -88,6 +88,11 @@
     <label><span>Leg length <b id="vLeg"></b></span></label>   <input type="range" id="legLen" min="14" max="56" value="34">
     <label><span>Leg width <b id="vLegW"></b></span></label>   <input type="range" id="legW" min="5" max="20" value="9">
     <label><span>Paw size <b id="vPaw"></b></span></label>     <input type="range" id="pawSize" min="50" max="200" value="100">
+    <label><span>Hip height <b id="vHipH"></b></span></label>   <input type="range" id="hipH" min="0" max="40" value="18">
+    <label><span>Hip width <b id="vHipW"></b></span></label>    <input type="range" id="hipW" min="40" max="120" value="82">
+    <label><span>Bust lift <b id="vLift"></b></span></label>    <input type="range" id="bustLift" min="-20" max="30" value="0">
+    <label><span>Forearms (continue the art's arms) <input type="checkbox" id="forearms" checked></span></label>
+    <label><span>Forearm length <b id="vFa"></b></span></label> <input type="range" id="forearmLen" min="6" max="40" value="16">
     <label><span>Extra arms (the art already has them) <input type="checkbox" id="arms"></span></label>
     <label><span>Arm length <b id="vArm"></b></span></label>   <input type="range" id="armLen" min="14" max="40" value="24">
     <label><span>Corner radius <b id="vRad"></b></span></label> <input type="range" id="radius" min="10" max="50" value="28">
@@ -143,16 +148,20 @@ async function loadCub(src) {
 }
 
 // ---- controls panel ----
-const ids = ['size','headScale','legLen','legW','pawSize','armLen','radius','bounce'];
+const ids = ['size','headScale','legLen','legW','pawSize','hipH','hipW','bustLift','forearmLen','armLen','radius','bounce'];
 function readPanel() {
   const v = id => Number(document.getElementById(id).value);
-  const opts = { size: v('size'), headScale: v('headScale') / 100, legLen: v('legLen'), legW: v('legW'), pawSize: v('pawSize') / 100, arms: document.getElementById('arms').checked, armLen: v('armLen'), radius: v('radius') / 100, bounce: v('bounce') / 100, weapon: document.getElementById('weapon').value };
+  const opts = { size: v('size'), headScale: v('headScale') / 100, legLen: v('legLen'), legW: v('legW'), pawSize: v('pawSize') / 100, hipH: v('hipH'), hipW: v('hipW') / 100, bustLift: v('bustLift'), forearms: document.getElementById('forearms').checked, forearmLen: v('forearmLen'), arms: document.getElementById('arms').checked, armLen: v('armLen'), radius: v('radius') / 100, bounce: v('bounce') / 100, weapon: document.getElementById('weapon').value };
   document.getElementById('vSize').textContent = opts.size;
   document.getElementById('vHead').textContent = opts.headScale.toFixed(2);
   document.getElementById('vLeg').textContent = opts.legLen;
   document.getElementById('vLegW').textContent = opts.legW;
   document.getElementById('vArm').textContent = opts.armLen;
   document.getElementById('vPaw').textContent = opts.pawSize.toFixed(2);
+  document.getElementById('vHipH').textContent = opts.hipH;
+  document.getElementById('vHipW').textContent = opts.hipW.toFixed(2);
+  document.getElementById('vLift').textContent = opts.bustLift;
+  document.getElementById('vFa').textContent = opts.forearmLen;
   document.getElementById('vRad').textContent = opts.radius.toFixed(2);
   document.getElementById('vBounce').textContent = opts.bounce.toFixed(2);
   sprite.setOptions(opts);
@@ -161,6 +170,7 @@ function readPanel() {
 ids.forEach(id => document.getElementById(id).oninput = readPanel);
 document.getElementById('weapon').onchange = readPanel;
 document.getElementById('arms').onchange = readPanel;
+document.getElementById('forearms').onchange = readPanel;
 function copyExport() { navigator.clipboard?.writeText(document.getElementById('export').value); document.getElementById('status').textContent = 'settings copied'; }
 
 function pose(p) {
