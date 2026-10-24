@@ -583,6 +583,10 @@
     .zone.era-active { box-shadow:0 0 22px rgba(212,175,55,.15); border-color:rgba(212,175,55,.4) !important; }
     .zone.era-active .z-lvl { color:var(--gold); opacity:.9; }
     .z-prog { font-family:'Cinzel',serif; font-size:8px; letter-spacing:1px; color:var(--silver); opacity:.3; margin-top:5px; }
+    .z-road { margin-top:10px; position:relative; z-index:1; }
+    .road-btn { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; text-transform:uppercase; padding:7px 12px; border:1px solid rgba(127,219,255,.6); background:rgba(52,152,219,.12); color:#7fdbff; cursor:pointer; transition:all .2s; }
+    .road-btn:hover { background:rgba(52,152,219,.3); box-shadow:0 0 16px rgba(127,219,255,.35); }
+    .road-locked { font-family:'Cinzel',serif; font-size:8px; letter-spacing:1px; color:var(--silver); opacity:.35; }
 
     /* === UNLOCK TOAST === */
     .era-toast {
@@ -763,6 +767,7 @@
         <div class="z-desc">The oldest fire. <strong>Magma Honey</strong> pools in the planet's molten core — raw power, destruction, pure heat. Its guardians have burned here since before the first rock cooled.</div>
         <div class="z-lvl" id="zlvl-hadean">LVL 1–5 · Active</div>
         <div class="z-prog" id="zprog-hadean"></div>
+        <div class="z-road" id="zroad-hadean"></div>
       </div>
       <div class="zone z-a locked" id="zone-archean" onclick="selectEra('archean')">
         <span class="z-icon" id="zicon-archean">🔒</span>
@@ -840,6 +845,8 @@ const G = {
   honey: 0, honeyByEra: {}, cubProg: {},
   // HP carried between tag-outs this session: { cubId: hp }
   hpPool: {},
+  // Honey Road records: { era: { runs, best, honey } }
+  roads: {},
   // true once the wallet signed in and the server owns the profile
   server: false,
 };
@@ -1342,7 +1349,7 @@ function cubName(id) { return cubById(id)?.name || `Cub ${id}`; }
 function profileFromG() {
   return {
     honey: G.honey, honeyByEra: G.honeyByEra, wins: G.wins, era: G.currentEra,
-    cubProg: G.cubProg, cooldowns: G.cooldowns, hpPool: G.hpPool,
+    cubProg: G.cubProg, cooldowns: G.cooldowns, hpPool: G.hpPool, roads: G.roads,
     battle: G.active && G.selected
       ? { cubId: G.selected.id, pHP: G.pHP, pMaxHP: G.pMaxHP, enemy: G.enemy, eHP: G.eHP, eMaxHP: G.eMaxHP, defending: false }
       : null,
@@ -1350,7 +1357,7 @@ function profileFromG() {
 }
 function syncFromProfile(p) {
   G.honey = p.honey || 0; G.honeyByEra = p.honeyByEra || {}; G.wins = p.wins || 0; G.currentEra = p.era || 'hadean';
-  G.cubProg = p.cubProg || {}; G.cooldowns = p.cooldowns || {}; G.hpPool = p.hpPool || {};
+  G.cubProg = p.cubProg || {}; G.cooldowns = p.cooldowns || {}; G.hpPool = p.hpPool || {}; G.roads = p.roads || {};
   const b = p.battle, cub = b && cubById(b.cubId);
   if (b && b.enemy && cub) {
     G.active = true; G.selected = cub;
@@ -2082,7 +2089,7 @@ function saveProgress() {
   try {
     localStorage.setItem('okaycubs_progress', JSON.stringify({
       wins: G.wins, era: G.currentEra, cooldowns: G.cooldowns,
-      honey: G.honey, honeyByEra: G.honeyByEra, cubProg: G.cubProg,
+      honey: G.honey, honeyByEra: G.honeyByEra, cubProg: G.cubProg, roads: G.roads,
     }));
   } catch(e) {}
 }
@@ -2095,6 +2102,7 @@ function loadProgress() {
     G.honey      = saved.honey || 0;
     G.honeyByEra = saved.honeyByEra || {};
     G.cubProg    = saved.cubProg || {};
+    G.roads      = saved.roads || {};
     // Load cooldowns, drop any already expired
     const now = Date.now();
     G.cooldowns = {};
@@ -2167,7 +2175,14 @@ setInterval(() => {
 }, 1000);
 
 function isEraUnlocked(era) {
-  return G.wins >= (ERA_UNLOCK[era] || 0);
+  return HoneyEngine.isEraUnlocked(profileFromG(), era);
+}
+
+function openRoad(era) {
+  const cub = (G.selected && !isCoolingDown(G.selected.id) ? G.selected : null) || G.cubs.find(c => !isCoolingDown(c.id)) || G.cubs[0];
+  if (!cub) { addLog('🐻 Pick a Cub first — the road needs a runner.', 'ls'); return; }
+  const img = cubPortrait(cub) || cub.image || '';
+  location.href = `/honey-road.html?era=${era}&id=${encodeURIComponent(cub.id)}&name=${encodeURIComponent(cub.name)}&img=${encodeURIComponent(img)}`;
 }
 
 function announceUnlocks(eras) {
@@ -2236,12 +2251,23 @@ function updateWorldMap() {
     if (lvlEl) lvlEl.textContent = `${lvls[era]} · ${active ? 'Active' : unlocked ? 'Unlocked' : 'Locked'}`;
     const progEl = document.getElementById(`zprog-${era}`);
     if (progEl) {
+      const prev = ERA_ORDER[ERA_ORDER.indexOf(era) - 1];
       if (unlocked) {
         progEl.textContent = active ? `⚔ ${G.wins} total wins` : '';
+      } else if (G.wins >= threshold && prev && HoneyEngine.ROADS[prev]) {
+        progEl.textContent = `Finish the ${ERA_META[prev].badge} Honey Road to unlock`;
       } else {
         const remaining = threshold - G.wins;
         progEl.textContent = `${remaining} win${remaining !== 1 ? 's' : ''} to unlock`;
       }
+    }
+    // Honey Road entrance: the wins threshold of the next era opens the road
+    const roadEl = document.getElementById(`zroad-${era}`);
+    if (roadEl) {
+      const avail = HoneyEngine.roadAvailable(profileFromG(), era), rec = G.roads[era];
+      roadEl.innerHTML = avail
+        ? `<button class="road-btn" onclick="event.stopPropagation();openRoad('${era}')">🏃 Honey Road${rec?.best ? ` · best ${(rec.best / 1000).toFixed(1)}s` : ''}</button>`
+        : (HoneyEngine.ROADS[era] ? `<span class="road-locked">🏃 Road opens at ${ERA_UNLOCK[HoneyEngine.ROADS[era].next]} wins</span>` : '');
     }
   });
   // Update era badges in header

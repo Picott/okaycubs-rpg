@@ -13,6 +13,8 @@
   const ERA_LVL    = { hadean:[1,5], archean:[6,15], proterozoic:[16,30], paleozoic:[31,50], mesozoic:[51,75], cenozoic:[76,100] };
   const COOLDOWN_MS = 30 * 60 * 1000;
   const MAX_LEVEL   = 50;
+  // Honey Roads: the wins threshold of the NEXT era unlocks the road; finishing the road unlocks the era
+  const ROADS = { hadean: { next:'archean', maxHoney: 26, minTimeMs: 9000 } };
 
   const ERA_ENEMIES = {
     hadean: [
@@ -167,11 +169,31 @@
   }
 
   function newProfile() {
-    return { honey:0, honeyByEra:{}, wins:0, era:'hadean', cubProg:{}, cooldowns:{}, hpPool:{}, battle:null };
+    return { honey:0, honeyByEra:{}, wins:0, era:'hadean', cubProg:{}, cooldowns:{}, hpPool:{}, battle:null, roads:{} };
   }
   function prog(p, id) { return p.cubProg[id] || (p.cubProg[id] = { xp:0, lvl:1 }); }
   function isCoolingDown(p, id, now) { return !!p.cooldowns[id] && p.cooldowns[id] > now; }
-  function isEraUnlocked(p, era) { return p.wins >= (ERA_UNLOCK[era] || 0); }
+  function roadAvailable(p, era) { const r = ROADS[era]; return !!r && p.wins >= (ERA_UNLOCK[r.next] || 0); }
+  function roadDone(p, era) { return !!(p.roads && p.roads[era] && p.roads[era].runs > 0); }
+  function isEraUnlocked(p, era) {
+    if (p.wins < (ERA_UNLOCK[era] || 0)) return false;
+    const prev = ERA_ORDER[ERA_ORDER.indexOf(era) - 1];
+    return !(prev && ROADS[prev]) || roadDone(p, prev);
+  }
+  function completeRoad(p, era, timeMs, honey, now) {
+    const road = ROADS[era];
+    if (!road) return fail('unknown road');
+    if (!roadAvailable(p, era)) return fail('locked');
+    if (!(timeMs >= road.minTimeMs)) return fail('too_fast');
+    honey = Math.max(0, Math.min(road.maxHoney, Math.floor(honey || 0)));
+    p.roads = p.roads || {};
+    const r = p.roads[era] || (p.roads[era] = { runs:0, best:null, honey:0, lastAt:0 });
+    const first = r.runs === 0;
+    r.runs++; r.best = r.best == null ? timeMs : Math.min(r.best, timeMs); r.honey += honey; r.lastAt = now || Date.now();
+    p.honey += honey; p.honeyByEra[era] = (p.honeyByEra[era] || 0) + honey;
+    const unlocked = first && isEraUnlocked(p, road.next) ? [road.next] : [];
+    return { ok:true, unlocked, first, p };
+  }
   function fail(error) { return { ok:false, error }; }
 
   function spawnEnemy(p, rng) {
@@ -329,7 +351,7 @@
     ERA_ORDER, ERA_UNLOCK, ERA_HONEY, ERA_LVL, ERA_ENEMIES, GEO_BURSTS, CLASS_BURSTS, CLASS_AFFINITY,
     COOLDOWN_MS, MAX_LEVEL, eraIdx, drinkCost, switchCost, reviveCost, infuseCost, xpToNext,
     hash, deriveClass, rarityForNumber, baseStats, affinity, getStats,
-    newProfile, prog, isCoolingDown, isEraUnlocked,
+    ROADS, newProfile, prog, isCoolingDown, isEraUnlocked, roadAvailable, roadDone, completeRoad,
     startBattle, resolveAction, infuse, reviveWithHoney, clearCooldown, selectEra,
   };
 });
