@@ -31,6 +31,25 @@
     textarea { width:100%; height:70px; background:#0d0f1a; color:var(--silver); border:1px solid rgba(212,175,55,.2); font-family:monospace; font-size:11px; padding:6px; }
     .status { font-size:12px; opacity:.6; font-style:italic; min-height:16px; }
     @media (max-width:900px) { .lab { grid-template-columns:1fr; } }
+
+    /* touch controls — shown on coarse pointers (phones / tablets) or via the toggle */
+    .touch { position:absolute; inset:0; display:none; pointer-events:none; }
+    body.touch-on .touch { display:block; }
+    @media (pointer:coarse) { .touch { display:block; } .keys { display:none; } }
+    .tbtn {
+      position:absolute; bottom:14px; width:64px; height:64px; border-radius:50%; pointer-events:auto;
+      border:2px solid rgba(212,175,55,.55); background:rgba(7,8,15,.55); color:var(--gold2);
+      font-family:'Cinzel',serif; font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center;
+      user-select:none; -webkit-user-select:none; touch-action:none; backdrop-filter:blur(4px);
+    }
+    .tbtn.held { background:rgba(212,175,55,.35); transform:scale(.94); }
+    .tbtn small { font-size:8px; letter-spacing:1px; margin-top:2px; opacity:.7; }
+    .t-left  { left:14px; }  .t-right { left:90px; }
+    .t-jump  { right:14px; width:74px; height:74px; bottom:22px; border-color:rgba(46,204,113,.6); color:#7cf29e; }
+    .t-atk   { right:100px; border-color:rgba(192,57,43,.6); color:#ff8a7a; }
+    .t-dash  { right:100px; bottom:90px; width:52px; height:52px; font-size:13px; }
+    .touch-toggle { position:absolute; right:10px; top:8px; font-size:8px; opacity:.5; pointer-events:auto; }
+    @media (pointer:coarse) { .touch-toggle { display:none; } }
   </style>
 </head>
 <body>
@@ -43,6 +62,14 @@
   <div class="stage">
     <canvas id="cv" width="960" height="480"></canvas>
     <div class="keys">← → run · space / ↑ jump (hold = higher) · X attack · Z dash · H hurt · C cheer</div>
+    <div class="touch" id="touch">
+      <div class="tbtn t-left"  data-hold="left">◀</div>
+      <div class="tbtn t-right" data-hold="right">▶</div>
+      <div class="tbtn t-dash"  data-tap="dash">Z<small>dash</small></div>
+      <div class="tbtn t-atk"   data-tap="attack">X<small>hit</small></div>
+      <div class="tbtn t-jump"  data-hold="jump">A<small>jump</small></div>
+    </div>
+    <button class="touch-toggle" onclick="document.body.classList.toggle('touch-on')">touch controls</button>
   </div>
 
   <div class="panel">
@@ -155,6 +182,29 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => {
   if (KEYS[e.key]) ctl.input[KEYS[e.key]] = false;
   if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') ctl.input.jumpHeld = false;
+});
+
+// ---- touch controls (pointer events → same input flags as the keyboard; multitouch friendly) ----
+document.querySelectorAll('.tbtn').forEach(btn => {
+  const hold = btn.dataset.hold, tap = btn.dataset.tap;
+  const press = e => {
+    e.preventDefault(); btn.classList.add('held');
+    try { btn.setPointerCapture(e.pointerId); } catch (err) { /* synthetic or already-released pointer */ }
+    if (hold === 'jump') { ctl.input.jump = true; ctl.input.jumpHeld = true; }
+    else if (hold) ctl.input[hold] = true;
+    if (tap === 'attack') sprite.attack();
+    if (tap === 'dash') ctl.input.dash = true;
+  };
+  const release = e => {
+    e.preventDefault(); btn.classList.remove('held');
+    if (hold === 'jump') ctl.input.jumpHeld = false;
+    else if (hold) ctl.input[hold] = false;
+  };
+  btn.addEventListener('pointerdown', press);
+  btn.addEventListener('pointerup', release);
+  btn.addEventListener('pointercancel', release);
+  btn.addEventListener('pointerleave', release);
+  btn.addEventListener('contextmenu', e => e.preventDefault());
 });
 
 // ---- stage ----
