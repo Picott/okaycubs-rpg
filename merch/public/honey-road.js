@@ -56,14 +56,15 @@
     reset() {
       const L = this.L;
       this.p = { x: 80, y: GROUND_Y, vx: 0, vy: 0, grounded: true, facing: 1, coyote: 0, buffer: 0, dashT: 0, dashCd: 0, dashDir: 1,
-                 hp: 3, inv: 0, honey: 0, checkpoint: 80, dead: 0, attackT: 0, stunned: 0 };
+                 hp: 3, inv: 0, honey: 0, checkpoint: 80, dead: 0, attackT: 0, stunned: 0,
+                 jumpsLeft: 1, burst: 1, burstFx: 0, tDash: -9, tAtk: -9 };
       this.solids = L.ground.map(([a, b]) => ({ x: a, y: GROUND_Y, w: b - a, h: FLOOR_H, type: 'ground' }));
       this.platforms = L.platforms.map(p => ({ ...p, h: 18, type: 'platform' }));
       this.crumbles = L.crumble.map(p => ({ ...p, h: 18, type: 'crumble', timer: 0, fall: 0, gone: false }));
       this.enemies = L.enemies.map(e => ({ ...ENEMY_TYPES[e.type], type: e.type, x: e.x, y: GROUND_Y, range: e.range, dir: 1, hpLeft: ENEMY_TYPES[e.type].hp, dead: 0, hit: 0, bob: Math.random() * 6 }));
       this.honey = L.honey.map(([x, y]) => ({ x, y, taken: false, t: Math.random() * 6 }));
       this.checkpoints = L.checkpoints.map(x => ({ x, lit: false }));
-      this.particles = []; this.floats = []; this.trail = [];
+      this.particles = []; this.floats = []; this.trail = []; this.rings = [];
       this.time = 0; this.finished = false; this.started = false;
       this.cam = { x: 0, y: 0 };
       this.shake = 0;
@@ -98,6 +99,14 @@
       p.coyote = p.grounded ? P.coyote : Math.max(0, p.coyote - dt);
       if (i.jump) { p.buffer = P.buffer; i.jump = false; } else p.buffer = Math.max(0, p.buffer - dt);
       p.dashCd = Math.max(0, p.dashCd - dt);
+      p.burstFx = Math.max(0, p.burstFx - dt);
+      // dash + hit pressed together (within 0.18s) → Honey Burst, if a charge is ready
+      if (i.dash) p.tDash = this.time;
+      if (i.attack) p.tAtk = this.time;
+      if ((i.dash || i.attack) && Math.abs(p.tDash - p.tAtk) < 0.18 && p.burst >= 1 && p.stunned <= 0) {
+        i.dash = false; i.attack = false; p.tDash = p.tAtk = -9;
+        this.honeyBurst();
+      }
       if (i.dash && p.dashCd <= 0 && p.dashT <= 0 && p.stunned <= 0) { p.dashT = P.dashTime; p.dashCd = P.dashCooldown; p.dashDir = p.facing; }
       i.dash = false;
       if (i.attack) { i.attack = false; if (p.attackT <= 0 && p.stunned <= 0 && this.sprite.attack()) p.attackT = 0.34; }
@@ -114,7 +123,14 @@
         else p.vx *= 1 - 0.6 * dt;
         p.vx = clamp(p.vx, -P.maxSpeed, P.maxSpeed);
       }
+      if (p.grounded) p.jumpsLeft = 1;
       if (p.buffer > 0 && p.coyote > 0 && p.stunned <= 0) { p.vy = -P.jumpVel; p.grounded = false; p.coyote = 0; p.buffer = 0; justJumped = true; }
+      else if (p.buffer > 0 && !p.grounded && p.coyote <= 0 && p.jumpsLeft > 0 && p.stunned <= 0) {
+        // double jump: a little shorter, with a honey ring under the paws
+        p.vy = -P.jumpVel * 0.88; p.jumpsLeft--; p.buffer = 0; justJumped = true;
+        this.rings.push({ x: p.x, y: p.y, t: 0.35 });
+        this.burst(p.x, p.y, ['#f5e06e', '#fff2b0'], 8, 90);
+      }
       if (!i.jumpHeld && p.vy < -P.jumpCut) p.vy = -P.jumpCut;
       p.vy += P.gravity * dt;
       p.vy = Math.min(p.vy, 1400);
@@ -205,12 +221,26 @@
       for (const h of this.honey) {
         if (h.taken || p.dead > 0) continue;
         if (Math.abs(h.x - p.x) < 30 && Math.abs(h.y - (p.y - 36)) < 48) {
-          h.taken = true; p.honey++; this.burst(h.x, h.y, ['#f5e06e', '#d4af37', '#fff2b0'], 10, 90);
+          h.taken = true; p.honey++; p.burst = Math.min(2, p.burst + 0.2); this.burst(h.x, h.y, ['#f5e06e', '#d4af37', '#fff2b0'], 10, 90);
           this.float(h.x, h.y - 20, '+1 🍯', '#ffe27a'); this.hooks.onHoney?.(p.honey);
         }
       }
       for (const c of this.checkpoints) if (!c.lit && p.x > c.x) { c.lit = true; p.checkpoint = c.x; this.float(c.x, GROUND_Y - 120, 'Checkpoint', '#7cf29e'); this.hooks.onCheckpoint?.(); }
       if (!this.finished && p.x > this.L.portal - 10 && p.dead <= 0) this.finish();
+    }
+    honeyBurst() {
+      const p = this.p;
+      p.burst -= 1; p.burstFx = 0.7; p.inv = Math.max(p.inv, 1.1); p.dashT = 0;
+      p.vy = Math.min(p.vy, -200); p.grounded = false;
+      this.sprite.cheerT = 0.6; this.shake = 0.6;
+      this.rings.push({ x: p.x, y: p.y - 30, t: 0.7, big: true });
+      this.burst(p.x, p.y - 30, ['#f5e06e', '#d4af37', '#fff2b0', '#ffb347'], 70, 320);
+      this.float(p.x, p.y - 110, '✦ HONEY BURST ✦', '#ffe27a');
+      for (const e of this.enemies) {
+        if (e.hpLeft <= 0) continue;
+        if (Math.hypot(e.x - p.x, (e.y - e.h / 2) - (p.y - 30)) < 230) { e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); if (e.hpLeft > 0) { e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); } }
+      }
+      this.hooks.onBurst?.(p.burst);
     }
     hitEnemy(e, dir, stomp) {
       e.hpLeft -= 1; e.hit = 0.4;
@@ -249,6 +279,7 @@
       for (const f of this.floats) { f.t -= dt * 0.9; f.y -= 40 * dt; }
       this.floats = this.floats.filter(f => f.t > 0);
       this.trail = this.trail.filter(t => (t.t -= dt) > 0);
+      this.rings = this.rings.filter(r => (r.t -= dt) > 0);
       for (const e of this.embers) { e.y -= e.v * dt; e.x += Math.sin(performance.now() / 900 + e.ph) * 12 * dt; if (e.y < -10) Object.assign(e, this.mkEmber(false)); }
     }
     updateCamera(dt) {
@@ -303,6 +334,14 @@
       for (const tr of this.trail) { ctx.globalAlpha = tr.t * 1.6; this.sprite.draw(ctx, tr.x, tr.y, 1, 0); }
       ctx.globalAlpha = 1;
       if (this.p.dead <= 0) { if (this.p.inv > 0 && Math.floor(this.p.inv * 14) % 2 === 0) ctx.globalAlpha = 0.45; this.sprite.draw(ctx, this.p.x, this.p.y, 1, 0); ctx.globalAlpha = 1; }
+      // rings: double-jump puffs and the Honey Burst shockwave
+      for (const r of this.rings) {
+        const life = r.big ? 1 - r.t / 0.7 : 1 - r.t / 0.35, rad = r.big ? 40 + life * 230 : 10 + life * 40;
+        ctx.globalAlpha = (1 - life) * 0.9; ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = r.big ? 6 : 3; ctx.shadowColor = '#f5e06e'; ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.ellipse(r.x, r.y, rad, r.big ? rad * 0.8 : rad * 0.35, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      if (this.p.burstFx > 0) { ctx.globalAlpha = this.p.burstFx * 0.35; ctx.fillStyle = '#ffe9a8'; ctx.fillRect(this.cam.x - 50, this.cam.y - 50, W + 100, H + 100); ctx.globalAlpha = 1; }
       // particles / floats
       for (const q of this.particles) { ctx.globalAlpha = clamp(q.t, 0, 1); ctx.fillStyle = q.c; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 7); ctx.fill(); }
       ctx.globalAlpha = 1;

@@ -14,6 +14,9 @@
     .hud .hearts { color:#ff6b6b; font-size:18px; letter-spacing:4px; }
     .hud .honey { color:var(--gold2); }
     .hud .time { color:var(--silver); font-variant-numeric:tabular-nums; }
+    .hud .burst { color:var(--gold2); font-size:11px; letter-spacing:3px; transition:opacity .3s; }
+    .hud .burst.ready { text-shadow:0 0 12px #f5e06e; }
+    .hud .burst.empty { opacity:.35; }
     .hud .title { font-family:'Cinzel Decorative',serif; font-size:12px; color:var(--gold); opacity:.8; }
     .hud button { pointer-events:auto; }
     button { font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:10px 18px; border:1px solid rgba(212,175,55,.5); background:rgba(7,8,15,.7); color:var(--gold); cursor:pointer; }
@@ -46,7 +49,7 @@
 <canvas id="game"></canvas>
 <div class="hud">
   <div><div class="title" id="hudTitle">Magma Road</div><div class="hearts" id="hearts">♥ ♥ ♥</div></div>
-  <div class="honey" id="hudHoney">🍯 0 / 26</div>
+  <div><div class="honey" id="hudHoney">🍯 0 / 26</div><div class="burst ready" id="hudBurst">✦ BURST READY</div></div>
   <div class="time" id="hudTime">0:00.0</div>
   <button onclick="togglePause()" id="pauseBtn">Pause</button>
 </div>
@@ -67,7 +70,7 @@
     <h1 id="introTitle">Magma Road</h1>
     <p id="introText">Run the molten road, dodge the Ember Sentinels, gather every drop of Magma Honey and reach the portal to the Archean era.</p>
     <div class="row"><button class="primary" id="startBtn" onclick="startRun()">Begin the run</button><a href="/game.html"><button>Back to the Hunt</button></a></div>
-    <div class="keys">← → run · space jump (hold = higher) · X hit · Z dash · stomp Ember Sentinels, hit Golems twice</div>
+    <div class="keys">← → run · space jump (press again in the air to double-jump) · X hit · Z dash · Z + X together = Honey Burst · stomp Ember Sentinels, hit Golems twice</div>
   </div>
 </div>
 <div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button onclick="restart()">Restart</button><a href="/game.html"><button>Leave</button></a></div></div></div>
@@ -96,6 +99,9 @@ const fmt = ms => { const s = ms / 1000; return `${Math.floor(s / 60)}:${(s % 60
 function hud() {
   document.getElementById('hearts').textContent = '♥ '.repeat(Math.max(0, road.p.hp)).trim() + (road.p.hp < 3 ? ' ' + '♡ '.repeat(3 - Math.max(0, road.p.hp)).trim() : '');
   document.getElementById('hudHoney').textContent = `🍯 ${road.p.honey} / ${TOTAL_HONEY}`;
+  const b = document.getElementById('hudBurst'), c = road.p.burst;
+  b.textContent = c >= 1 ? `✦ BURST READY${c >= 2 ? ' ×2' : ''}` : `✦ burst ${Math.floor(c * 100)}%`;
+  b.className = 'burst ' + (c >= 1 ? 'ready' : 'empty');
 }
 setInterval(() => { if (road && road.started && !road.paused && !road.finished) document.getElementById('hudTime').textContent = fmt(road.time * 1000); }, 100);
 
@@ -116,14 +122,15 @@ async function init() {
     }
   } catch (e) {}
   road = new HoneyRoad(cv, sprite, ERA, {
-    onHoney: hud, onHurt: hud, onRespawn: hud, onDeath: hud,
+    onHoney: hud, onHurt: hud, onRespawn: hud, onDeath: hud, onBurst: hud,
     onFinish: r => showResult(r),
   });
   road.start();
   hud();
 }
 function startRun() {
-  document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0; cv.focus();
+  document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0;
+  document.activeElement?.blur();   // otherwise the space bar keeps re-activating the button
   // phones: go full screen and ask for landscape where the platform allows it (Android); iOS ignores both quietly
   if (matchMedia('(pointer:coarse)').matches) {
     const el = document.documentElement;
