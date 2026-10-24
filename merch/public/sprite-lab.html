@@ -85,8 +85,10 @@
     <h2>Body</h2>
     <label><span>Size <b id="vSize"></b></span></label>      <input type="range" id="size" min="64" max="150" value="96">
     <label><span>Head / torso scale <b id="vHead"></b></span></label> <input type="range" id="headScale" min="80" max="130" value="100">
-    <label><span>Leg length <b id="vLeg"></b></span></label>   <input type="range" id="legLen" min="14" max="44" value="26">
-    <label><span>Leg width <b id="vLegW"></b></span></label>   <input type="range" id="legW" min="8" max="20" value="13">
+    <label><span>Leg length <b id="vLeg"></b></span></label>   <input type="range" id="legLen" min="14" max="56" value="34">
+    <label><span>Leg width <b id="vLegW"></b></span></label>   <input type="range" id="legW" min="5" max="20" value="9">
+    <label><span>Paw size <b id="vPaw"></b></span></label>     <input type="range" id="pawSize" min="50" max="200" value="100">
+    <label><span>Extra arms (the art already has them) <input type="checkbox" id="arms"></span></label>
     <label><span>Arm length <b id="vArm"></b></span></label>   <input type="range" id="armLen" min="14" max="40" value="24">
     <label><span>Corner radius <b id="vRad"></b></span></label> <input type="range" id="radius" min="10" max="50" value="28">
     <label><span>Bounce <b id="vBounce"></b></span></label>    <input type="range" id="bounce" min="0" max="200" value="100">
@@ -141,15 +143,16 @@ async function loadCub(src) {
 }
 
 // ---- controls panel ----
-const ids = ['size','headScale','legLen','legW','armLen','radius','bounce'];
+const ids = ['size','headScale','legLen','legW','pawSize','armLen','radius','bounce'];
 function readPanel() {
   const v = id => Number(document.getElementById(id).value);
-  const opts = { size: v('size'), headScale: v('headScale') / 100, legLen: v('legLen'), legW: v('legW'), armLen: v('armLen'), radius: v('radius') / 100, bounce: v('bounce') / 100, weapon: document.getElementById('weapon').value };
+  const opts = { size: v('size'), headScale: v('headScale') / 100, legLen: v('legLen'), legW: v('legW'), pawSize: v('pawSize') / 100, arms: document.getElementById('arms').checked, armLen: v('armLen'), radius: v('radius') / 100, bounce: v('bounce') / 100, weapon: document.getElementById('weapon').value };
   document.getElementById('vSize').textContent = opts.size;
   document.getElementById('vHead').textContent = opts.headScale.toFixed(2);
   document.getElementById('vLeg').textContent = opts.legLen;
   document.getElementById('vLegW').textContent = opts.legW;
   document.getElementById('vArm').textContent = opts.armLen;
+  document.getElementById('vPaw').textContent = opts.pawSize.toFixed(2);
   document.getElementById('vRad').textContent = opts.radius.toFixed(2);
   document.getElementById('vBounce').textContent = opts.bounce.toFixed(2);
   sprite.setOptions(opts);
@@ -157,6 +160,7 @@ function readPanel() {
 }
 ids.forEach(id => document.getElementById(id).oninput = readPanel);
 document.getElementById('weapon').onchange = readPanel;
+document.getElementById('arms').onchange = readPanel;
 function copyExport() { navigator.clipboard?.writeText(document.getElementById('export').value); document.getElementById('status').textContent = 'settings copied'; }
 
 function pose(p) {

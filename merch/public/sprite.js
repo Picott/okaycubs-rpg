@@ -7,7 +7,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const DEFAULTS = { size: 96, radius: 0.28, legLen: 26, legW: 13, armLen: 24, armW: 11, headScale: 1, bounce: 1, outline: 3, weapon: '🍯' };
+  const DEFAULTS = { size: 96, radius: 0.28, legLen: 34, legW: 9, pawSize: 1, arms: false, armLen: 24, armW: 11, headScale: 1, bounce: 1, outline: 3, weapon: '🍯' };
   const PHYS = { accel: 2200, maxSpeed: 330, friction: 2600, airControl: 0.65, gravity: 2000, jumpVel: 640, jumpCut: 240,
                  coyote: 0.1, buffer: 0.12, dashSpeed: 640, dashTime: 0.14, dashCooldown: 0.55 };
 
@@ -196,6 +196,14 @@
       ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
     }
 
+    // a flat paw at the end of a leg, pointing forward (the sprite faces +x before flipping)
+    paw(ctx, x, y, color) {
+      const o = this.o, w = o.legW * 2.1 * o.pawSize, h = o.legW * 1.15 * o.pawSize;
+      ctx.beginPath(); ctx.ellipse(x + w * 0.22, y, w / 2, h / 2, 0, 0, Math.PI * 2);
+      ctx.lineWidth = o.outline * 2; ctx.strokeStyle = shade(this.colors.body, -0.55); ctx.stroke();
+      ctx.fillStyle = color; ctx.fill();
+    }
+
     // x, yGround: the point between the feet, in world/screen pixels
     draw(ctx, x, yGround, scale = 1, height = (this.motion && this.motion.height) || 0) {
       if (!this.ready) return;
@@ -241,8 +249,10 @@
       const shX = tw * 0.44, shY = torsoBottom - th * 0.3;
 
       // back limbs
-      this.capsule(ctx, -hipX, hipY, -hipX + Math.sin(legB) * legLen, hipY + Math.cos(legB) * legLen, o.legW, dark);
-      this.capsule(ctx, -shX, shY, -shX + Math.sin(armB) * o.armLen, shY + Math.cos(armB) * o.armLen, o.armW, dark);
+      const bFootX = -hipX + Math.sin(legB) * legLen, bFootY = hipY + Math.cos(legB) * legLen;
+      this.capsule(ctx, -hipX, hipY, bFootX, bFootY, o.legW, dark);
+      this.paw(ctx, bFootX, bFootY, dark);
+      if (o.arms) this.capsule(ctx, -shX, shY, -shX + Math.sin(armB) * o.armLen, shY + Math.cos(armB) * o.armLen, o.armW, dark);
 
       // torso: the NFT cut-out
       ctx.save();
@@ -264,15 +274,26 @@
       ctx.restore();
 
       // front limbs
-      this.capsule(ctx, hipX, hipY, hipX + Math.sin(legF) * legLen, hipY + Math.cos(legF) * legLen, o.legW, body);
-      const handX = shX + Math.sin(armF) * o.armLen, handY = shY + Math.cos(armF) * o.armLen;
-      this.capsule(ctx, shX, shY, handX, handY, o.armW, body);
+      const fFootX = hipX + Math.sin(legF) * legLen, fFootY = hipY + Math.cos(legF) * legLen;
+      this.capsule(ctx, hipX, hipY, fFootX, fFootY, o.legW, body);
+      this.paw(ctx, fFootX, fFootY, body);
+      let handX, handY, weaponAngle;
+      if (o.arms) {
+        handX = shX + Math.sin(armF) * o.armLen; handY = shY + Math.cos(armF) * o.armLen;
+        this.capsule(ctx, shX, shY, handX, handY, o.armW, body);
+        weaponAngle = armF + Math.PI / 2 + (swing != null ? 0.4 : -0.3);
+      } else {
+        // the art's own hand sits at the lower front of the bust; the tool swings from there
+        handX = tw * 0.4; handY = torsoBottom - th * 0.1;
+        // rest: tool points forward-down from the hand; attack: wind up behind the head, then sweep forward
+        weaponAngle = swing == null ? 1.15 : (swing < 0.35 ? lerp(1.15, -1.9, swing / 0.35) : lerp(-1.9, 2.1, (swing - 0.35) / 0.65));
+      }
 
       // weapon in the front hand: a honey ladle / tool, swung on attack
       if (o.weapon) {
         ctx.save();
         ctx.translate(handX, handY);
-        ctx.rotate(armF + Math.PI / 2 + (swing != null ? 0.4 : -0.3));
+        ctx.rotate(weaponAngle);
         ctx.lineCap = 'round'; ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 5;
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -S * 0.3); ctx.stroke();
         ctx.font = `${Math.round(S * 0.26)}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -284,7 +305,8 @@
           ctx.globalAlpha = (1 - a) * 0.85;
           ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 6; ctx.lineCap = 'round';
           ctx.shadowColor = '#ffd45e'; ctx.shadowBlur = 16;
-          ctx.beginPath(); ctx.arc(shX, shY, o.armLen + S * 0.32, -2.2 + a * 1.2, -0.4 + a * 1.6); ctx.stroke();
+          const cx = o.arms ? shX : handX, cy = o.arms ? shY : handY, cr = (o.arms ? o.armLen : 0) + S * 0.34;
+          ctx.beginPath(); ctx.arc(cx, cy, cr, -2.2 + a * 1.2, -0.4 + a * 1.6); ctx.stroke();
           ctx.restore();
         }
       }
