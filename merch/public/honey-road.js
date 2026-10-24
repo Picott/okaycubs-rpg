@@ -73,8 +73,9 @@
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const w = this.cv.clientWidth, h = this.cv.clientHeight;
       this.cv.width = w * dpr; this.cv.height = h * dpr;
-      this.scale = (h / VIEW_H) * dpr;
-      this.viewW = w * dpr / this.scale; this.viewH = VIEW_H;
+      // fit the height on wide screens; on narrow (portrait) screens keep at least ~820 world px visible
+      this.scale = Math.min(h / VIEW_H, w / 820) * dpr;
+      this.viewW = w * dpr / this.scale; this.viewH = h * dpr / this.scale;
     }
 
     start() { this.running = true; this.started = true; this.last = performance.now(); requestAnimationFrame(t => this.frame(t)); }
@@ -253,7 +254,8 @@
     updateCamera(dt) {
       const p = this.p, target = p.x + p.facing * 90 - this.viewW * 0.42;
       this.cam.x = lerp(this.cam.x, clamp(target, 0, this.L.length - this.viewW), clamp(dt * 5, 0, 1));
-      const ty = clamp(p.y - VIEW_H * 0.68, -120, 40);
+      // tall (portrait) views keep the road centred; wide views follow the cub a little
+      const ty = this.viewH > 760 ? 400 - this.viewH / 2 + Math.min(0, p.y - GROUND_Y) * 0.3 : clamp(p.y - this.viewH * 0.68, -120, 40);
       this.cam.y = lerp(this.cam.y, ty, clamp(dt * 4, 0, 1));
     }
 
@@ -283,7 +285,7 @@
       // lava under everything
       const lavaY = GROUND_Y + 36, t = performance.now() / 1000;
       const lg = ctx.createLinearGradient(0, lavaY, 0, lavaY + 160); lg.addColorStop(0, '#ffb347'); lg.addColorStop(0.25, pal.lava); lg.addColorStop(1, '#6a1202');
-      ctx.fillStyle = lg; ctx.fillRect(this.cam.x - 50, lavaY, W + 100, 200);
+      ctx.fillStyle = lg; ctx.fillRect(this.cam.x - 50, lavaY, W + 100, Math.max(200, H));
       ctx.fillStyle = 'rgba(255,230,150,.35)';
       for (let x = Math.floor(this.cam.x / 40) * 40; x < this.cam.x + W + 40; x += 40) { const h = 4 + Math.sin(t * 2 + x * 0.05) * 3; ctx.fillRect(x, lavaY - h, 24, h + 2); }
       // ground blocks

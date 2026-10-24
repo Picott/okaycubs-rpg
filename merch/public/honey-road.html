@@ -37,8 +37,9 @@
     .t-jump { right:calc(16px + env(safe-area-inset-right)); width:78px; height:78px; border-color:rgba(46,204,113,.6); color:#7cf29e; }
     .t-atk { right:calc(106px + env(safe-area-inset-right)); border-color:rgba(192,57,43,.6); color:#ff8a7a; }
     .t-dash { right:calc(106px + env(safe-area-inset-right)); bottom:calc(96px + env(safe-area-inset-bottom)); width:54px; height:54px; font-size:13px; }
-    .rotate { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:#07080f; z-index:9; text-align:center; font-family:'Cinzel',serif; letter-spacing:3px; font-size:12px; color:var(--gold); padding:30px; }
-    @media (pointer:coarse) and (orientation:portrait) { .rotate { display:flex; } }
+    .rotate { position:fixed; inset:0; display:none; flex-direction:column; gap:22px; align-items:center; justify-content:center; background:rgba(7,8,15,.94); z-index:9; text-align:center; font-family:'Cinzel',serif; letter-spacing:3px; font-size:12px; color:var(--gold); padding:30px; line-height:1.8; }
+    @media (pointer:coarse) and (orientation:portrait) { body:not(.portrait-ok) .rotate { display:flex; } }
+    @media (pointer:coarse) and (orientation:portrait) { .hud { padding-top:calc(10px + env(safe-area-inset-top)); font-size:11px; } .card { padding:24px 18px; max-width:92vw; } }
   </style>
 </head>
 <body>
@@ -56,7 +57,10 @@
   <div class="tbtn t-atk" data-tap="attack">X<small>hit</small></div>
   <div class="tbtn t-jump" data-hold="jump">A<small>jump</small></div>
 </div>
-<div class="rotate">🔄<br><br>Turn your phone sideways to run the Honey Road</div>
+<div class="rotate">
+  <div>🔄<br><br>The Honey Road plays best sideways.<br>Turn your phone (and unlock rotation) — or play as is.</div>
+  <button class="primary" onclick="document.body.classList.add('portrait-ok')">Play in portrait</button>
+</div>
 
 <div class="overlay" id="intro">
   <div class="card">
@@ -118,7 +122,14 @@ async function init() {
   road.start();
   hud();
 }
-function startRun() { document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0; cv.focus(); }
+function startRun() {
+  document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0; cv.focus();
+  // phones: go full screen and ask for landscape where the platform allows it (Android); iOS ignores both quietly
+  if (matchMedia('(pointer:coarse)').matches) {
+    const el = document.documentElement;
+    (el.requestFullscreen?.() || Promise.resolve()).then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
+  }
+}
 function restart() { road.reset(); submitted = false; document.getElementById('result').classList.add('hidden'); document.getElementById('pause').classList.add('hidden'); road.paused = false; road.started = true; hud(); }
 function togglePause() { if (!road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); }
 
