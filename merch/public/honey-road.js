@@ -57,7 +57,7 @@
       const L = this.L;
       this.p = { x: 80, y: GROUND_Y, vx: 0, vy: 0, grounded: true, facing: 1, coyote: 0, buffer: 0, dashT: 0, dashCd: 0, dashDir: 1,
                  hp: 3, inv: 0, honey: 0, checkpoint: 80, dead: 0, attackT: 0, stunned: 0,
-                 jumpsLeft: 1, burst: 1, burstFx: 0, tDash: -9, tAtk: -9 };
+                 jumpsLeft: 1, burst: 0, burstStreak: 0, primed: 0, burstFx: 0 };
       this.solids = L.ground.map(([a, b]) => ({ x: a, y: GROUND_Y, w: b - a, h: FLOOR_H, type: 'ground' }));
       this.platforms = L.platforms.map(p => ({ ...p, h: 18, type: 'platform' }));
       this.crumbles = L.crumble.map(p => ({ ...p, h: 18, type: 'crumble', timer: 0, fall: 0, gone: false }));
@@ -100,16 +100,20 @@
       if (i.jump) { p.buffer = P.buffer; i.jump = false; } else p.buffer = Math.max(0, p.buffer - dt);
       p.dashCd = Math.max(0, p.dashCd - dt);
       p.burstFx = Math.max(0, p.burstFx - dt);
-      // dash + hit pressed together (within 0.18s) → Honey Burst, if a charge is ready
-      if (i.dash) p.tDash = this.time;
-      if (i.attack) p.tAtk = this.time;
-      if ((i.dash || i.attack) && Math.abs(p.tDash - p.tAtk) < 0.18 && p.burst >= 1 && p.stunned <= 0) {
-        i.dash = false; i.attack = false; p.tDash = p.tAtk = -9;
-        this.honeyBurst();
+      const wasPrimed = p.primed > 0;
+      p.primed = Math.max(0, p.primed - dt);
+      if (wasPrimed && p.primed <= 0) this.hooks.onBurst?.(p.burst);
+      // Honey Burst is a sequence: dash (with a charge ready) primes it, hit releases it
+      if (i.dash && p.dashCd <= 0 && p.dashT <= 0 && p.stunned <= 0) {
+        p.dashT = P.dashTime; p.dashCd = P.dashCooldown; p.dashDir = p.facing;
+        if (p.burst >= 1) { p.primed = 1.2; this.burst(p.x, p.y - 30, ['#f5e06e', '#fff2b0'], 10, 120); this.hooks.onBurst?.(p.burst); }
       }
-      if (i.dash && p.dashCd <= 0 && p.dashT <= 0 && p.stunned <= 0) { p.dashT = P.dashTime; p.dashCd = P.dashCooldown; p.dashDir = p.facing; }
       i.dash = false;
-      if (i.attack) { i.attack = false; if (p.attackT <= 0 && p.stunned <= 0 && this.sprite.attack()) p.attackT = 0.34; }
+      if (i.attack) {
+        i.attack = false;
+        if (p.primed > 0 && p.burst >= 1) this.honeyBurst();   // a panic button: works even while stunned
+        else if (p.attackT <= 0 && p.stunned <= 0 && this.sprite.attack()) p.attackT = 0.34;
+      }
 
       const dir = p.stunned > 0 ? 0 : (i.right ? 1 : 0) - (i.left ? 1 : 0);
       let justJumped = false, justLanded = false;
@@ -221,7 +225,10 @@
       for (const h of this.honey) {
         if (h.taken || p.dead > 0) continue;
         if (Math.abs(h.x - p.x) < 30 && Math.abs(h.y - (p.y - 36)) < 48) {
-          h.taken = true; p.honey++; p.burst = Math.min(2, p.burst + 0.2); this.burst(h.x, h.y, ['#f5e06e', '#d4af37', '#fff2b0'], 10, 90);
+          h.taken = true; p.honey++;
+          // every five drops charge a Honey Burst (up to two stored)
+          if (++p.burstStreak >= 5) { p.burstStreak = 0; if (p.burst < 2) { p.burst++; this.float(p.x, p.y - 110, '✦ Burst charged', '#ffe27a'); } }
+          this.burst(h.x, h.y, ['#f5e06e', '#d4af37', '#fff2b0'], 10, 90);
           this.float(h.x, h.y - 20, '+1 🍯', '#ffe27a'); this.hooks.onHoney?.(p.honey);
         }
       }
@@ -230,7 +237,7 @@
     }
     honeyBurst() {
       const p = this.p;
-      p.burst -= 1; p.burstFx = 0.7; p.inv = Math.max(p.inv, 1.1); p.dashT = 0;
+      p.burst -= 1; p.primed = 0; p.burstFx = 0.7; p.inv = Math.max(p.inv, 1.1); p.dashT = 0;
       p.vy = Math.min(p.vy, -200); p.grounded = false;
       this.sprite.cheerT = 0.6; this.shake = 0.6;
       this.rings.push({ x: p.x, y: p.y - 30, t: 0.7, big: true });
@@ -333,6 +340,11 @@
       // player
       for (const tr of this.trail) { ctx.globalAlpha = tr.t * 1.6; this.sprite.draw(ctx, tr.x, tr.y, 1, 0); }
       ctx.globalAlpha = 1;
+      if (this.p.primed > 0) {
+        const pulse = 0.7 + Math.sin(t * 18) * 0.3;
+        ctx.save(); ctx.globalAlpha = Math.min(1, this.p.primed) * 0.8; ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 3 + pulse * 2; ctx.shadowColor = '#f5e06e'; ctx.shadowBlur = 24 * pulse;
+        ctx.beginPath(); ctx.ellipse(this.p.x, this.p.y - 36, 48 + pulse * 6, 60 + pulse * 6, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
       if (this.p.dead <= 0) { if (this.p.inv > 0 && Math.floor(this.p.inv * 14) % 2 === 0) ctx.globalAlpha = 0.45; this.sprite.draw(ctx, this.p.x, this.p.y, 1, 0); ctx.globalAlpha = 1; }
       // rings: double-jump puffs and the Honey Burst shockwave
       for (const r of this.rings) {
