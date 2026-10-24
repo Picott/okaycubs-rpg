@@ -7,8 +7,8 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const DEFAULTS = { size: 96, radius: 0.28, legLen: 34, legW: 9, pawSize: 1, hipH: 18, hipW: 0.82, bustLift: 0,
-                     forearms: true, forearmLen: 16, forearmW: 9, arms: false, armLen: 24, armW: 11, headScale: 1, bounce: 1, outline: 3, weapon: '🍯' };
+  const DEFAULTS = { size: 88, radius: 0.16, legLen: 18, legW: 9, pawSize: 1, hipH: 21, hipW: 0.68, bustLift: -4,
+                   forearms: true, forearmLen: 16, forearmW: 9, arms: false, armLen: 20, armW: 11, headScale: 1.01, bounce: 1.51, outline: 3, weapon: '🍯' };
   const PHYS = { accel: 2200, maxSpeed: 330, friction: 2600, airControl: 0.65, gravity: 2000, jumpVel: 640, jumpCut: 240,
                  coyote: 0.1, buffer: 0.12, dashSpeed: 640, dashTime: 0.14, dashCooldown: 0.55 };
 
