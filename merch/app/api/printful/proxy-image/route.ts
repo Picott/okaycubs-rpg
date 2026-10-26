@@ -55,16 +55,17 @@ export async function GET(req: NextRequest) {
     if (!upstream) continue;
 
     let contentType = upstream.headers.get('content-type') || 'image/png';
-    let buf: Uint8Array = new Uint8Array(await upstream.arrayBuffer());
+    let buf: ArrayBuffer = await upstream.arrayBuffer();
     if (width && contentType.startsWith('image/')) {
       try {
         const sharp = (await import('sharp')).default;
-        buf = new Uint8Array(await sharp(Buffer.from(buf)).resize({ width, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer());
+        const out = await sharp(Buffer.from(buf)).resize({ width, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
+        buf = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
         contentType = 'image/webp';
       } catch { /* serve the original if resizing fails */ }
     }
 
-    return new NextResponse(new Blob([buf]), {
+    return new NextResponse(buf, {
       headers: {
         'Content-Type': contentType,
         // IPFS content is immutable: cache a year at Vercel's edge (s-maxage) so each image crosses the
