@@ -133,7 +133,7 @@ sel.onchange = () => loadCub(sel.value);
 function loadByNumber() {
   const n = parseInt(document.getElementById('cubNumber').value.replace(/\D/g, ''));
   if (!n) return;
-  loadCub(LOCAL_CUBS.includes(n) ? `/cubs/${n}.png` : `/api/printful/proxy-image?url=${encodeURIComponent(`https://w3s.link/ipfs/${CUBS_IMG_CID}/${n}.png`)}`);
+  loadCub(LOCAL_CUBS.includes(n) ? `/cubs/${n}.png` : `/api/printful/proxy-image?url=${encodeURIComponent(`https://w3s.link/ipfs/${CUBS_IMG_CID}/${n}.png`)}&w=384`);
 }
 async function loadCub(src) {
   const st = document.getElementById('status');

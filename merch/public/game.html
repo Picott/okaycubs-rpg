@@ -975,14 +975,15 @@ const CUBS_IMG_CID = 'QmZsTzg9Y88239r1uU2zkvdBYooJZNteu5NuUwLcFQYoqf';
 // Cub numbers that ship as static PNGs in /cubs — only those skip the proxy
 const LOCAL_CUBS = new Set([35,99,177,432,470,545,783,828,886,903,1038,1156,1355,1369,1667,1775,1827,1829,1910,1948,1956,1975,2030,2055,2097,2133,2156,2169,2219,2223,2309,2333,2378,2395,2402,2409,2421,2493,2559,2849,2988,2993,3027,3076,3102,3148,3228,3232,3241,3276,3409,3446,3593,3604,3649,3707,3727,3818,3876,4240,4257,4474,4494,4515,4574,4587,4618,4776,4882,4884,4903,5014,5048,5110,5136,5181,5200,5216,5279,5311,5383,5407,5472,5492,5496,5498,5531]);
 const proxied = url => `/api/printful/proxy-image?url=${encodeURIComponent(url)}`;
+const proxiedThumb = url => `${proxied(url)}&w=384`;   // roster/den/sprites never need more than 384px
 
 // Same-origin candidates, in order: local static PNG → server-side IPFS proxy by number → proxy of the chain URL.
 // Public IPFS gateways block cross-origin <img> loads (CORP), so the browser never hits them directly.
 function cubImageCandidates(num, directUrl) {
   const list = [];
   if (num && LOCAL_CUBS.has(num)) list.push(`/cubs/${num}.png`);
-  if (num) list.push(proxied(`https://w3s.link/ipfs/${CUBS_IMG_CID}/${num}.png`));
-  if (directUrl) list.push(directUrl.startsWith('/') ? directUrl : proxied(directUrl));
+  if (num) list.push(proxiedThumb(`https://w3s.link/ipfs/${CUBS_IMG_CID}/${num}.png`));
+  if (directUrl) list.push(directUrl.startsWith('/') ? directUrl : proxiedThumb(directUrl));
   return list;
 }
 

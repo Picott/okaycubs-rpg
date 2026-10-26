@@ -45,15 +45,26 @@ export async function GET(req: NextRequest) {
   if (!url) return NextResponse.json({ error: 'Missing url param' }, { status: 400 });
 
   const candidates = candidateUrls(decodeURIComponent(url));
+  // optional thumbnail: the game shows cubs at ~184px, so a 384px WebP is ~30x smaller than the 1-2MB
+  // originals and saves the Fast Origin Transfer quota. Printful keeps fetching full resolution (no `w`).
+  const wParam = parseInt(req.nextUrl.searchParams.get('w') || '', 10);
+  const width = Number.isFinite(wParam) ? Math.min(1024, Math.max(64, wParam)) : 0;
 
   for (const candidate of candidates) {
     const upstream = await fetchImage(candidate);
     if (!upstream) continue;
 
-    const contentType = upstream.headers.get('content-type') || 'image/png';
-    const buf = await upstream.arrayBuffer();
+    let contentType = upstream.headers.get('content-type') || 'image/png';
+    let buf: Uint8Array = new Uint8Array(await upstream.arrayBuffer());
+    if (width && contentType.startsWith('image/')) {
+      try {
+        const sharp = (await import('sharp')).default;
+        buf = new Uint8Array(await sharp(Buffer.from(buf)).resize({ width, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer());
+        contentType = 'image/webp';
+      } catch { /* serve the original if resizing fails */ }
+    }
 
-    return new NextResponse(buf, {
+    return new NextResponse(new Blob([buf]), {
       headers: {
         'Content-Type': contentType,
         // IPFS content is immutable: cache a year at Vercel's edge (s-maxage) so each image crosses the
