@@ -6,6 +6,7 @@
   const ARTIST  = 'πcott';
   const KEY_ON = 'okaycubs_music_on', KEY_OPEN = 'okaycubs_music_open';
   const position = document.currentScript?.dataset.position || 'bottom';
+  const lift = document.currentScript?.dataset.lift === 'touch';   // keep clear of on-screen controls
 
   const style = document.createElement('style');
   style.textContent = `
@@ -18,12 +19,14 @@
                  background:rgba(7,8,15,.85); color:#f5e06e; cursor:pointer; }
     .sc-toggle.playing::before { content:'♪ '; animation:scPulse 1s ease-in-out infinite; display:inline-block; }
     @keyframes scPulse { 50% { transform:translateY(-2px); } }
-    @media (pointer:coarse) and (orientation:portrait) { .sc-bar { ${position === 'top' ? 'top:52px;' : 'bottom:190px;'} } }
-    @media (pointer:coarse) and (orientation:landscape) { .sc-bar { ${position === 'top' ? '' : 'bottom:110px;'} } }`;
+    ${lift ? `@media (pointer:coarse) and (orientation:portrait) { .sc-bar { ${position === 'top' ? 'top:52px;' : 'bottom:190px;'} } }
+    @media (pointer:coarse) and (orientation:landscape) { .sc-bar { ${position === 'top' ? '' : 'bottom:110px;'} } }` : ''}`;
   document.head.appendChild(style);
 
   const bar = document.createElement('div');
-  bar.className = 'sc-bar' + (localStorage.getItem(KEY_OPEN) === '0' ? ' collapsed' : '');
+  // narrow screens (phones, Phantom's in-app browser) start collapsed unless the player opened it before
+  const openPref = localStorage.getItem(KEY_OPEN);
+  bar.className = 'sc-bar' + ((openPref === '0' || (openPref === null && innerWidth < 760)) ? ' collapsed' : '');
   const src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(PROFILE)
     + '&color=%23d4af37&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false';
   bar.innerHTML = `
@@ -48,6 +51,12 @@
         widget.setVolume(volume);
         widget.bind(window.SC.Widget.Events.PLAY,  () => { playing = true;  toggle.classList.add('playing'); try { localStorage.setItem(KEY_ON, '1'); } catch (e) {} });
         widget.bind(window.SC.Widget.Events.PAUSE, () => { playing = false; toggle.classList.remove('playing'); try { localStorage.setItem(KEY_ON, '0'); } catch (e) {} });
+        // keep the music going: next track when one ends, back to the first after the last
+        widget.bind(window.SC.Widget.Events.FINISH, () => {
+          widget.getSounds(sounds => widget.getCurrentSoundIndex(i => {
+            if (sounds && i < sounds.length - 1) widget.next(); else { widget.skip(0); widget.play(); }
+          }));
+        });
       });
     };
     document.head.appendChild(s);
