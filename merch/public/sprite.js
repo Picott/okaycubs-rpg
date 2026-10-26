@@ -175,8 +175,8 @@
       if (m.justJumped) { this.squash.x = 1 - 0.18 * o.bounce; this.squash.y = 1 + 0.22 * o.bounce; }
       if (m.justLanded) { this.squash.x = 1 + 0.28 * o.bounce; this.squash.y = 1 - 0.3 * o.bounce; }
       const k = clamp(dt * 12, 0, 1);
-      this.squash.x = lerp(this.squash.x, 1, k);
-      this.squash.y = lerp(this.squash.y, 1, k);
+      this.squash.x = lerp(this.squash.x, m.blocking ? 1.08 : 1, k);
+      this.squash.y = lerp(this.squash.y, m.blocking ? 0.9 : 1, k);
       if (Math.abs(m.vx) > 1) this.facing = m.vx > 0 ? 1 : -1;
       const running = m.grounded && Math.abs(m.vx) > 20;
       if (running) this.runPhase += dt * (9 + Math.abs(m.vx) / 40);

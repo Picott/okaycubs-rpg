@@ -121,7 +121,7 @@
     constructor(canvas, sprite, era, hooks) {
       this.cv = canvas; this.ctx = canvas.getContext('2d');
       this.sprite = sprite; this.era = era; this.L = typeof era === 'object' ? era : (LEVELS[era] || LEVELS.hadean); this.hooks = hooks || {};
-      this.input = { left: false, right: false, jump: false, jumpHeld: false, attack: false, dash: false };
+      this.input = { left: false, right: false, jump: false, jumpHeld: false, attack: false, dash: false, block: false };
       this.reset();
       this.embers = Array.from({ length: 60 }, () => this.mkEmber(true));
       this.last = performance.now(); this.running = false; this.paused = false;
@@ -206,13 +206,15 @@
         if (p.burst >= 1) { p.primed = 1.2; this.burst(p.x, p.y - 30, ['#f5e06e', '#fff2b0'], 10, 120); this.hooks.onBurst?.(p.burst); }
       }
       i.dash = false;
+      // block: plant the paws and raise the ladle — stops projectiles and shoves, not the big attacks
+      p.blocking = !!i.block && p.grounded && p.stunned <= 0 && p.dashT <= 0 && p.attackT <= 0;
       if (i.attack) {
         i.attack = false;
         if (p.primed > 0 && p.burst >= 1) this.honeyBurst();   // a panic button: works even while stunned
-        else if (p.attackT <= 0 && p.stunned <= 0 && this.sprite.attack()) p.attackT = 0.34;
+        else if (!p.blocking && p.attackT <= 0 && p.stunned <= 0 && this.sprite.attack()) p.attackT = 0.34;
       }
 
-      const dir = p.stunned > 0 ? 0 : (i.right ? 1 : 0) - (i.left ? 1 : 0);
+      const dir = p.stunned > 0 || p.blocking ? 0 : (i.right ? 1 : 0) - (i.left ? 1 : 0);
       let justJumped = false, justLanded = false;
       if (p.dashT > 0) {
         p.dashT -= dt; p.vx = p.dashDir * P.dashSpeed; if (p.vy > 0) p.vy = 0;
@@ -226,7 +228,7 @@
         p.vx = clamp(p.vx, -P.maxSpeed, P.maxSpeed);
       }
       if (p.grounded) p.jumpsLeft = 1;
-      if (p.buffer > 0 && p.coyote > 0 && p.stunned <= 0) { p.vy = -P.jumpVel; p.grounded = false; p.coyote = 0; p.buffer = 0; justJumped = true; }
+      if (p.buffer > 0 && p.coyote > 0 && p.stunned <= 0 && !p.blocking) { p.vy = -P.jumpVel; p.grounded = false; p.coyote = 0; p.buffer = 0; justJumped = true; }
       else if (p.buffer > 0 && !p.grounded && p.coyote <= 0 && p.jumpsLeft > 0 && p.stunned <= 0) {
         // double jump: a little shorter, with a honey ring under the paws
         p.vy = -P.jumpVel * 0.88; p.jumpsLeft--; p.buffer = 0; justJumped = true;
@@ -273,7 +275,7 @@
       // the era's hazard / falling off the world
       if (p.y > GROUND_Y + 60 && p.dead <= 0) this.die(this.L.hazard);
 
-      return { vx: p.vx, vy: p.vy, grounded: p.grounded, justJumped, justLanded, dashing: p.dashT > 0, height: 0 };
+      return { vx: p.vx, vy: p.vy, grounded: p.grounded, justJumped, justLanded, dashing: p.dashT > 0, blocking: p.blocking, height: 0 };
     }
 
     overlaps(p, r) {
@@ -362,7 +364,11 @@
       // guardian projectiles and ground shockwaves
       for (const q of this.projectiles) {
         q.t -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 120 * dt;
-        if (p.dead <= 0 && Math.abs(q.x - p.x) < 26 && q.y > p.y - PLAYER_H && q.y < p.y) { q.t = 0; this.damage({ x: q.x, atk: q.atk }, q.scale); this.burst(q.x, q.y, ['#fff', '#ffb347'], 6, 80); }
+        if (p.dead <= 0 && Math.abs(q.x - p.x) < (p.blocking ? 44 : 26) && q.y > p.y - PLAYER_H - 10 && q.y < p.y) {
+          q.t = 0;
+          if (p.blocking && Math.sign(q.x - p.x) === p.facing) { this.burst(q.x, q.y, ['#f5e06e', '#fff2b0'], 10, 120); this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); this.shake = Math.max(this.shake, 0.08); }
+          else { this.damage({ x: q.x, atk: q.atk }, q.scale); this.burst(q.x, q.y, ['#fff', '#ffb347'], 6, 80); }
+        }
       }
       this.projectiles = this.projectiles.filter(q => q.t > 0 && q.y < GROUND_Y + 40);
       for (const w of this.waves) {
@@ -388,8 +394,11 @@
       }
       if (p.attackT <= 0) p.swingHit = false;
       const hitX = Math.abs(g.x - p.x) < (g.w + PLAYER_W) / 2, hitY = p.y > g.y - g.h && p.y - PLAYER_H < g.y;
-      const scale = root.Guardian.contactScale(g);
-      if (hitX && hitY && scale > 0) this.damage(g, scale);
+      const scale = root.Guardian.contactScale(g), special = g.state === 'charge' || g.state === 'leap' || g.state === 'swoop';
+      if (hitX && hitY && scale > 0) {
+        if (p.blocking && !special && Math.sign(g.x - p.x) === p.facing) { if (p.inv <= 0) { p.inv = 0.5; p.vx = -p.facing * 160; this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); } }
+        else this.damage(g, scale);
+      }
     }
     hitGuardian(g, burst) {
       const p = this.p, s = this.L.stats, C = root.HoneyEngine.COMBAT;
@@ -529,6 +538,14 @@
         ctx.beginPath(); ctx.ellipse(this.p.x, this.p.y - 36, 48 + pulse * 6, 60 + pulse * 6, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
       if (this.p.dead <= 0) { if (this.p.inv > 0 && Math.floor(this.p.inv * 14) % 2 === 0) ctx.globalAlpha = 0.45; this.sprite.draw(ctx, this.p.x, this.p.y, 1, 0); ctx.globalAlpha = 1; }
+      if (this.p.blocking && this.p.dead <= 0) {
+        const f = this.sprite.facing, px = this.p.x + f * 34, py = this.p.y - 40;
+        ctx.save(); ctx.translate(px, py); ctx.scale(f, 1);
+        ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.shadowColor = '#f5e06e'; ctx.shadowBlur = 18; ctx.globalAlpha = 0.9;
+        ctx.beginPath(); ctx.arc(0, 0, 44, -Math.PI / 2 + 0.15, Math.PI / 2 - 0.15); ctx.stroke();
+        ctx.globalAlpha = 0.18; ctx.fillStyle = '#f5e06e'; ctx.beginPath(); ctx.arc(0, 0, 44, -Math.PI / 2 + 0.15, Math.PI / 2 - 0.15); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
       // rings: double-jump puffs and the Honey Burst shockwave
       for (const r of this.rings) {
         const life = r.big ? 1 - r.t / 0.7 : 1 - r.t / 0.35, rad = r.big ? 40 + life * 230 : 10 + life * 40;
