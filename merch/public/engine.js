@@ -13,6 +13,19 @@
   const ERA_LVL    = { hadean:[1,5], archean:[6,15], proterozoic:[16,30], paleozoic:[31,50], mesozoic:[51,75], cenozoic:[76,100] };
   const COOLDOWN_MS = 30 * 60 * 1000;
   const MAX_LEVEL   = 50;
+
+  // Scout Cubs: loaned to wallets that hold no OkayCubs. Capped so holding the real thing matters.
+  const SCOUT_LEVEL_CAP = 10, SCOUT_ERA_CAP = 'archean';
+  const SCOUT_CUBS = [
+    { id:'scout-35',  name:'Scout Cub #35',  number:35,  image:'/cubs/35.png',  rarity:'legendary', class:'Magma Warden',   traits:{ Background:'Volcanic Rift', Eyes:'Obsidian Gaze', Fur:'Ashen Gray', Accessory:'Crystal Pickaxe', Mouth:'Ember Fangs' } },
+    { id:'scout-99',  name:'Scout Cub #99',  number:99,  image:'/cubs/99.png',  rarity:'epic',      class:'Stratum Knight', traits:{ Background:'Deep Fault', Eyes:'Sapphire Core', Fur:'Slate Blue', Accessory:'Geode Shield', Mouth:'Iron Jaw' } },
+    { id:'scout-177', name:'Scout Cub #177', number:177, image:'/cubs/177.png', rarity:'rare',      class:'Fossil Rogue',   traits:{ Background:'Amber Resin', Eyes:'Topaz Sight', Fur:'Sandstone', Accessory:'Ammonite Ring', Mouth:'Quartz Bite' } },
+    { id:'scout-432', name:'Scout Cub #432', number:432, image:'/cubs/432.png', rarity:'common',    class:'Sediment Scout', traits:{ Background:'River Delta', Eyes:'Flint Gray', Fur:'Clay Brown', Accessory:'Stone Compass', Mouth:'Pebble Grin' } },
+  ];
+  const isScout   = id => String(id).startsWith('scout-');
+  const scoutCub  = id => SCOUT_CUBS.find(c => c.id === id) || null;
+  const levelCap  = id => isScout(id) ? SCOUT_LEVEL_CAP : MAX_LEVEL;
+  const scoutEraOk = (id, era) => !isScout(id) || ERA_ORDER.indexOf(era) <= ERA_ORDER.indexOf(SCOUT_ERA_CAP);
   // Honey Roads: the wins threshold of the NEXT era unlocks the road; finishing the road unlocks the era
   const ROADS = {
     hadean:      { next:'archean',     wins:5,   maxHoney: 36, minTimeMs: 9000 },
@@ -187,9 +200,10 @@
     const prev = ERA_ORDER[ERA_ORDER.indexOf(era) - 1];
     return !(prev && ROADS[prev]) || roadDone(p, prev);
   }
-  function completeRoad(p, era, timeMs, honey, now) {
+  function completeRoad(p, era, timeMs, honey, now, cubId) {
     const road = ROADS[era];
     if (!road) return fail('unknown road');
+    if (cubId && !scoutEraOk(cubId, era)) return fail('scout_era');
     if (!roadAvailable(p, era)) return fail('locked');
     if (!(timeMs >= road.minTimeMs)) return fail('too_fast');
     honey = Math.max(0, Math.min(road.maxHoney, Math.floor(honey || 0)));
@@ -224,6 +238,7 @@
   function startBattle(p, cub, opts) {
     const now = opts.now || Date.now(), rng = opts.rng || Math.random;
     if (isCoolingDown(p, cub.id, now)) return fail('cooling');
+    if (!scoutEraOk(cub.id, p.era)) return fail('scout_era');
     p.battle = { cubId:null, pHP:0, pMaxHP:0, enemy:null, eHP:0, eMaxHP:0, defending:false };
     enterCub(p, cub);
     const events = [spawnEnemy(p, rng)];
@@ -263,7 +278,9 @@
         const prevWins = p.wins; p.wins++;
         const pr = prog(p, cub.id); pr.xp += xpGain;
         let ups = 0;
-        while (pr.lvl < MAX_LEVEL && pr.xp >= xpToNext(pr.lvl)) { pr.xp -= xpToNext(pr.lvl); pr.lvl++; ups++; }
+        const cap = levelCap(cub.id);
+        while (pr.lvl < cap && pr.xp >= xpToNext(pr.lvl)) { pr.xp -= xpToNext(pr.lvl); pr.lvl++; ups++; }
+        if (pr.lvl >= cap) pr.xp = Math.min(pr.xp, xpToNext(pr.lvl) - 1);
         p.honey += drop; p.honeyByEra[era] = (p.honeyByEra[era] || 0) + drop;
         const unlocked = ERA_ORDER.filter(e => prevWins < ERA_UNLOCK[e] && p.wins >= ERA_UNLOCK[e]);
         if (ups) { b.pMaxHP = getStats(cub, pr.lvl, era).HP; b.pHP = Math.min(b.pMaxHP, b.pHP + 8 * ups); }
@@ -286,6 +303,7 @@
       const target = cubs[opts.switchTo];
       if (!target || target.id === cub.id) return fail('unknown cub');
       if (isCoolingDown(p, target.id, now)) return fail('cooling');
+      if (!scoutEraOk(target.id, era)) return fail('scout_era');
       const cost = switchCost(era);
       if (p.honey < cost) return fail('honey');
       p.honey -= cost;
@@ -316,7 +334,7 @@
 
   function infuse(p, cub) {
     const pr = prog(p, cub.id);
-    if (pr.lvl >= MAX_LEVEL) return fail('max');
+    if (pr.lvl >= levelCap(cub.id)) return fail('max');
     const cost = infuseCost(pr.lvl);
     if (p.honey < cost) return fail('honey');
     p.honey -= cost; pr.lvl++; pr.xp = 0;
@@ -345,6 +363,7 @@
   function selectEra(p, era, cub, opts) {
     if (!ERA_UNLOCK.hasOwnProperty(era)) return fail('unknown era');
     if (!isEraUnlocked(p, era)) return fail('locked');
+    if (cub && !scoutEraOk(cub.id, era)) return fail('scout_era');
     p.era = era;
     const events = [];
     if (p.battle && cub) {
@@ -358,7 +377,8 @@
     ERA_ORDER, ERA_UNLOCK, ERA_HONEY, ERA_LVL, ERA_ENEMIES, GEO_BURSTS, CLASS_BURSTS, CLASS_AFFINITY,
     COOLDOWN_MS, MAX_LEVEL, eraIdx, drinkCost, switchCost, reviveCost, infuseCost, xpToNext,
     hash, deriveClass, rarityForNumber, baseStats, affinity, getStats,
-    ROADS, newProfile, prog, isCoolingDown, isEraUnlocked, roadAvailable, roadDone, completeRoad,
+    ROADS, SCOUT_CUBS, SCOUT_LEVEL_CAP, SCOUT_ERA_CAP, isScout, scoutCub, levelCap, scoutEraOk,
+    newProfile, prog, isCoolingDown, isEraUnlocked, roadAvailable, roadDone, completeRoad,
     startBattle, resolveAction, infuse, reviveWithHoney, clearCooldown, selectEra,
   };
 });

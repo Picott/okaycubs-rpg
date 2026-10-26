@@ -161,11 +161,11 @@ async function showResult({ timeMs, honey }) {
       // local mode — same rules via the shared engine
       let p; try { p = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}'); } catch (e) { p = {}; }
       const prof = Object.assign(HoneyEngine.newProfile(), { honey: p.honey || 0, honeyByEra: p.honeyByEra || {}, wins: p.wins || 0, era: p.era || 'hadean', cubProg: p.cubProg || {}, cooldowns: p.cooldowns || {}, roads: p.roads || {} });
-      const r = HoneyEngine.completeRoad(prof, ERA, timeMs, honey, Date.now());
-      if (!r.ok) throw new Error(r.error === 'locked' ? 'This road is not unlocked yet — win more hunts first.' : r.error);
+      const r = HoneyEngine.completeRoad(prof, ERA, timeMs, honey, Date.now(), CUB.id);
+      if (!r.ok) throw new Error(r.error === 'locked' ? 'This road is not unlocked yet — win more hunts first.' : r.error === 'scout_era' ? 'Scout Cubs run the Hadean and Archean roads — become a Hunter to go further.' : r.error);
       localStorage.setItem('okaycubs_progress', JSON.stringify({ ...p, honey: prof.honey, honeyByEra: prof.honeyByEra, roads: prof.roads }));
       state = prof; unlocked = r.unlocked;
-    } else throw new Error(data.error === 'locked' ? 'This road is not unlocked yet — win more hunts first.' : (data.error || 'could not save'));
+    } else throw new Error(data.error === 'locked' ? 'This road is not unlocked yet — win more hunts first.' : data.error === 'scout_era' ? 'Scout Cubs run the Hadean and Archean roads — become a Hunter to go further.' : (data.error || 'could not save'));
     const best = state.roads?.[ERA]?.best;
     document.getElementById('rBest').textContent = best ? fmt(best) : '—';
     txt.innerHTML = `+${honey} ${L.honeyName} added to your pot (🍯 ${state.honey}).`

@@ -606,6 +606,26 @@
       text-transform:uppercase; padding:3px 10px; border:1px solid currentColor;
       border-radius:1px; margin-left:10px; vertical-align:middle; opacity:.7;
     }
+    /* === BECOME A HUNTER === */
+    .hunter-card { margin:22px 0 6px; padding:30px 32px; border:1px solid rgba(127,219,255,.35); background:linear-gradient(135deg,rgba(52,152,219,.08),rgba(212,175,55,.08)); text-align:center; animation:fadeUp .5s ease; }
+    .hunter-card.hidden { display:none; }
+    .hunter-eyebrow { font-family:'Cinzel',serif; font-size:8px; letter-spacing:5px; text-transform:uppercase; color:#7fdbff; opacity:.7; margin-bottom:10px; }
+    .hunter-title { font-family:'Cinzel Decorative',serif; font-size:clamp(16px,3vw,22px); color:var(--gold2); margin-bottom:12px; }
+    .hunter-text { font-family:'Crimson Pro',serif; font-size:16px; line-height:1.7; opacity:.8; max-width:620px; margin:0 auto 18px; }
+    .hunter-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; text-align:left; margin-bottom:18px; }
+    .hunter-grid div { background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.06); padding:12px 14px; }
+    .hunter-grid b { display:block; font-family:'Cinzel',serif; font-size:11px; letter-spacing:1px; color:var(--gold); margin-bottom:5px; }
+    .hunter-grid span { font-family:'Crimson Pro',serif; font-size:13px; line-height:1.5; opacity:.75; }
+    .hunter-floor { font-family:'Cinzel',serif; font-size:10px; letter-spacing:3px; color:var(--gold); opacity:.7; margin-bottom:14px; min-height:14px; }
+    .hunter-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .hunter-btn { font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:11px 20px; border:1px solid rgba(212,175,55,.5); background:transparent; color:var(--gold); cursor:pointer; text-decoration:none; transition:all .2s; }
+    .hunter-btn.primary { border-color:#7fdbff; color:#7fdbff; }
+    .hunter-btn:hover { background:rgba(212,175,55,.12); } .hunter-btn.primary:hover { background:rgba(127,219,255,.12); box-shadow:0 0 18px rgba(127,219,255,.25); }
+    .hunter-trade { margin-top:16px; padding:14px 18px; background:rgba(0,0,0,.35); border-left:3px solid #7fdbff; font-family:'Crimson Pro',serif; font-size:14px; line-height:1.6; text-align:left; opacity:.85; }
+    .hunter-trade.hidden { display:none; }
+    .zone.holders-only { opacity:.45; }
+    .zone.holders-only .z-prog { color:#7fdbff; opacity:.8; }
+
     /* === HONEY & PROGRESSION === */
     .sync-badge { font-family:'Cinzel',serif; font-size:8px; letter-spacing:2px; text-transform:uppercase; margin-top:6px; min-height:12px; opacity:.7; }
     .sync-badge.cloud { color:var(--jade); }
@@ -717,6 +737,27 @@
   <!-- CUBS -->
   <div class="sec-title" id="cubsTitle">✦ Your Cubs ✦</div>
   <div class="cubs-grid" id="cubsGrid"></div>
+
+  <!-- BECOME A HUNTER — shown to Scouts (no OkayCubs in the wallet, or no wallet) -->
+  <div class="hunter-card hidden" id="hunterCard">
+    <div class="hunter-eyebrow">The Honey Chronicles · Open to all</div>
+    <h2 class="hunter-title">Become a Hunter</h2>
+    <p class="hunter-text">You are riding the <strong>Scout Cubs</strong> — four loaned bears, progress saved to your wallet. Holding an OkayCub turns the whole collection in your wallet into your roster.</p>
+    <div class="hunter-grid">
+      <div><b>🐻 Your own Cubs</b><span>Every OkayCub you hold joins the hunt — real traits, real classes, real era affinities.</span></div>
+      <div><b>⛏ All six eras</b><span>Scouts stop at Archean. Hunters push through Proterozoic, Paleozoic, Mesozoic and Cenozoic to The Golden Drop.</span></div>
+      <div><b>✨ Level 50</b><span>Scouts cap at Lv 10. Hunters infuse honey all the way to 50.</span></div>
+      <div><b>🏃 All Honey Roads</b><span>Six platformer roads, your Cub as the runner, best times on your profile.</span></div>
+    </div>
+    <div class="hunter-floor" id="hunterFloor"></div>
+    <div class="hunter-actions">
+      <a class="hunter-btn primary" href="https://www.tensor.trade/trade/okay_cubs" target="_blank" rel="noopener">Browse OkayCubs on Tensor →</a>
+      <button class="hunter-btn" onclick="document.getElementById('hunterTrade').classList.toggle('hidden')">Owner-to-owner trade</button>
+    </div>
+    <div class="hunter-trade hidden" id="hunterTrade">
+      <b>No marketplace needed.</b> Any holder can send you a Cub straight from Phantom: <em>Collectibles → the Cub → Send → your address</em>. The next time you connect here, it walks into your den and your Scout progress carries over to your new roster.
+    </div>
+  </div>
 
   <!-- TRAIT PANEL -->
   <div class="trait-panel" id="traitPanel">
@@ -855,6 +896,8 @@ const G = {
   roads: {},
   // true once the wallet signed in and the server owns the profile
   server: false,
+  // riding the loaned Scout Cubs (no OkayCubs in the wallet, or no wallet)
+  scout: true,
 };
 
 const { ERA_ORDER, ERA_UNLOCK, ERA_HONEY, ERA_LVL, ERA_ENEMIES, GEO_BURSTS, CLASS_BURSTS, CLASS_AFFINITY,
@@ -1020,34 +1063,16 @@ return nameMatch || uriMatch || collMatch;
     });
 
     if (cubs.length === 0) {
-      // Filter out obvious junk (fungible airdrops with emoji names)
-      const realNFTs = all.filter(n => {
-        const iface = n.interface || '';
-        const name  = n.content?.metadata?.name || '';
-        const isNFTType = iface === 'V1_NFT' || iface === 'ProgrammableNFT' ||
-                          iface === 'MplCoreAsset' || iface === 'Custom';
-        const hasImage = !!(n.content?.links?.image ||
-                           (n.content?.files || []).find(f => f.mime?.startsWith('image')));
-        const isJunk   = name.startsWith('🎁') || name.toLowerCase().includes('airdrop');
-        return isNFTType && hasImage && !isJunk;
-      });
-
-      if (realNFTs.length > 0) {
-        const first = realNFTs[0];
-        const files = first.content?.files || [];
-        const imgFile = files.find(f => f.mime?.startsWith('image'));
-        setStatus(`✦ ${realNFTs.length} NFTs loaded from chain ✦`, 'good');
-        return parseCubs(realNFTs);
-      }
-
-setStatus(`No OkayCubs found (${all.length} NFTs scanned) — showing demo Cubs`, 'bad');
-return getDemoCubs();
+      G.scout = true;
+      setStatus(`No OkayCubs in this wallet — you ride with the Scout Cubs`, '');
+      return getDemoCubs();
 
 
 
 
     }
 
+    G.scout = false;
     setStatus(`✦ ${cubs.length} OkayCubs loaded from chain ✦`, 'good');
 // chain data loaded
 
@@ -1109,17 +1134,7 @@ function parseCubs(nfts) {
 // DEMO FALLBACK
 // ─────────────────────────────────────────
 function getDemoCubs() {
-  // Image paths served from /cubs/ by the Next.js merch app (merch/public/cubs/)
-  return [
-    { id:1, name:'OkayCub #35', image:'/cubs/35.png', rarity:'legendary', class:'Magma Warden',
-      traits:{ Background:'Volcanic Rift', Eyes:'Obsidian Gaze', Fur:'Ashen Gray', Accessory:'Crystal Pickaxe', Mouth:'Ember Fangs', Era:'Hadean' } },
-    { id:2, name:'OkayCub #99', image:'/cubs/99.png', rarity:'epic', class:'Stratum Knight',
-      traits:{ Background:'Deep Fault', Eyes:'Sapphire Core', Fur:'Slate Blue', Accessory:'Geode Shield', Mouth:'Iron Jaw', Era:'Archean' } },
-    { id:3, name:'OkayCub #177', image:'/cubs/177.png', rarity:'rare', class:'Fossil Rogue',
-      traits:{ Background:'Amber Resin', Eyes:'Topaz Sight', Fur:'Sandstone', Accessory:'Ammonite Ring', Mouth:'Quartz Bite', Era:'Proterozoic' } },
-    { id:4, name:'OkayCub #432', image:'/cubs/432.png', rarity:'common', class:'Sediment Scout',
-      traits:{ Background:'River Delta', Eyes:'Flint Gray', Fur:'Clay Brown', Accessory:'Stone Compass', Mouth:'Pebble Grin', Era:'Hadean' } },
-  ];
+  return HoneyEngine.SCOUT_CUBS.map(c => ({ ...c, traits: { ...c.traits } }));
 }
 
 // ─────────────────────────────────────────
@@ -1240,6 +1255,8 @@ function renderCubs(cubs) {
     `<div class="roster-status" id="rosterStatus"><span class="available">${available}</span> / ${cubs.length} Cubs ready</div>`
   );
 
+  document.getElementById('cubsTitle').textContent = G.scout ? '✦ Your Scout Cubs ✦' : '✦ Your Cubs ✦';
+  updateHunterCard();
   cubs.forEach(cub => {
     const cooling = isCoolingDown(cub.id);
     const card    = document.createElement('div');
@@ -1420,7 +1437,8 @@ async function hydrateTraits(cub) {
 
 function cardBodyHTML(cub) {
   const stats = getStats(cub), p = cubProg(cub), aff = CLASS_AFFINITY[cub.class], now = affinity(cub);
-  const xpPct = p.lvl >= MAX_LEVEL ? 100 : Math.floor(p.xp / xpToNext(p.lvl) * 100);
+  const cap = HoneyEngine.levelCap(cub.id), capped = p.lvl >= cap;
+  const xpPct = capped ? 100 : Math.floor(p.xp / xpToNext(p.lvl) * 100);
   const affChip = aff
     ? `<span class="cub-aff${now === 1 ? ' now' : ''}" style="color:${ERA_META[aff.strong].color}" title="Strong in ${ERA_META[aff.strong].badge} · weak in ${ERA_META[aff.weak].badge}">⚡ ${ERA_META[aff.strong].badge}</span>`
     : '';
@@ -1431,7 +1449,7 @@ function cardBodyHTML(cub) {
     <div class="xp-bg" title="${p.xp} / ${xpToNext(p.lvl)} XP"><div class="xp-fill" style="width:${xpPct}%"></div></div>
     ${statBars(stats)}
     <div class="cub-actions">
-      <button class="cub-btn infuse" data-cub="${cub.id}" onclick="event.stopPropagation();infuseCub('${cub.id}')"${p.lvl >= MAX_LEVEL ? ' disabled' : ''}>Infuse 🍯 ${infuseCost(p.lvl)}</button>
+      <button class="cub-btn infuse" data-cub="${cub.id}" onclick="event.stopPropagation();infuseCub('${cub.id}')"${capped ? ' disabled' : ''} title="${capped && HoneyEngine.isScout(cub.id) ? 'Scout Cubs stop at Lv ' + cap + ' — holders go to ' + MAX_LEVEL : ''}">${capped ? (HoneyEngine.isScout(cub.id) ? 'Scout cap · Lv ' + cap : 'Max level') : 'Infuse 🍯 ' + infuseCost(p.lvl)}</button>
     </div>`;
 }
 function refreshCard(cub) {
@@ -1464,6 +1482,7 @@ const ERR_MSG = {
   payment_not_verified:'Payment could not be verified.', signature_used:'That payment was already used.',
   payments_not_configured:'SOL payments are not configured yet.', unauthorized:'Session expired — reconnect your wallet.',
   server_error:'The server stumbled — try again.',
+  scout_era:'Scout Cubs hunt up to the Archean era — become a Hunter to go further.',
 };
 function errMsg(code) { return ERR_MSG[code] || code || 'Something went wrong'; }
 
@@ -1530,8 +1549,9 @@ function adoptServerProfile(state) {
     addLog('⚔ Resuming your hunt where you left it…', 'ls');
   }
   updateCosts();
-  setSync('cloud', '☁ Hunt synced to your wallet');
-  setStatus(`✦ ${G.cubs.length} OkayCubs · progress synced ✦`, 'good');
+  setSync('cloud', G.scout ? '☁ Scout hunt synced to your wallet' : '☁ Hunt synced to your wallet');
+  setStatus(G.scout ? '✦ Scout Cubs ready · progress synced ✦' : `✦ ${G.cubs.length} OkayCubs · progress synced ✦`, 'good');
+  updateHunterCard();
 }
 
 // ─────────────────────────────────────────
@@ -2036,6 +2056,7 @@ async function connectWallet() {
       try {
         cubs = await fetchCubsTensor(addr);
         if (cubs && cubs.length > 0) {
+          G.scout = false;
           setStatus(`✦ Tensor verified — ${cubs.length} OkayCubs ✦`, 'good');
           showLoader(false);
           const addrEl = document.getElementById('walletAddr');
@@ -2069,6 +2090,7 @@ async function connectWallet() {
 }
 
 async function loadDemo() {
+  G.scout = true;
   showLoader(true);
   await new Promise(r => setTimeout(r, 800));
   showLoader(false);
@@ -2185,6 +2207,15 @@ function isEraUnlocked(era) {
   return HoneyEngine.isEraUnlocked(profileFromG(), era);
 }
 
+function updateHunterCard() {
+  const card = document.getElementById('hunterCard');
+  if (!card) return;
+  card.classList.toggle('hidden', !G.scout);
+  const fp = document.getElementById('floorPrice')?.textContent?.trim();
+  const el = document.getElementById('hunterFloor');
+  if (el) el.textContent = fp ? `Current floor · ${fp}` : '';
+}
+
 function openRoad(era) {
   const cub = (G.selected && !isCoolingDown(G.selected.id) ? G.selected : null) || G.cubs.find(c => !isCoolingDown(c.id)) || G.cubs[0];
   if (!cub) { addLog('🐻 Pick a Cub first — the road needs a runner.', 'ls'); return; }
@@ -2215,6 +2246,7 @@ function applyEraTexts(era) {
 
 async function selectEra(era) {
   if (G.busy) return;
+  if (G.scout && !HoneyEngine.scoutEraOk('scout-x', era)) { addLog(`🐻 ${ERA_META[era].badge} is for Hunters — Scout Cubs stop at Archean. Become a holder to continue the Chronicles.`, 'ls'); document.getElementById('hunterCard')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   if (!isEraUnlocked(era)) {
     addLog(`🔒 ${ERA_META[era].badge} Era locked — ${ERA_UNLOCK[era] - G.wins} more wins needed`, 'ls');
     return;
@@ -2251,7 +2283,8 @@ function updateWorldMap() {
     const unlocked = isEraUnlocked(era);
     const active   = G.currentEra === era;
     const threshold = ERA_UNLOCK[era];
-    zone.className = `zone z-${era[0]} ${unlocked ? 'unlocked' : 'locked'} ${active ? 'era-active' : ''}`;
+    const holdersOnly = G.scout && !HoneyEngine.scoutEraOk('scout-x', era);
+    zone.className = `zone z-${era[0]} ${unlocked ? 'unlocked' : 'locked'} ${active ? 'era-active' : ''} ${holdersOnly ? 'holders-only' : ''}`;
     const iconEl = document.getElementById(`zicon-${era}`);
     if (iconEl) iconEl.textContent = unlocked ? icons[era] : '🔒';
     const lvlEl = document.getElementById(`zlvl-${era}`);
@@ -2259,7 +2292,9 @@ function updateWorldMap() {
     const progEl = document.getElementById(`zprog-${era}`);
     if (progEl) {
       const prev = ERA_ORDER[ERA_ORDER.indexOf(era) - 1];
-      if (unlocked) {
+      if (holdersOnly) {
+        progEl.textContent = '🐻 Holders only — become a Hunter';
+      } else if (unlocked) {
         progEl.textContent = active ? `⚔ ${G.wins} total wins` : '';
       } else if (G.wins >= threshold && prev && HoneyEngine.ROADS[prev]) {
         progEl.textContent = `Finish the ${ERA_META[prev].badge} Honey Road to unlock`;
@@ -2369,6 +2404,7 @@ function toggleChronicle() {
   G.cubs = getDemoCubs();
   renderCubs(G.cubs);
   loadFloorPrice(); // non-blocking — fills in floor price header when ready
+  new MutationObserver(updateHunterCard).observe(document.getElementById('floorPrice'), { childList: true, characterData: true, subtree: true });
 })();
 </script>
 </body>

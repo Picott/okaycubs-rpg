@@ -8,11 +8,11 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   const s = requireSession(req);
   if (s instanceof NextResponse) return s;
-  const { era, timeMs, honey } = await req.json().catch(() => ({}));
+  const { era, timeMs, honey, cubId } = await req.json().catch(() => ({}));
   if (typeof era !== 'string' || !Number.isFinite(timeMs) || !Number.isFinite(honey)) return jsonError(400, 'bad_request');
 
   return withProfile(s.wallet, async p => {
-    const r = Engine.completeRoad(p, era, Math.round(timeMs), Math.round(honey), Date.now());
+    const r = Engine.completeRoad(p, era, Math.round(timeMs), Math.round(honey), Date.now(), typeof cubId === 'string' ? cubId : undefined);
     if (!r.ok) return jsonError(400, r.error);
     return { unlocked: r.unlocked };
   });

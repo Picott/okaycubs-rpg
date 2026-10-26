@@ -16,7 +16,9 @@ interface EngineApi {
   reviveWithHoney(p: Profile, cubId: string, now: number): EngineResult;
   clearCooldown(p: Profile, cubId: string): EngineResult;
   selectEra(p: Profile, era: string, cub: CubInfo | null, opts: object): EngineResult;
-  completeRoad(p: Profile, era: string, timeMs: number, honey: number, now: number): EngineResult;
+  completeRoad(p: Profile, era: string, timeMs: number, honey: number, now: number, cubId?: string): EngineResult;
+  isScout(id: string): boolean;
+  scoutCub(id: string): CubInfo | null;
 }
 // The engine is plain JS shared with the browser; give the server a typed view of it
 export const Engine = EngineJs as unknown as EngineApi;
@@ -73,6 +75,8 @@ interface CachedCub { info: CubInfo; owner: string; ownerAt: number }
 
 // Returns the cub only if `wallet` owns it (checked on-chain, cached briefly) and it is an OkayCub
 export async function resolveOwnedCub(mint: string, wallet: string): Promise<CubInfo | null> {
+  // Scout Cubs are loaned to everyone — no ownership to check
+  if (Engine.isScout(mint)) return Engine.scoutCub(mint);
   const key = `cub:${mint}`;
   const cached = await kv.get<CachedCub>(key);
   if (cached && cached.owner === wallet && Date.now() - cached.ownerAt < OWNER_TTL * 1000) return cached.info;
