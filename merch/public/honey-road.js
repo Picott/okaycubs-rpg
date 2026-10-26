@@ -36,7 +36,7 @@
     },
     proterozoic: {
       title: 'Tide Road', honeyName: 'Tide Honey', next: 'paleozoic', length: 4200, hazard: 'water',
-      intro: 'The first oceans froze over the road. Everything slides — plan your jumps, stomp the Frost Sentinels and bring back the Tide Honey.',
+      intro: 'Snowball Earth: the oceans learned to breathe, then the whole planet froze. Everything slides — plan your jumps, stomp the Frost Sentinels and bring back the Tide Honey.',
       palette: { skyTop: '#031016', skyBottom: '#0b3a40', far: '#0a2a30', mid: '#061c22', rock: '#163a44', rockTop: '#a8e6cf', ember: ['#7fdbff', '#a8e6cf', '#ffffff'], glow: 'rgba(26,188,156,.25)' },
       ground: [[0, 760, true], [900, 1400, true], [1640, 2000], [2200, 2800, true], [3000, 3400, true], [3600, 4200, true]],
       platforms: [{ x: 620, y: 350, w: 120, ice: true }, { x: 1180, y: 330, w: 110 }, { x: 1440, y: 400, w: 100, ice: true }, { x: 1800, y: 340, w: 120 }, { x: 2060, y: 380, w: 90 }, { x: 2460, y: 340, w: 120, ice: true }, { x: 2620, y: 250, w: 100 }, { x: 3160, y: 350, w: 120, ice: true }, { x: 3440, y: 390, w: 100 }, { x: 3800, y: 340, w: 130 }],
@@ -57,8 +57,8 @@
       checkpoints: [880, 2160, 3480], portal: 4300,
     },
     mesozoic: {
-      title: 'Titan Road', honeyName: 'Titan Honey', next: 'cenozoic', length: 4600, hazard: 'tar',
-      intro: 'The age of giants. Apex Sentinels charge the moment they see you and Sky Wardens dive from above — keep moving and seize the Titan Honey.',
+      title: 'Titan Road', honeyName: 'Titan Honey', next: 'cenozoic', length: 4600, hazard: 'amber',
+      intro: 'The age of giants. Apex Sentinels charge the moment they see you, pterosaur Sky Wardens dive from above and the amber pools swallow whoever stops — keep moving and seize the Titan Honey.',
       palette: { skyTop: '#160b03', skyBottom: '#5a2e0a', far: '#2e1708', mid: '#1c0e05', rock: '#2a1a0e', rockTop: '#8a5a2a', ember: ['#f39c12', '#ff9f43', '#ffe08a'], glow: 'rgba(243,156,18,.25)' },
       ground: [[0, 800], [980, 1500], [1700, 2200], [2420, 2900], [3080, 3600], [3820, 4600]],
       platforms: [{ x: 640, y: 350, w: 120 }, { x: 860, y: 380, w: 100 }, { x: 1240, y: 330, w: 120 }, { x: 1560, y: 390, w: 110 }, { x: 1960, y: 330, w: 120 }, { x: 2280, y: 380, w: 110 }, { x: 2660, y: 340, w: 120 }, { x: 2960, y: 400, w: 100 }, { x: 3300, y: 330, w: 130 }, { x: 3680, y: 380, w: 110 }, { x: 4100, y: 330, w: 130 }, { x: 4300, y: 240, w: 100 }],
@@ -69,7 +69,7 @@
     },
     cenozoic: {
       title: 'Frost Road', honeyName: 'Frost Honey', next: null, length: 5000, hazard: 'ice',
-      intro: 'The last road. Ice, drifting floes and the Time Wardens stand between you and the Golden Drop — the honey that bends time itself.',
+      intro: 'The last road, in the age the first bears were born. Ice, drifting floes and the Time Wardens stand between you and the Golden Drop — the honey that bends time itself.',
       palette: { skyTop: '#060a14', skyBottom: '#1f3348', far: '#162638', mid: '#0d1826', rock: '#24344a', rockTop: '#dfe9f5', ember: ['#ffffff', '#aed6f1', '#e74c3c'], glow: 'rgba(174,214,241,.22)' },
       ground: [[0, 700, true], [880, 1300, true], [1520, 1900], [2120, 2600, true], [2840, 3200, true], [3440, 3900], [4120, 5000, true]],
       platforms: [{ x: 540, y: 340, w: 120, ice: true }, { x: 1100, y: 330, w: 110 }, { x: 1700, y: 340, w: 120, ice: true }, { x: 1960, y: 390, w: 90 }, { x: 2360, y: 330, w: 120 }, { x: 2520, y: 240, w: 100, ice: true }, { x: 3000, y: 340, w: 120 }, { x: 3600, y: 330, w: 120, ice: true }, { x: 3760, y: 240, w: 100 }, { x: 4300, y: 340, w: 130 }, { x: 4600, y: 300, w: 120, ice: true }],
@@ -86,7 +86,7 @@
     chasm: { top: '#0b1220', mid: '#05080f', deep: '#000000', foam: 'rgba(120,150,200,.12)', name: 'the fault' },
     water: { top: '#7fdbff', mid: '#1a8fa8', deep: '#062a33', foam: 'rgba(255,255,255,.45)', name: 'freezing water' },
     venom: { top: '#b8ff6a', mid: '#4caf2a', deep: '#123a0a', foam: 'rgba(230,255,160,.4)', name: 'venom' },
-    tar:   { top: '#5a3a1a', mid: '#1c1208', deep: '#000000', foam: 'rgba(255,170,80,.25)', name: 'tar' },
+    amber: { top: '#ffd27a', mid: '#e0932a', deep: '#6b3b05', foam: 'rgba(255,240,200,.4)', name: 'amber' },
     ice:   { top: '#e8f6ff', mid: '#8ec5e8', deep: '#1b4a6b', foam: 'rgba(255,255,255,.6)', name: 'glacial water' },
   };
 
@@ -100,7 +100,7 @@
     crawler:   { emoji: '🦂', hp: 1, speed: 150, w: 48, h: 44, stompable: true,  name: 'Venom Crawler' },
     specter:   { emoji: '🌱', hp: 2, speed: 55,  w: 44, h: 50, stompable: true,  fly: true, name: 'Spore Specter' },
     raptor:    { emoji: '🦖', hp: 3, speed: 60,  w: 64, h: 70, stompable: false, charge: true, name: 'Apex Sentinel' },
-    sky:       { emoji: '🦅', hp: 1, speed: 110, w: 52, h: 48, stompable: true,  fly: true, name: 'Sky Warden' },
+    sky:       { emoji: '🦅', hp: 1, speed: 110, w: 52, h: 48, stompable: true,  fly: true, name: 'Pterosaur Warden' },
     keeper:    { emoji: '❄',  hp: 2, speed: 75,  w: 48, h: 50, stompable: true,  name: 'Frost Keeper' },
     warden:    { emoji: '⏳', hp: 3, speed: 50,  w: 52, h: 64, stompable: false, charge: true, name: 'Time Warden' },
   };
