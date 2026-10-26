@@ -247,89 +247,58 @@
 
   function endBattle(p) { p.battle = null; }
 
-  // Resolve one full exchange: the player's action, then the guardian's answer.
-  // cubs: { [id]: cub } must contain the active cub (and the switch target, if any).
-  function resolveAction(p, cubs, action, opts) {
+  // ---- rewards shared by every kind of fight ----
+  function applyVictory(p, cub, enemy, rng) {
+    const era = p.era, xpGain = enemy.xp || 10, drop = honeyDrop(era, rng);
+    const prevWins = p.wins; p.wins++;
+    const pr = prog(p, cub.id); pr.xp += xpGain;
+    let ups = 0; const cap = levelCap(cub.id);
+    while (pr.lvl < cap && pr.xp >= xpToNext(pr.lvl)) { pr.xp -= xpToNext(pr.lvl); pr.lvl++; ups++; }
+    if (pr.lvl >= cap) pr.xp = Math.min(pr.xp, xpToNext(pr.lvl) - 1);
+    p.honey += drop; p.honeyByEra[era] = (p.honeyByEra[era] || 0) + drop;
+    const unlocked = ERA_ORDER.filter(e => prevWins < ERA_UNLOCK[e] && p.wins >= ERA_UNLOCK[e] && isEraUnlocked(p, e));
+    return { honey: drop, honeyName: ERA_HONEY[era], xp: xpGain, ups, lvl: pr.lvl, wins: p.wins, unlocked };
+  }
+  function applyDefeat(p, cubId, now) {
+    p.cooldowns[cubId] = now + COOLDOWN_MS;
+    delete p.hpPool[cubId];
+    return p.cooldowns[cubId];
+  }
+
+  // ---- combat numbers: one formula set for the real-time hunt (client) and its validation (server) ----
+  const COMBAT = {
+    hit:   (stats, rng) => Math.floor(stats.ATK * 0.4 + (rng || Math.random)() * 15),   // honey ladle swing
+    crit:  (stats, rng) => (rng || Math.random)() < stats.LCK / 200,                       // ×1.8
+    burst: (stats)      => Math.floor(stats.ATK * 1.2 + stats.LCK * 0.3),                // Honey Burst, staggers
+    taken: (stats, enemy, rng, scale) => Math.max(1, Math.floor((enemy.atk * 0.6 + (rng || Math.random)() * 12) * (scale || 1)) - Math.floor(stats.DEF * 0.2)),
+  };
+
+  // The browser fights in real time; the server only grants what is plausible: a win cannot land
+  // faster than the cub's best possible damage output, and a report must match the open battle.
+  const HUNT = { minSeconds: 4, maxHitsPerSecond: 3.5 };
+  function huntMinTimeMs(cub, lvl, era, enemy) {
+    const s = getStats(cub, lvl, era), perHit = (s.ATK * 0.4 + 15) * 1.8;
+    return Math.max(HUNT.minSeconds * 1000, Math.floor(enemy.hp / (perHit * HUNT.maxHitsPerSecond) * 1000));
+  }
+  function resolveHunt(p, cub, report, opts) {
     opts = opts || {};
-    const now = opts.now || Date.now(), rng = opts.rng || Math.random;
-    const b = p.battle;
+    const now = opts.now || Date.now(), rng = opts.rng || Math.random, b = p.battle;
     if (!b || !b.enemy) return fail('no battle');
-    const cub = cubs[b.cubId];
-    if (!cub) return fail('unknown cub');
-    const era = p.era, events = [];
-    let stats = getStats(cub, prog(p, cub.id).lvl, era);
-    let defending = false, actor = cub;
-
-    if (action === 'atk' || action === 'spc') {
-      let dmg, crit = false, burst = null;
-      if (action === 'atk') {
-        crit = rng() < stats.LCK / 200;
-        dmg  = Math.floor(stats.ATK * 0.4 + rng() * 15);
-        if (crit) dmg = Math.floor(dmg * 1.8);
-      } else {
-        const pool = CLASS_BURSTS[cub.class] || GEO_BURSTS;
-        burst = pool[Math.floor(rng() * pool.length)];
-        dmg   = Math.floor(stats.ATK * .6 + stats.LCK * .3 + rng() * 20);
-      }
-      b.eHP = Math.max(0, b.eHP - dmg);
-      events.push({ t:'player', action, dmg, crit, burst, eHP:b.eHP });
-      if (b.eHP <= 0) {
-        const xpGain = b.enemy.xp || 10, drop = honeyDrop(era, rng);
-        const prevWins = p.wins; p.wins++;
-        const pr = prog(p, cub.id); pr.xp += xpGain;
-        let ups = 0;
-        const cap = levelCap(cub.id);
-        while (pr.lvl < cap && pr.xp >= xpToNext(pr.lvl)) { pr.xp -= xpToNext(pr.lvl); pr.lvl++; ups++; }
-        if (pr.lvl >= cap) pr.xp = Math.min(pr.xp, xpToNext(pr.lvl) - 1);
-        p.honey += drop; p.honeyByEra[era] = (p.honeyByEra[era] || 0) + drop;
-        const unlocked = ERA_ORDER.filter(e => prevWins < ERA_UNLOCK[e] && p.wins >= ERA_UNLOCK[e]);
-        if (ups) { b.pMaxHP = getStats(cub, pr.lvl, era).HP; b.pHP = Math.min(b.pMaxHP, b.pHP + 8 * ups); }
-        events.push({ t:'victory', honey:drop, honeyName:ERA_HONEY[era], xp:xpGain, ups, lvl:pr.lvl, wins:p.wins, unlocked, pHP:b.pHP, pMaxHP:b.pMaxHP });
-        events.push(spawnEnemy(p, rng));
-        return { ok:true, events, p };
-      }
-    } else if (action === 'def') {
-      defending = true;
-      events.push({ t:'player', action, shield:Math.floor(stats.DEF * .5) });
-    } else if (action === 'drink') {
-      const cost = drinkCost(era);
-      if (b.pHP >= b.pMaxHP) return fail('full');
-      if (p.honey < cost) return fail('honey');
-      const heal = Math.floor(b.pMaxHP * 0.4);
-      p.honey -= cost;
-      b.pHP = Math.min(b.pMaxHP, b.pHP + heal);
-      events.push({ t:'player', action, heal, cost, honeyName:ERA_HONEY[era], pHP:b.pHP, pMaxHP:b.pMaxHP });
-    } else if (action === 'switch') {
-      const target = cubs[opts.switchTo];
-      if (!target || target.id === cub.id) return fail('unknown cub');
-      if (isCoolingDown(p, target.id, now)) return fail('cooling');
-      if (!scoutEraOk(target.id, era)) return fail('scout_era');
-      const cost = switchCost(era);
-      if (p.honey < cost) return fail('honey');
-      p.honey -= cost;
-      p.hpPool[cub.id] = b.pHP;
-      enterCub(p, target);
-      actor = target;
-      stats = getStats(target, prog(p, target.id).lvl, era);
-      events.push({ t:'player', action, from:cub.id, to:target.id, cost, pHP:b.pHP, pMaxHP:b.pMaxHP });
-    } else {
-      return fail('unknown action');
+    if (b.cubId !== cub.id) return fail('wrong cub');
+    const timeMs = Math.round(report.timeMs || 0);
+    const keepHP = () => { p.hpPool[cub.id] = Math.max(1, Math.min(b.pMaxHP, Math.round(report.pHP != null ? report.pHP : b.pMaxHP))); };
+    if (report.outcome === 'win') {
+      if (timeMs < huntMinTimeMs(cub, prog(p, cub.id).lvl, p.era, b.enemy)) return fail('too_fast');
+      const v = applyVictory(p, cub, b.enemy, rng);
+      keepHP(); endBattle(p);
+      return Object.assign({ ok:true, outcome:'win', enemy:b.enemy, p }, v);
     }
-
-    // Guardian retaliates
-    const rawDmg = Math.floor(b.enemy.atk * .6 + rng() * 12);
-    const red    = defending ? Math.floor(rawDmg * .35) : rawDmg;
-    const dmg    = Math.max(1, red - Math.floor(stats.DEF * .2));
-    b.pHP = Math.max(0, b.pHP - dmg);
-    events.push({ t:'enemy', dmg, blocked:defending, pHP:b.pHP });
-    if (b.pHP <= 0) {
-      const until = now + COOLDOWN_MS;
-      p.cooldowns[actor.id] = until;
-      delete p.hpPool[actor.id];
-      endBattle(p);
-      events.push({ t:'defeat', cubId:actor.id, cooldownUntil:until });
+    if (report.outcome === 'lose') {
+      const until = applyDefeat(p, cub.id, now); endBattle(p);
+      return { ok:true, outcome:'lose', cooldownUntil: until, p };
     }
-    return { ok:true, events, p };
+    if (report.outcome === 'flee') { keepHP(); endBattle(p); return { ok:true, outcome:'flee', p }; }
+    return fail('bad outcome');
   }
 
   function infuse(p, cub) {
@@ -379,6 +348,6 @@
     hash, deriveClass, rarityForNumber, baseStats, affinity, getStats,
     ROADS, SCOUT_CUBS, SCOUT_LEVEL_CAP, SCOUT_ERA_CAP, isScout, scoutCub, levelCap, scoutEraOk,
     newProfile, prog, isCoolingDown, isEraUnlocked, roadAvailable, roadDone, completeRoad,
-    startBattle, resolveAction, infuse, reviveWithHoney, clearCooldown, selectEra,
+    COMBAT, HUNT, huntMinTimeMs, startBattle, resolveHunt, applyVictory, applyDefeat, infuse, reviveWithHoney, clearCooldown, selectEra,
   };
 });

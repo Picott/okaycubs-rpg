@@ -120,7 +120,7 @@
   class HoneyRoad {
     constructor(canvas, sprite, era, hooks) {
       this.cv = canvas; this.ctx = canvas.getContext('2d');
-      this.sprite = sprite; this.era = era; this.L = LEVELS[era] || LEVELS.hadean; this.hooks = hooks || {};
+      this.sprite = sprite; this.era = era; this.L = typeof era === 'object' ? era : (LEVELS[era] || LEVELS.hadean); this.hooks = hooks || {};
       this.input = { left: false, right: false, jump: false, jumpHeld: false, attack: false, dash: false };
       this.reset();
       this.embers = Array.from({ length: 60 }, () => this.mkEmber(true));
@@ -142,7 +142,15 @@
       this.enemies = L.enemies.map(e => ({ ...ENEMY_TYPES[e.type], type: e.type, x: e.x, y: GROUND_Y, range: e.range, dir: 1, hpLeft: ENEMY_TYPES[e.type].hp, dead: 0, hit: 0, bob: Math.random() * 6, chargeT: 0, restT: 0 }));
       this.honey = L.honey.map(([x, y]) => ({ x, y, taken: false, t: Math.random() * 6 }));
       this.checkpoints = L.checkpoints.map(x => ({ x, lit: false }));
-      this.particles = []; this.floats = []; this.trail = []; this.rings = [];
+      this.particles = []; this.floats = []; this.trail = []; this.rings = []; this.projectiles = []; this.waves = [];
+      if (L.mode === 'hunt') {
+        // one guardian with a brain, numeric HP on both sides, no honey or portal — the fight is the level
+        const g = { ...L.guardian, x: L.guardian.x || L.length - 400, y: GROUND_Y, range: [120, L.length - 120], dir: -1, dead: 0, hit: 0, bob: 0,
+                    guardian: true, w: L.guardian.w || 84, h: L.guardian.h || 100, speed: L.guardian.speed || 95 };
+        root.Guardian.init(g);
+        this.enemies = [g]; this.honey = []; this.checkpoints = []; this.L.portal = Infinity;
+        this.p.hpNum = L.pHP; this.p.hpMax = L.pMaxHP; this.p.hits = 0;
+      }
       this.time = 0; this.finished = false; this.started = false;
       this.cam = { x: 0, y: 0 };
       this.shake = 0;
@@ -287,9 +295,19 @@
       p.onRect = null;
       this.hooks.onRespawn?.();
     }
-    damage(from) {
+    damage(from, scale) {
       const p = this.p;
       if (p.inv > 0 || p.dead > 0) return;
+      if (this.L.mode === 'hunt') {
+        const dmg = root.HoneyEngine.COMBAT.taken(this.L.stats, from, Math.random, scale || 1);
+        p.hpNum = Math.max(0, p.hpNum - dmg); p.inv = 0.9; p.stunned = 0.25;
+        p.vx = (p.x < from.x ? -1 : 1) * 280; p.vy = -360; p.grounded = false;
+        this.sprite.hurt(); this.shake = 0.35;
+        this.float(p.x, p.y - 100, `-${dmg}`, '#ff5b4d');
+        this.hooks.onHurt?.(p.hpNum);
+        if (p.hpNum <= 0) { p.dead = 1e9; this.finished = true; this.burst(p.x, p.y - 30, ['#fff', '#ff8a7a'], 26, 220); this.hooks.onCubDown?.({ timeMs: Math.round(this.time * 1000) }); }
+        return;
+      }
       p.hp -= 1; p.inv = 1.2; p.stunned = 0.3;
       p.vx = (p.x < from.x ? -1 : 1) * 260; p.vy = -380; p.grounded = false;
       this.sprite.hurt(); this.shake = 0.35;
@@ -304,6 +322,7 @@
         if (c.timer > 0) { c.timer += dt; if (c.timer > 0.7) { c.fall += 600 * dt * (c.timer - 0.7) * 3; if (c.fall > 500) c.gone = true; } }
       }
       for (const e of this.enemies) {
+        if (e.guardian) { this.stepGuardian(e, dt); continue; }
         if (e.dead > 0) { e.dead -= dt; continue; }
         if (e.hpLeft <= 0) continue;
         e.hit = Math.max(0, e.hit - dt);
@@ -340,9 +359,55 @@
           this.float(h.x, h.y - 20, '+1 🍯', '#ffe27a'); this.hooks.onHoney?.(p.honey);
         }
       }
+      // guardian projectiles and ground shockwaves
+      for (const q of this.projectiles) {
+        q.t -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 120 * dt;
+        if (p.dead <= 0 && Math.abs(q.x - p.x) < 26 && q.y > p.y - PLAYER_H && q.y < p.y) { q.t = 0; this.damage({ x: q.x, atk: q.atk }, q.scale); this.burst(q.x, q.y, ['#fff', '#ffb347'], 6, 80); }
+      }
+      this.projectiles = this.projectiles.filter(q => q.t > 0 && q.y < GROUND_Y + 40);
+      for (const w of this.waves) {
+        w.t -= dt; w.x += w.dir * 420 * dt;
+        if (p.dead <= 0 && p.grounded && Math.abs(w.x - p.x) < 28) { w.t = 0; this.damage({ x: w.x, atk: w.atk }, w.scale); }
+      }
+      this.waves = this.waves.filter(w => w.t > 0);
       for (const sp of this.springs) sp.t = Math.max(0, sp.t - dt);
       for (const c of this.checkpoints) if (!c.lit && p.x > c.x) { c.lit = true; p.checkpoint = c.x; this.float(c.x, GROUND_Y - 120, 'Checkpoint', '#7cf29e'); this.hooks.onCheckpoint?.(); }
       if (!this.finished && p.x > this.L.portal - 10 && p.dead <= 0) this.finish();
+    }
+    stepGuardian(g, dt) {
+      const p = this.p;
+      if (g.dead > 0) { g.dead -= dt; return; }
+      if (g.hpLeft <= 0) return;
+      g.hit = Math.max(0, g.hit - dt);
+      root.Guardian.step(this, g, dt);
+      if (p.dead > 0) return;
+      // the swing lands once per attack
+      if (p.attackT > 0 && p.attackT < 0.26 && !p.swingHit) {
+        const hx = p.x + p.facing * 48, hy = p.y - 34;
+        if (Math.abs(hx - g.x) < (g.w / 2 + 40) && Math.abs(hy - (g.y - g.h / 2)) < 76) { p.swingHit = true; this.hitGuardian(g, false); }
+      }
+      if (p.attackT <= 0) p.swingHit = false;
+      const hitX = Math.abs(g.x - p.x) < (g.w + PLAYER_W) / 2, hitY = p.y > g.y - g.h && p.y - PLAYER_H < g.y;
+      const scale = root.Guardian.contactScale(g);
+      if (hitX && hitY && scale > 0) this.damage(g, scale);
+    }
+    hitGuardian(g, burst) {
+      const p = this.p, s = this.L.stats, C = root.HoneyEngine.COMBAT;
+      const crit = !burst && C.crit(s);
+      let dmg = burst ? C.burst(s) : Math.floor(C.hit(s) * (crit ? 1.8 : 1));
+      dmg = Math.floor(dmg * root.Guardian.vulnerability(g));
+      g.hpLeft = Math.max(0, g.hpLeft - dmg); g.hit = 0.3; p.hits++;
+      if (burst) { g.stagger = 1.2; g.vx = 0; }
+      else if (++p.burstStreak >= 8) { p.burstStreak = 0; if (p.burst < 2) { p.burst++; this.float(p.x, p.y - 110, '✦ Burst charged', '#ffe27a'); } this.hooks.onBurst?.(p.burst); }
+      this.burst(g.x, g.y - g.h / 2, burst ? ['#f5e06e', '#fff2b0', '#ffb347'] : ['#fff', '#ffb347', '#ff6b35'], burst ? 40 : 16, burst ? 260 : 170);
+      this.shake = Math.max(this.shake, crit || burst ? 0.4 : 0.15);
+      this.float(g.x + (Math.random() - .5) * 40, g.y - g.h - 10, `-${dmg}${crit ? ' CRIT' : ''}`, crit ? '#ff6b35' : burst ? '#ffe27a' : '#fff');
+      this.hooks.onGuardianHit?.(g, dmg);
+      if (g.hpLeft <= 0) {
+        g.dead = 0.9; this.finished = true; this.sprite.cheer();
+        this.burst(g.x, g.y - g.h / 2, ['#f5e06e', '#d4af37', '#fff2b0', '#7fdbff'], 60, 280);
+        this.hooks.onGuardianDown?.({ timeMs: Math.round(this.time * 1000), pHP: p.hpNum, hits: p.hits });
+      }
     }
     honeyBurst() {
       const p = this.p;
@@ -354,7 +419,9 @@
       this.float(p.x, p.y - 110, '✦ HONEY BURST ✦', '#ffe27a');
       for (const e of this.enemies) {
         if (e.hpLeft <= 0) continue;
-        if (Math.hypot(e.x - p.x, (e.y - e.h / 2) - (p.y - 30)) < 230) { e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); if (e.hpLeft > 0) { e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); } }
+        if (Math.hypot(e.x - p.x, (e.y - e.h / 2) - (p.y - 30)) >= 240) continue;
+        if (e.guardian) { this.hitGuardian(e, true); continue; }
+        e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); if (e.hpLeft > 0) { e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); }
       }
       this.hooks.onBurst?.(p.burst);
       this.hooks.onBurstFire?.();
@@ -446,11 +513,13 @@
       for (const c of this.crumbles) if (!c.gone) { const shakeX = c.timer > 0 && c.timer < 0.7 ? (Math.random() - .5) * 4 : 0; this.drawSlab({ ...c, x: c.x + shakeX, y: c.y + c.fall }, pal, c.timer); }
       // checkpoints + portal
       for (const c of this.checkpoints) this.drawTotem(c, t);
-      this.drawPortal(t);
+      if (Number.isFinite(this.L.portal)) this.drawPortal(t);
       // honey
       for (const h of this.honey) if (!h.taken) this.drawHoney(h, t);
       // enemies
       for (const e of this.enemies) this.drawEnemy(e, t);
+      for (const w of this.waves) { ctx.save(); ctx.globalAlpha = Math.min(1, w.t); ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 4; ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(w.x, GROUND_Y, 26, Math.PI, 0); ctx.stroke(); ctx.restore(); }
+      for (const q of this.projectiles) { ctx.save(); ctx.translate(q.x, q.y); ctx.shadowColor = '#ffb347'; ctx.shadowBlur = 14; ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(q.glyph, 0, 0); ctx.restore(); }
       // player
       for (const tr of this.trail) { ctx.globalAlpha = tr.t * 1.6; this.sprite.draw(ctx, tr.x, tr.y, 1, 0); }
       ctx.globalAlpha = 1;
@@ -534,7 +603,9 @@
       ctx.save(); ctx.translate(e.x, e.y);
       if (e.fly) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, GROUND_Y - e.y + 4, e.w * 0.35, 5, 0, 0, 7); ctx.fill(); }
       else { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 4, e.w * 0.5, 7, 0, 0, 7); ctx.fill(); }
-      if (e.chargeT > 0) ctx.filter = 'drop-shadow(0 0 10px #ff6b35)';
+      if (e.chargeT > 0 || e.state === 'charge' || e.state === 'swoop') ctx.filter = 'drop-shadow(0 0 10px #ff6b35)';
+      if (e.state === 'tell') ctx.filter = `drop-shadow(0 0 ${14 + Math.sin(t * 30) * 6}px #ff3b1f) brightness(1.5)`;
+      if (e.stagger > 0) ctx.filter = 'saturate(0.4) brightness(1.2)';
       if (e.dead > 0) { ctx.globalAlpha = e.dead / 0.6; ctx.scale(1 + (0.6 - e.dead), 1 - (0.6 - e.dead) * 0.8); }
       ctx.scale(e.dir, 1);
       ctx.font = `${e.h}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
@@ -542,7 +613,8 @@
       if (e.restT > 0) ctx.globalAlpha *= 0.85;
       ctx.fillText(e.emoji, 0, Math.sin(t * 6 + e.bob) * 3);
       ctx.restore();
-      if (e.hp > 1 && e.hpLeft > 0) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(e.x - 20, e.y - e.h - 14, 40, 5); ctx.fillStyle = '#e74c3c'; ctx.fillRect(e.x - 20, e.y - e.h - 14, 40 * e.hpLeft / e.hp, 5); }
+      if (e.guardian && e.stagger > 0) { ctx.font = '22px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', e.x + Math.sin(t * 9) * 18, e.y - e.h - 16); }
+      if (!e.guardian && e.hp > 1 && e.hpLeft > 0) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(e.x - 20, e.y - e.h - 14, 40, 5); ctx.fillStyle = '#e74c3c'; ctx.fillRect(e.x - 20, e.y - e.h - 14, 40 * e.hpLeft / e.hp, 5); }
     }
   }
 

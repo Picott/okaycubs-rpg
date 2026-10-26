@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"/>
+  <title>The Hunt — OkayCubs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --gold:#d4af37; --gold2:#f5e06e; --silver:#b8bcc8; --quartz:#e8eaf0; --jade:#2ecc71; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html, body { height:100%; background:#07080f; color:var(--quartz); font-family:'Crimson Pro',serif; overflow:hidden; }
+    #game { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+    .hud { position:fixed; left:0; right:0; top:0; padding:12px 16px; display:grid; grid-template-columns:1fr auto 1fr; align-items:start; gap:12px; pointer-events:none; font-family:'Cinzel',serif; letter-spacing:2px; font-size:12px; text-shadow:0 2px 6px #000; }
+    .plate { background:rgba(4,5,9,.72); border:1px solid rgba(212,175,55,.3); padding:9px 12px; min-width:200px; backdrop-filter:blur(4px); }
+    .plate .name { font-size:12px; font-weight:700; }
+    .plate .sub { font-size:8px; letter-spacing:3px; opacity:.55; text-transform:uppercase; margin:2px 0 6px; }
+    .bar { position:relative; height:9px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:5px; overflow:hidden; }
+    .bar i { position:absolute; inset:0; width:100%; transition:width .25s ease; }
+    .bar .ghost { background:rgba(255,255,255,.5); transition:width 1s ease .3s; }
+    .bar .fill { background:linear-gradient(90deg,#1a8f4a,#2ecc71,#7cf29e); box-shadow:0 0 10px rgba(46,204,113,.5); }
+    .bar .fill.mid { background:linear-gradient(90deg,#b7770d,#f1c40f,#f7e27a); }
+    .bar .fill.low { background:linear-gradient(90deg,#8b1a1a,#e74c3c,#ff8a7a); }
+    .guard .fill { background:linear-gradient(90deg,#8b1a1a,#e74c3c,#ff8a7a); box-shadow:0 0 10px rgba(231,76,60,.55); }
+    .guard { border-left:3px solid #e74c3c; justify-self:center; min-width:min(420px, 60vw); }
+    .cub { border-left:3px solid var(--jade); }
+    .num { font-size:10px; opacity:.75; margin-top:5px; letter-spacing:1px; }
+    .right { justify-self:end; text-align:right; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+    .burst { color:var(--gold2); font-size:10px; letter-spacing:3px; }
+    .burst.empty { opacity:.4; }
+    .time { color:var(--silver); font-variant-numeric:tabular-nums; }
+    button { font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:10px 18px; border:1px solid rgba(212,175,55,.5); background:rgba(7,8,15,.7); color:var(--gold); cursor:pointer; pointer-events:auto; }
+    button.primary { border-color:var(--jade); color:#7cf29e; }
+    button.danger { border-color:#e74c3c; color:#ff8a7a; }
+    .overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(4,5,9,.74); backdrop-filter:blur(4px); z-index:5; }
+    .overlay.hidden { display:none; }
+    .card { text-align:center; max-width:480px; padding:34px 36px; border:1px solid rgba(212,175,55,.3); background:linear-gradient(135deg,rgba(212,175,55,.05),rgba(212,175,55,.1)); }
+    .card h1 { font-family:'Cinzel Decorative',serif; font-size:22px; color:var(--gold2); margin-bottom:8px; }
+    .card .guardian { font-size:64px; line-height:1.1; margin:6px 0 10px; filter:drop-shadow(0 10px 18px rgba(0,0,0,.6)); }
+    .card p { font-size:16px; line-height:1.6; opacity:.85; margin-bottom:18px; }
+    .card .stats { display:flex; justify-content:center; gap:24px; margin:10px 0 18px; font-family:'Cinzel',serif; font-size:11px; letter-spacing:2px; }
+    .card .stats b { display:block; font-size:22px; color:var(--gold2); }
+    .card .row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .keys { font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; opacity:.5; margin-top:14px; text-transform:uppercase; line-height:1.8; }
+    .touch { position:fixed; inset:0; pointer-events:none; display:none; z-index:4; }
+    @media (pointer:coarse) { .touch { display:block; } .hud { font-size:10px; } .plate { min-width:150px; } .guard { min-width:40vw; } }
+    .tbtn { position:absolute; bottom:calc(16px + env(safe-area-inset-bottom)); width:66px; height:66px; border-radius:50%; pointer-events:auto; border:2px solid rgba(212,175,55,.55); background:rgba(7,8,15,.5); color:var(--gold2); font-family:'Cinzel',serif; font-size:17px; font-weight:700; display:flex; flex-direction:column; align-items:center; justify-content:center; user-select:none; -webkit-user-select:none; touch-action:none; }
+    .tbtn.held { background:rgba(212,175,55,.35); transform:scale(.94); }
+    .tbtn small { font-size:8px; letter-spacing:1px; opacity:.7; }
+    .t-left { left:calc(16px + env(safe-area-inset-left)); } .t-right { left:calc(96px + env(safe-area-inset-left)); }
+    .t-jump { right:calc(16px + env(safe-area-inset-right)); width:78px; height:78px; border-color:rgba(46,204,113,.6); color:#7cf29e; }
+    .t-atk { right:calc(106px + env(safe-area-inset-right)); border-color:rgba(192,57,43,.6); color:#ff8a7a; }
+    .t-dash { right:calc(106px + env(safe-area-inset-right)); bottom:calc(96px + env(safe-area-inset-bottom)); width:54px; height:54px; font-size:13px; }
+  </style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div class="hud">
+  <div class="plate cub"><div class="name" id="cubName">—</div><div class="sub" id="cubClass">—</div><div class="bar"><i class="ghost" id="cubGhost"></i><i class="fill" id="cubFill"></i></div><div class="num" id="cubHP"></div></div>
+  <div class="plate guard"><div class="name" id="gName">—</div><div class="sub" id="gClass">—</div><div class="bar"><i class="ghost" id="gGhost"></i><i class="fill" id="gFill"></i></div><div class="num" id="gHP"></div></div>
+  <div class="right"><div class="time" id="hudTime">0:00.0</div><div class="burst empty" id="hudBurst">✦ burst 0 / 8 hits</div><button onclick="togglePause()">Pause</button></div>
+</div>
+<div class="touch">
+  <div class="tbtn t-left" data-hold="left">◀</div><div class="tbtn t-right" data-hold="right">▶</div>
+  <div class="tbtn t-dash" data-tap="dash">Z<small>dash</small></div><div class="tbtn t-atk" data-tap="attack">X<small>hit</small></div><div class="tbtn t-jump" data-hold="jump">A<small>jump</small></div>
+</div>
+
+<div class="overlay" id="intro"><div class="card">
+  <div class="guardian" id="introEmoji">🌋</div>
+  <h1 id="introTitle">A guardian blocks the honey</h1>
+  <p id="introText">Watch for the red flash — that is the tell. Dodge the attack, then strike while the guardian recovers. Land 8 hits to charge a Honey Burst: dash to prime it, hit to release.</p>
+  <div class="row"><button class="primary" id="startBtn" onclick="startHunt()">Face the guardian</button><a href="/game.html"><button>Back to the den</button></a></div>
+  <div class="keys">← → move · space jump (again in the air to double-jump) · X hit · Z dash · Esc pause</div>
+</div></div>
+<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button class="danger" onclick="flee()">Flee the den</button></div></div></div>
+<div class="overlay hidden" id="result"><div class="card">
+  <div class="guardian" id="resultEmoji">🍯</div>
+  <h1 id="resultTitle">Guardian defeated!</h1>
+  <div class="stats" id="resultStats"></div>
+  <p id="resultText">Claiming the honey…</p>
+  <div class="row" id="resultActions"></div>
+</div></div>
+
+<script src="/engine.js"></script>
+<script src="/sprite.js"></script>
+<script src="/guardian.js"></script>
+<script src="/honey-road.js"></script>
+<script src="/music.js" data-position="top" data-lift="touch"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const CUB = { id: q.get('id') || 'scout-35', name: q.get('name') || 'Scout Cub #35', image: q.get('img') || '/cubs/35.png',
+              rarity: q.get('r') || 'common', class: q.get('c') || 'Sediment Scout', traits: {} };
+try { CUB.traits = JSON.parse(q.get('t') || '{}'); } catch (e) {}
+if (HoneyEngine.isScout(CUB.id)) Object.assign(CUB, HoneyEngine.scoutCub(CUB.id), { traits: { ...HoneyEngine.scoutCub(CUB.id).traits } });
+let ERA = HoneyEngine.ERA_UNLOCK.hasOwnProperty(q.get('era')) ? q.get('era') : 'hadean';
+
+const cv = document.getElementById('game'), sprite = new CubSprite();
+let road = null, server = false, prof = null, enemy = null, stats = null, lvl = 1, reported = false;
+const fmt = ms => { const s = ms / 1000; return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`; };
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
+async function api(path, body) {
+  const res = await fetch(path, { method: body ? 'POST' : 'GET', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, credentials: 'same-origin' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) throw Object.assign(new Error(data.error || String(res.status)), { code: data.error || String(res.status) });
+  return data;
+}
+function localProfile() {
+  let p = {}; try { p = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}'); } catch (e) {}
+  return Object.assign(HoneyEngine.newProfile(), { honey: p.honey || 0, honeyByEra: p.honeyByEra || {}, wins: p.wins || 0, era: p.era || 'hadean', cubProg: p.cubProg || {}, cooldowns: p.cooldowns || {}, hpPool: p.hpPool || {}, roads: p.roads || {} });
+}
+function saveLocal(p) {
+  let old = {}; try { old = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}'); } catch (e) {}
+  localStorage.setItem('okaycubs_progress', JSON.stringify({ ...old, honey: p.honey, honeyByEra: p.honeyByEra, wins: p.wins, era: p.era, cubProg: p.cubProg, cooldowns: p.cooldowns, hpPool: p.hpPool, roads: p.roads }));
+}
+
+// ---- HUD ----
+function bar(fillId, ghostId, hp, max) {
+  const pct = Math.max(0, hp / max * 100), f = document.getElementById(fillId);
+  f.style.width = pct + '%'; document.getElementById(ghostId).style.width = pct + '%';
+  f.className = 'fill' + (pct <= 25 ? ' low' : pct <= 50 ? ' mid' : '');
+}
+function hud() {
+  if (!road) return;
+  const g = road.enemies[0], p = road.p;
+  bar('cubFill', 'cubGhost', p.hpNum, p.hpMax); document.getElementById('cubHP').textContent = `${Math.max(0, p.hpNum)} / ${p.hpMax}`;
+  bar('gFill', 'gGhost', g.hpLeft, g.hp); document.getElementById('gHP').textContent = `${Math.max(0, g.hpLeft)} / ${g.hp}`;
+  const b = document.getElementById('hudBurst');
+  if (p.primed > 0) { b.textContent = '✦ PRIMED — HIT TO RELEASE'; b.className = 'burst'; }
+  else if (p.burst >= 1) { b.textContent = `✦ BURST READY${p.burst >= 2 ? ' ×2' : ''} — DASH, THEN HIT`; b.className = 'burst'; }
+  else { b.textContent = `✦ burst ${p.burstStreak} / 8 hits`; b.className = 'burst empty'; }
+}
+setInterval(() => { if (road && road.started && !road.paused && !road.finished) document.getElementById('hudTime').textContent = fmt(road.time * 1000); }, 100);
+
+// ---- setup: profile → open battle (the server spawns the guardian) → arena ----
+async function init() {
+  try { await sprite.load(CUB.image); } catch (e) { await sprite.load('/cubs/35.png'); }
+  let state;
+  try { const r = await api('/api/game/profile'); server = true; state = r.state; }
+  catch (e) { server = false; prof = localProfile(); if (ERA !== prof.era && HoneyEngine.isEraUnlocked(prof, ERA)) prof.era = ERA; state = prof; }
+  ERA = state.era;
+  lvl = state.cubProg?.[CUB.id]?.lvl || 1;
+  stats = HoneyEngine.getStats(CUB, lvl, ERA);
+  // reuse an open battle with this cub, otherwise open one
+  let b = state.battle && state.battle.cubId === CUB.id ? state.battle : null;
+  if (!b) {
+    if (server) { const r = await api('/api/game/battle/start', { cubId: CUB.id }).catch(e => { fail(e); return null; }); if (!r) return; b = r.state.battle; }
+    else { const r = HoneyEngine.startBattle(prof, CUB, { now: Date.now() }); if (!r.ok) return fail(r); b = prof.battle; saveLocal(prof); }
+  }
+  enemy = b.enemy;
+  const base = HONEY_ROAD_LEVELS[ERA];
+  const level = { mode: 'hunt', title: `${enemy.name}'s Den`, honeyName: base.honeyName, next: null, length: 1500, hazard: base.hazard, palette: base.palette,
+    ground: [[0, 1500]], platforms: [{ x: 290, y: 362, w: 150 }, { x: 1060, y: 362, w: 150 }], crumble: [], movers: [], springs: [], enemies: [], honey: [], checkpoints: [], portal: Infinity,
+    guardian: { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 }, pHP: b.pHP, pMaxHP: b.pMaxHP, stats };
+  road = new HoneyRoad(cv, sprite, level, {
+    onHurt: hud, onBurst: hud, onGuardianHit: hud,
+    onBurstFire: () => window.Music?.duck(1400),
+    onGuardianDown: r => report('win', r),
+    onCubDown: r => report('lose', r),
+  });
+  road.paused = true; road.started = false; road.start();
+  document.getElementById('cubName').textContent = `${CUB.name} · Lv ${lvl}`;
+  document.getElementById('cubClass').textContent = CUB.class + (HoneyEngine.affinity(CUB.class, ERA) === 1 ? ' · strong here' : HoneyEngine.affinity(CUB.class, ERA) === -1 ? ' · weak here' : '');
+  document.getElementById('gName').textContent = `${enemy.emoji} ${enemy.name} · Lv ${enemy.lvl || 1}`;
+  document.getElementById('gClass').textContent = enemy.cls;
+  document.getElementById('introEmoji').textContent = enemy.emoji;
+  document.getElementById('introTitle').textContent = `${enemy.name} guards the ${base.honeyName}`;
+  hud();
+}
+function fail(e) {
+  const code = e?.code || e?.error || e?.message || 'error';
+  const msg = { cooling: 'This Cub is still recovering — pick another in the den.', scout_era: 'Scout Cubs hunt up to Archean. Become a Hunter to go further.', not_owner: 'Your wallet does not own that Cub.', unauthorized: 'Session expired — reconnect your wallet in the den.', locked: 'That era is still locked.' }[code] || code;
+  document.getElementById('introEmoji').textContent = '⚠';
+  document.getElementById('introTitle').textContent = 'The den is closed';
+  document.getElementById('introText').textContent = msg;
+  document.getElementById('startBtn').style.display = 'none';
+}
+function startHunt() { document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0; document.activeElement?.blur();
+  if (matchMedia('(pointer:coarse)').matches) { const el = document.documentElement; (el.requestFullscreen?.() || Promise.resolve()).then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); } }
+function togglePause() { if (!road || !road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); }
+function flee() { road.finished = true; report('flee', { timeMs: Math.round(road.time * 1000), pHP: road.p.hpNum }); }
+
+// ---- outcome → server (or local engine) → rewards ----
+async function report(outcome, r) {
+  if (reported) return; reported = true;
+  const title = document.getElementById('resultTitle'), text = document.getElementById('resultText'), em = document.getElementById('resultEmoji'), st = document.getElementById('resultStats'), act = document.getElementById('resultActions');
+  document.getElementById('pause').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  em.textContent = outcome === 'win' ? '🍯' : outcome === 'lose' ? '💀' : '🏃';
+  title.textContent = outcome === 'win' ? `${enemy.name} defeated!` : outcome === 'lose' ? `${CUB.name} has fallen` : 'You slipped out of the den';
+  st.innerHTML = `<div>Time<b>${fmt(r.timeMs)}</b></div><div>Hits<b>${road.p.hits}</b></div>`;
+  let res;
+  try {
+    if (server) res = await api('/api/game/hunt/report', { outcome, timeMs: r.timeMs, pHP: r.pHP });
+    else { res = HoneyEngine.resolveHunt(prof, CUB, { outcome, timeMs: r.timeMs, pHP: r.pHP }, { now: Date.now() }); if (!res.ok) throw Object.assign(new Error(res.error), { code: res.error }); saveLocal(prof); res.state = prof; }
+  } catch (e) { text.textContent = `The hunt was not recorded: ${e.code === 'too_fast' ? 'that was faster than the guardian allows — try again' : (e.message || e)}`; act.innerHTML = `<a href="/game.html"><button>Back to the den</button></a>`; return; }
+  if (outcome === 'win') {
+    text.innerHTML = `+${res.honey} ${res.honeyName} · +${res.xp} XP (🍯 ${res.state.honey} · ${res.wins} kills)`
+      + (res.ups ? `<br><strong style="color:#7cf29e">✨ ${CUB.name} reached Lv ${res.lvl}!</strong>` : '')
+      + (res.unlocked?.length ? `<br><strong style="color:#7fdbff">⛏ ${res.unlocked.map(cap).join(', ')} era unlocked!</strong>` : '');
+    act.innerHTML = `<button class="primary" onclick="location.reload()">Hunt again</button><a href="/game.html"><button>Back to the den</button></a>`;
+  } else if (outcome === 'lose') {
+    text.innerHTML = `${CUB.name} needs 30 minutes to recover — or honey to revive. Send in another Cub from the den.`;
+    act.innerHTML = `<a href="/game.html"><button class="primary">Back to the den</button></a>`;
+  } else {
+    text.textContent = 'No honey, no kill — but the Cub keeps its wounds and lives to hunt again.';
+    act.innerHTML = `<a href="/game.html"><button class="primary">Back to the den</button></a>`;
+  }
+}
+
+// ---- input ----
+const KEYS = { ArrowLeft: 'left', ArrowRight: 'right', a: 'left', d: 'right' };
+addEventListener('keydown', e => {
+  if (!road) return;
+  if (KEYS[e.key]) road.input[KEYS[e.key]] = true;
+  if ((e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') && !e.repeat) { road.input.jump = true; road.input.jumpHeld = true; }
+  if (e.key === ' ' || e.key === 'ArrowUp') e.preventDefault();
+  if (e.key.toLowerCase() === 'x' && !e.repeat) road.input.attack = true;
+  if (e.key.toLowerCase() === 'z' && !e.repeat) road.input.dash = true;
+  if ((e.key === 'Escape' || e.key.toLowerCase() === 'p') && !e.repeat) togglePause();
+  if (e.key === 'Enter' && !document.getElementById('intro').classList.contains('hidden') && document.getElementById('startBtn').style.display !== 'none') startHunt();
+});
+addEventListener('keyup', e => { if (!road) return; if (KEYS[e.key]) road.input[KEYS[e.key]] = false; if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') road.input.jumpHeld = false; });
+document.querySelectorAll('.tbtn').forEach(btn => {
+  const hold = btn.dataset.hold, tap = btn.dataset.tap;
+  const press = e => { e.preventDefault(); btn.classList.add('held'); try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+    if (hold === 'jump') { road.input.jump = true; road.input.jumpHeld = true; } else if (hold) road.input[hold] = true;
+    if (tap === 'attack') road.input.attack = true; if (tap === 'dash') road.input.dash = true; };
+  const release = e => { e.preventDefault(); btn.classList.remove('held'); if (hold === 'jump') road.input.jumpHeld = false; else if (hold) road.input[hold] = false; };
+  btn.addEventListener('pointerdown', press); btn.addEventListener('pointerup', release); btn.addEventListener('pointercancel', release); btn.addEventListener('pointerleave', release);
+  btn.addEventListener('contextmenu', e => e.preventDefault());
+});
+init();
+</script>
+</body>
+</html>

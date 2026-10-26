@@ -11,7 +11,7 @@ interface EngineApi {
   rarityForNumber(num: number | null): string;
   deriveClass(traits: Record<string, string>, seed: string): string;
   startBattle(p: Profile, cub: CubInfo, opts: { now?: number }): EngineResult;
-  resolveAction(p: Profile, cubs: Record<string, CubInfo>, action: string, opts: { now?: number; switchTo?: string }): EngineResult;
+  resolveHunt(p: Profile, cub: CubInfo, report: { outcome: string; timeMs: number; pHP?: number }, opts: { now?: number }): EngineResult & Record<string, unknown>;
   infuse(p: Profile, cub: CubInfo): EngineResult;
   reviveWithHoney(p: Profile, cubId: string, now: number): EngineResult;
   clearCooldown(p: Profile, cubId: string): EngineResult;
