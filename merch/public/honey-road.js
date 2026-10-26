@@ -357,6 +357,7 @@
         if (Math.hypot(e.x - p.x, (e.y - e.h / 2) - (p.y - 30)) < 230) { e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); if (e.hpLeft > 0) { e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); } }
       }
       this.hooks.onBurst?.(p.burst);
+      this.hooks.onBurstFire?.();
     }
     hitEnemy(e, dir, stomp) {
       e.hpLeft -= 1; e.hit = 0.4;

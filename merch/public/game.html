@@ -819,6 +819,7 @@
 
 </div>
 
+<script src="/music.js" data-position="bottom"></script>
 <script>
 // ─────────────────────────────────────────
 // CONFIG
@@ -1897,6 +1898,7 @@ async function playEvents(events) {
       await wait(270);
       spriteFx('enemySprite', 'hit', 500);
       if (e.burst) {
+        window.Music?.duck(1200);
         stageFlash(); stageShake(true);
         fxAt('enemySprite', 'burst-ring', 750);
         honeyBurst('enemySprite', 40, 5);
