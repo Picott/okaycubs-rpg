@@ -2,7 +2,8 @@
 // driven through the Widget API so the game can resume it after a tap and duck it under big effects.
 (function () {
   'use strict';
-  const PROFILE = 'https://soundcloud.com/juan-b-picott';
+  const TRACKS  = 'https://soundcloud.com/juan-b-picott/tracks';   // all uploads
+  const PROFILE = 'https://soundcloud.com/juan-b-picott';          // fallback if the widget cannot resolve /tracks
   const ARTIST  = 'πcott';
   const KEY_ON = 'okaycubs_music_on', KEY_OPEN = 'okaycubs_music_open';
   const position = document.currentScript?.dataset.position || 'bottom';
@@ -27,8 +28,9 @@
   // narrow screens (phones, Phantom's in-app browser) start collapsed unless the player opened it before
   const openPref = localStorage.getItem(KEY_OPEN);
   bar.className = 'sc-bar' + ((openPref === '0' || (openPref === null && innerWidth < 760)) ? ' collapsed' : '');
-  const src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(PROFILE)
+  const playerSrc = url => 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url)
     + '&color=%23d4af37&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false';
+  const src = playerSrc(TRACKS);
   bar.innerHTML = `
     <button class="sc-toggle" id="scToggle" title="Music by ${ARTIST} on SoundCloud">♫ ${ARTIST}</button>
     <div class="sc-frame"><iframe id="scFrame" allow="autoplay" src="${src}" title="SoundCloud · ${ARTIST}"></iframe></div>`;
@@ -46,7 +48,13 @@
     const s = document.createElement('script');
     s.src = 'https://w.soundcloud.com/player/api.js';
     s.onload = () => {
-      widget = window.SC.Widget(bar.querySelector('#scFrame'));
+      const frame = bar.querySelector('#scFrame');
+      widget = window.SC.Widget(frame);
+      let fellBack = false;
+      widget.bind(window.SC.Widget.Events.ERROR, () => {
+        if (fellBack) return; fellBack = true;
+        widget.load(PROFILE, { color: '#d4af37', hide_related: true, show_comments: false, show_user: true, show_reposts: false, show_teaser: false, visual: false });
+      });
       widget.bind(window.SC.Widget.Events.READY, () => {
         widget.setVolume(volume);
         widget.bind(window.SC.Widget.Events.PLAY,  () => { playing = true;  toggle.classList.add('playing'); try { localStorage.setItem(KEY_ON, '1'); } catch (e) {} });
