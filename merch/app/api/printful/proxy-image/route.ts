@@ -56,7 +56,10 @@ export async function GET(req: NextRequest) {
     return new NextResponse(buf, {
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400, immutable',
+        // IPFS content is immutable: cache a year at Vercel's edge (s-maxage) so each image crosses the
+        // function once instead of on every visit — this was eating the Fast Origin Transfer quota
+        'Cache-Control': 'public, max-age=86400, s-maxage=31536000, immutable',
+        'Vercel-CDN-Cache-Control': 'max-age=31536000',
         'Access-Control-Allow-Origin': '*',
       },
     });
