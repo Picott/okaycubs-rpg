@@ -371,10 +371,10 @@
       }
       // guardian projectiles and ground shockwaves
       for (const q of this.projectiles) {
-        q.t -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 120 * dt;
+        q.t -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += (q.gravity || 120) * dt;
         if (p.dead <= 0 && Math.abs(q.x - p.x) < (p.blocking ? 44 : 26) && q.y > p.y - PLAYER_H - 10 && q.y < p.y) {
           q.t = 0;
-          if (p.blocking && Math.sign(q.x - p.x) === p.facing) { this.burst(q.x, q.y, ['#f5e06e', '#fff2b0'], 10, 120); this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); this.shake = Math.max(this.shake, 0.08); this.sfx('block'); }
+          if (p.blocking && !q.rain && Math.sign(q.x - p.x) === p.facing) { this.burst(q.x, q.y, ['#f5e06e', '#fff2b0'], 10, 120); this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); this.shake = Math.max(this.shake, 0.08); this.sfx('block'); }
           else { this.damage({ x: q.x, atk: q.atk }, q.scale); this.burst(q.x, q.y, ['#fff', '#ffb347'], 6, 80); }
         }
       }
@@ -405,7 +405,7 @@
       }
       if (p.attackT <= 0) p.swingHit = false;
       const hitX = Math.abs(g.x - p.x) < (g.w + PLAYER_W) / 2, hitY = p.y > g.y - g.h && p.y - PLAYER_H < g.y;
-      const scale = root.Guardian.contactScale(g), special = g.state === 'charge' || g.state === 'leap' || g.state === 'swoop';
+      const scale = root.Guardian.contactScale(g), special = root.Guardian.isSpecial(g);
       if (hitX && hitY && scale > 0) {
         if (p.blocking && !special && Math.sign(g.x - p.x) === p.facing) { if (p.inv <= 0) { p.inv = 0.5; p.vx = -p.facing * 160; this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); this.sfx('block'); } }
         else this.damage(g, scale, g.state === 'charge' || g.state === 'idle' ? 'ground' : 'any');
@@ -552,6 +552,7 @@
       // honey
       for (const h of this.honey) if (!h.taken) this.drawHoney(h, t);
       // enemies
+      for (const e of this.enemies) if (e.guardian) root.Guardian.drawTelegraph(ctx, e, this);
       for (const e of this.enemies) this.drawEnemy(e, t);
       for (const w of this.waves) { ctx.save(); ctx.globalAlpha = Math.min(1, w.t); ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 4; ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(w.x, GROUND_Y, 26, Math.PI, 0); ctx.stroke(); ctx.restore(); }
       for (const q of this.projectiles) { ctx.save(); ctx.translate(q.x, q.y); ctx.shadowColor = '#ffb347'; ctx.shadowBlur = 14; ctx.font = '26px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(q.glyph, 0, 0); ctx.restore(); }
@@ -654,7 +655,7 @@
       ctx.save(); ctx.translate(e.x, e.y);
       if (e.fly) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, GROUND_Y - e.y + 4, e.w * 0.35, 5, 0, 0, 7); ctx.fill(); }
       else { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 4, e.w * 0.5, 7, 0, 0, 7); ctx.fill(); }
-      if (e.chargeT > 0 || e.state === 'charge' || e.state === 'swoop') ctx.filter = 'drop-shadow(0 0 10px #ff6b35)';
+      if (e.chargeT > 0 || e.state === 'charge' || e.state === 'swoop' || e.state === 'hop' || e.state === 'leap') ctx.filter = 'drop-shadow(0 0 10px #ff6b35)';
       if (e.state === 'tell') ctx.filter = `drop-shadow(0 0 ${14 + Math.sin(t * 30) * 6}px #ff3b1f) brightness(1.5)`;
       if (e.stagger > 0) ctx.filter = 'saturate(0.4) brightness(1.2)';
       if (e.frozen > 0) ctx.filter = 'hue-rotate(180deg) saturate(0.5) brightness(1.3) drop-shadow(0 0 12px #7fdbff)';

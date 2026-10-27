@@ -168,6 +168,9 @@ async function init() {
   document.getElementById('gClass').textContent = enemy.cls;
   document.getElementById('introEmoji').textContent = enemy.emoji;
   document.getElementById('introTitle').textContent = `${enemy.name} guards the ${base.honeyName}`;
+  const g0 = road.enemies[0];
+  document.getElementById('gClass').textContent = `${enemy.cls} · ${g0.moveName}`;
+  document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${g0.moveName}</strong> — ${g0.moveTip}.`;
   hud();
 }
 function fail(e) {
