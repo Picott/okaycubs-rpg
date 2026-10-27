@@ -18,6 +18,7 @@
   let ctx = null, master = null, musicGain = null, sfxGain = null, lp = null;
   let theme = THEMES.hadean, eraName = 'hadean', running = false, step = 0, nextTime = 0, timer = null;
   let settings = { music: 0.55, sfx: 0.8, muted: false };
+  let intensity = 0;   // 0 normal · 1–3 boss phases: faster, heavier drums, growling bass
   try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
 
   const midi = n => 440 * Math.pow(2, (n - 69) / 12);
@@ -57,7 +58,7 @@
     s.connect(f); f.connect(g); g.connect(dest); s.start(t); s.stop(t + dur + 0.02);
   }
   function scheduleStep(i, t) {
-    const beat = 60 / theme.bpm, sixteenth = beat / 4, bar = Math.floor(i / 16) % 4, pos = i % 16;
+    const beat = 60 / bpm(), sixteenth = beat / 4, bar = Math.floor(i / 16) % 4, pos = i % 16;
     const chordRoot = PROG[bar];
     if (pos === 0) {                                  // pad chord, one per bar
       for (const iv of theme.chord) { const n = noteAt(chordRoot + [0, 2, 4][theme.chord.indexOf(iv)], 0); tone(midi(n), t, beat * 3.6, { type: 'triangle', gain: 0.07, attack: 0.4, release: 0.8 }); tone(midi(n), t, beat * 3.6, { type: 'sawtooth', gain: 0.025, attack: 0.5, release: 0.8, detune: 7 }); }
@@ -72,10 +73,17 @@
     if (theme.perc === 'stone' || theme.perc === 'wood') { if (pos % 4 === 2) noise(t, 0.03, { gain: 0.05, hp: 3000, dest: musicGain }); }
     if (theme.perc === 'drip' || theme.perc === 'bell') { if (pos === 6 || pos === 14) tone(midi(noteAt(chordRoot + 4, 2)), t, 0.08, { type: 'sine', gain: 0.08, attack: 0.002, release: 0.5 }); }
     if (pos % 4 === 2 && theme.perc !== 'bell') noise(t, 0.02, { gain: 0.025, hp: 6000, dest: musicGain });   // soft hat
+    if (intensity > 0) {                              // boss layer
+      if (pos % 4 === 0) tone(55, t, 0.14, { type: 'sine', gain: 0.4, attack: 0.002, release: 0.12 });
+      if (intensity >= 2 && pos % 4 === 2) noise(t, 0.1, { gain: 0.09, hp: 1200, dest: musicGain });
+      if (pos % 2 === 1) noise(t, 0.015, { gain: 0.02 + 0.015 * intensity, hp: 7000, dest: musicGain });
+      if (pos % 8 === 0 || (intensity >= 3 && pos % 8 === 6)) tone(midi(noteAt(chordRoot, -1)), t, beat * (intensity >= 3 ? 0.9 : 1.6), { type: 'sawtooth', gain: 0.05 + 0.02 * intensity, attack: 0.01, release: 0.2 });
+    }
   }
+  const bpm = () => theme.bpm * (1 + 0.07 * intensity);
   function tick() {
     if (!running) return;
-    const sixteenth = 60 / theme.bpm / 4;
+    const sixteenth = 60 / bpm() / 4;
     while (nextTime < ctx.currentTime + 0.25) { scheduleStep(step, nextTime); step = (step + 1) % 64; nextTime += sixteenth; }
     timer = setTimeout(tick, 60);
   }
@@ -119,6 +127,7 @@
     portal:  t => [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, t + i * 0.1, 0.3, { type: 'sine', gain: 0.14, release: 0.6, dest: sfxGain })),
     victory: t => [392, 523, 659, 784, 1046].forEach((f, i) => tone(f, t + i * 0.11, 0.25, { type: 'triangle', gain: 0.16, release: 0.5, dest: sfxGain })),
     defeat:  t => [392, 349, 311, 262].forEach((f, i) => tone(f, t + i * 0.22, 0.3, { type: 'triangle', gain: 0.16, release: 0.5, dest: sfxGain })),
+    roar:    t => { tone(48, t, 0.9, { type: 'sawtooth', gain: 0.3, attack: 0.05, release: 0.6, dest: sfxGain }); tone(72, t + 0.1, 0.8, { type: 'square', gain: 0.1, attack: 0.1, release: 0.5, dest: sfxGain }); noise(t, 0.7, { gain: 0.2, hp: 300 }); },
     power:   t => { for (let i = 0; i < 4; i++) tone(330 * Math.pow(1.5, i), t + i * 0.06, 0.25, { type: 'sine', gain: 0.14, attack: 0.01, release: 0.4, dest: sfxGain }); },
   };
   function sfx(name) { if (!ensure() || settings.muted) return; const f = SFX[name]; if (f) f(ctx.currentTime); }
@@ -131,6 +140,7 @@
 
   root.GameMusic = {
     autostart: true, start, stop, setEra, duck, sfx,
+    setIntensity(n) { intensity = Math.max(0, Math.min(3, n | 0)); if (lp) lp.frequency.setTargetAtTime(theme.lp * (1 + 0.5 * intensity), ctx.currentTime, 0.4); },
     isRunning: () => running,
     settings, setMusic(v) { settings.music = v; applyVolumes(); }, setSfx(v) { settings.sfx = v; applyVolumes(); },
     toggleMute() { settings.muted = !settings.muted; applyVolumes(); return settings.muted; },

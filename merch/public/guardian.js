@@ -39,8 +39,13 @@
   function familyOf(type, emoji) { return FAMILY_OF[type] || FAMILY_OF_EMOJI[emoji] || 'jumper'; }
 
   function init(g) {
-    g.family = g.family || familyOf(g.type, g.emoji);
-    g.move = g.move || MOVES[g.name] || DEFAULT_MOVE[g.family];
+    g.baseSpeed = g.speed;
+    g.phase = 0; g.transition = 0; g.haste = 1;
+    if (g.boss && g.phases && g.phases.length) applyPhase(g, 0);
+    else {
+      g.family = g.family || familyOf(g.type, g.emoji);
+      g.move = g.move || MOVES[g.name] || DEFAULT_MOVE[g.family];
+    }
     if (!MOVE_NAMES[g.move]) g.move = DEFAULT_MOVE[g.family];
     g.moveName = MOVE_NAMES[g.move]; g.moveTip = MOVE_TIPS[g.move];
     g.state = 'idle'; g.t = 0; g.vx = 0; g.vy = 0; g.airborne = false;
@@ -50,15 +55,45 @@
     g.hpLeft = g.hp;
   }
 
+  // ---- era bosses: three phases, each a different family + signature move, faster every time ----
+  function applyPhase(g, i) {
+    const ph = g.phases[i];
+    g.phase = i; g.family = ph.family; g.move = ph.move;
+    if (!MOVE_NAMES[g.move]) g.move = DEFAULT_MOVE[g.family];
+    g.moveName = MOVE_NAMES[g.move]; g.moveTip = MOVE_TIPS[g.move];
+    g.speed = g.baseSpeed * (1 + 0.18 * i); g.haste = [1, 0.85, 0.7][i] || 0.7;
+    g.fly = g.family === 'flyer';
+  }
+  function phaseFor(g) { const k = g.hpLeft / g.hp; return k <= 1 / 3 ? 2 : k <= 2 / 3 ? 1 : 0; }
+  // called after damage: returns the new phase index when the boss crosses a threshold, otherwise -1
+  function checkPhase(game, g) {
+    if (!g.boss || !g.phases || g.hpLeft <= 0) return -1;
+    const next = Math.min(g.phases.length - 1, phaseFor(g));
+    if (next <= g.phase) return -1;
+    applyPhase(g, next);
+    g.transition = 1.4; g.state = 'idle'; g.t = 0; g.vx = 0; g.vy = 0; g.airborne = false; g.midMove = false;
+    g.stagger = 0; g.frozen = 0; g.burn = 0;            // the roar shakes everything off
+    game.shake = Math.max(game.shake, 0.7);
+    game.burst(g.x, g.y - g.h / 2, ['#fff', '#ff6b5a', '#f5e06e'], 40, 320);
+    game.sfx?.('roar');
+    return next;
+  }
+
   function fire(game, g, T, angle, speed, extra) {
     const sx = g.x + g.dir * 20, sy = g.y - g.h * 0.55;
-    game.projectiles.push({ x: sx, y: sy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 60, t: 2.4, glyph: SHOT[g.type] || '✦', scale: T.shot, atk: g.atk, ...(extra || {}) });
+    game.projectiles.push({ x: sx, y: sy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 60, t: 2.4, glyph: g.shot || SHOT[g.type] || '✦', scale: T.shot, atk: g.atk, ...(extra || {}) });
   }
 
   function step(game, g, dt) {
     const p = game.p, T = TUNE[g.family];
     const dx = p.x - g.x, dir = dx < 0 ? -1 : 1, dist = Math.abs(dx);
     g.t += dt;
+    if (g.transition > 0) {   // phase change: the boss roars, invulnerable and still, then opens with its new move
+      g.transition -= dt; g.vx = 0; g.dir = dir;
+      if (g.fly) g.y += (GROUND_Y - T.hover - g.y) * Math.min(1, dt * 3); else g.y = GROUND_Y;
+      if (g.transition <= 0) { g.transition = 0; g.state = 'idle'; g.t = T.cooldown * g.haste * 0.6; }
+      return;
+    }
     if (g.stagger > 0) { g.stagger -= dt; g.vx *= 0.8; g.x += g.vx * dt; return; }
     if (!['leap', 'swoop', 'charge', 'hop'].includes(g.state)) g.dir = dir;
 
@@ -72,7 +107,7 @@
         } else {
           g.vx = dist > 70 ? dir * g.speed * 0.9 : 0;
         }
-        if (g.t > T.cooldown * (g.frozen > 0 ? 2 : 1) && (g.family === 'shooter' || g.family === 'flyer' ? dist < 700 : dist < 320)) {
+        if (g.t > T.cooldown * (g.haste || 1) * (g.frozen > 0 ? 2 : 1) && (g.family === 'shooter' || g.family === 'flyer' ? dist < 700 : dist < 320)) {
           g.state = 'tell'; g.t = 0; g.vx = 0; g.aim = { x: p.x, y: p.y };
           game.float(g.x, g.y - g.h - 12, '!', '#ff8a7a'); game.sfx?.('tell');
         }
@@ -126,7 +161,7 @@
         if (g.shotsLeft > 0 && g.shotT <= 0) {
           g.shotsLeft--; g.shotT = T.shotGap;
           const tx = p.x + (Math.random() - 0.5) * 140, dxs = tx - g.x, up = -760, tFly = 1.1;
-          game.projectiles.push({ x: g.x, y: g.y - g.h * 0.6, vx: dxs / tFly, vy: up, t: 3, glyph: SHOT[g.type] || '✦', scale: T.shot, atk: g.atk, rain: true, gravity: 1400 });
+          game.projectiles.push({ x: g.x, y: g.y - g.h * 0.6, vx: dxs / tFly, vy: up, t: 3, glyph: g.shot || SHOT[g.type] || '✦', scale: T.shot, atk: g.atk, rain: true, gravity: 1400 });
         }
         if (g.shotsLeft <= 0 && g.shotT <= 0) { g.state = 'reload'; g.t = 0; }
         break;
@@ -165,9 +200,9 @@
   }
 
   // damage multiplier the guardian takes right now (punish the recovery window)
-  function vulnerability(g) { return g.state === 'rest' || g.state === 'reload' || g.stagger > 0 ? 1.5 : 1; }
+  function vulnerability(g) { return g.transition > 0 ? 0 : g.state === 'rest' || g.state === 'reload' || g.stagger > 0 ? 1.5 : 1; }
   // damage the guardian deals on contact in its current state
-  function contactScale(g) { const T = TUNE[g.family]; return g.state === 'rest' || g.state === 'reload' ? 0 : (g.state === 'charge' || g.state === 'leap' || g.state === 'hop' || g.state === 'swoop') ? T.contact : 0.6; }
+  function contactScale(g) { const T = TUNE[g.family]; if (g.transition > 0) return 0; return g.state === 'rest' || g.state === 'reload' ? 0 : (g.state === 'charge' || g.state === 'leap' || g.state === 'hop' || g.state === 'swoop') ? T.contact : 0.6; }
   function isSpecial(g) { return ['charge', 'leap', 'hop', 'swoop'].includes(g.state); }
 
   // What is about to happen, drawn in world space during the tell
@@ -202,5 +237,5 @@
     ctx.restore();
   }
 
-  root.Guardian = { init, step, vulnerability, contactScale, isSpecial, drawTelegraph, familyOf, MOVES, MOVE_NAMES, MOVE_TIPS, TUNE };
+  root.Guardian = { init, step, checkPhase, applyPhase, vulnerability, contactScale, isSpecial, drawTelegraph, familyOf, MOVES, MOVE_NAMES, MOVE_TIPS, TUNE };
 })(typeof self !== 'undefined' ? self : this);

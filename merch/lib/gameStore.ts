@@ -11,6 +11,9 @@ interface EngineApi {
   rarityForNumber(num: number | null): string;
   deriveClass(traits: Record<string, string>, seed: string): string;
   startBattle(p: Profile, cub: CubInfo, opts: { now?: number }): EngineResult;
+  startBoss(p: Profile, cub: CubInfo, opts: { now?: number }): EngineResult;
+  bossAvailable(p: Profile, era: string): boolean;
+  bossDone(p: Profile, era: string): boolean;
   resolveHunt(p: Profile, cub: CubInfo, report: { outcome: string; timeMs: number; pHP?: number }, opts: { now?: number }): EngineResult & Record<string, unknown>;
   infuse(p: Profile, cub: CubInfo): EngineResult;
   reviveWithHoney(p: Profile, cubId: string, now: number): EngineResult;
@@ -26,13 +29,14 @@ export const Engine = EngineJs as unknown as EngineApi;
 export interface CubProg { xp: number; lvl: number }
 export interface Battle {
   cubId: string; pHP: number; pMaxHP: number;
-  enemy: { name: string; emoji: string; cls: string; hp: number; atk: number; def: number; xp: number; lvl: number } | null;
-  eHP: number; eMaxHP: number; defending: boolean;
+  enemy: { name: string; emoji: string; cls: string; hp: number; atk: number; def: number; xp: number; lvl: number; boss?: boolean; phases?: { family: string; move: string }[] } | null;
+  eHP: number; eMaxHP: number; defending: boolean; boss?: boolean; era?: string;
 }
 export interface Profile {
   honey: number; honeyByEra: Record<string, number>; wins: number; era: string;
   cubProg: Record<string, CubProg>; cooldowns: Record<string, number>; hpPool: Record<string, number>;
-  battle: Battle | null; roads?: Record<string, { runs: number; best: number | null; honey: number; lastAt: number }>; updatedAt?: number;
+  battle: Battle | null; roads?: Record<string, { runs: number; best: number | null; honey: number; lastAt: number }>;
+  bosses?: Record<string, { runs: number; best: number | null; lastAt: number }>; updatedAt?: number;
 }
 export interface CubInfo {
   id: string; name: string; number: number | null; rarity: string; class: string;

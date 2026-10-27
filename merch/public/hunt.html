@@ -50,11 +50,21 @@
     .t-jump { right:calc(16px + env(safe-area-inset-right)); width:78px; height:78px; border-color:rgba(46,204,113,.6); color:#7cf29e; }
     .t-atk { right:calc(106px + env(safe-area-inset-right)); border-color:rgba(192,57,43,.6); color:#ff8a7a; }
     .t-dash { right:calc(106px + env(safe-area-inset-right)); bottom:calc(96px + env(safe-area-inset-bottom)); width:54px; height:54px; font-size:13px; }
+    .plate.boss { border-left-color:#ffb347; border-color:rgba(255,179,71,.45); box-shadow:0 0 24px rgba(255,120,60,.25); }
+    .plate.boss .fill { background:linear-gradient(90deg,#8b1a1a,#ff6b35,#ffb347); }
+    .pips { display:inline-flex; gap:5px; margin-left:8px; vertical-align:middle; }
+    .pips i { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.2); }
+    .pips i.on { background:#ff6b5a; box-shadow:0 0 8px #ff3b1f; }
+    #phaseBanner { position:fixed; left:0; right:0; top:34%; text-align:center; pointer-events:none; z-index:3; font-family:'Cinzel Decorative',serif; font-size:clamp(22px,5vw,44px); color:#ffb347; text-shadow:0 0 24px #ff3b1f, 0 4px 10px #000; opacity:0; letter-spacing:4px; }
+    #phaseBanner small { display:block; font-family:'Cinzel',serif; font-size:12px; letter-spacing:4px; color:#ffd2cc; margin-top:8px; }
+    #phaseBanner.show { animation:bannerIn 2.4s ease forwards; }
+    @keyframes bannerIn { 0% { opacity:0; transform:scale(.8); } 12% { opacity:1; transform:scale(1.05); } 20% { transform:scale(1); } 80% { opacity:1; } 100% { opacity:0; } }
     .t-block { right:calc(22px + env(safe-area-inset-right)); bottom:calc(106px + env(safe-area-inset-bottom)); width:60px; height:60px; font-size:14px; border-color:rgba(245,224,110,.7); }
   </style>
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="phaseBanner"></div>
 <div class="hud">
   <div class="plate cub"><div class="name" id="cubName">—</div><div class="sub" id="cubClass">—</div><div class="bar"><i class="ghost" id="cubGhost"></i><i class="fill" id="cubFill"></i></div><div class="num" id="cubHP"></div></div>
   <div class="plate guard"><div class="name" id="gName">—</div><div class="sub" id="gClass">—</div><div class="bar"><i class="ghost" id="gGhost"></i><i class="fill" id="gFill"></i></div><div class="num" id="gHP"></div></div>
@@ -93,6 +103,7 @@ const CUB = { id: q.get('id') || 'scout-35', name: q.get('name') || 'Scout Cub #
 try { CUB.traits = JSON.parse(q.get('t') || '{}'); } catch (e) {}
 if (HoneyEngine.isScout(CUB.id)) Object.assign(CUB, HoneyEngine.scoutCub(CUB.id), { traits: { ...HoneyEngine.scoutCub(CUB.id).traits } });
 let ERA = HoneyEngine.ERA_UNLOCK.hasOwnProperty(q.get('era')) ? q.get('era') : 'hadean';
+const BOSS = q.get('boss') === '1';
 
 const cv = document.getElementById('game'), sprite = new CubSprite();
 let road = null, server = false, prof = null, enemy = null, stats = null, lvl = 1, reported = false;
@@ -107,11 +118,11 @@ async function api(path, body) {
 }
 function localProfile() {
   let p = {}; try { p = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}'); } catch (e) {}
-  return Object.assign(HoneyEngine.newProfile(), { honey: p.honey || 0, honeyByEra: p.honeyByEra || {}, wins: p.wins || 0, era: p.era || 'hadean', cubProg: p.cubProg || {}, cooldowns: p.cooldowns || {}, hpPool: p.hpPool || {}, roads: p.roads || {} });
+  return Object.assign(HoneyEngine.newProfile(), { honey: p.honey || 0, honeyByEra: p.honeyByEra || {}, wins: p.wins || 0, era: p.era || 'hadean', cubProg: p.cubProg || {}, cooldowns: p.cooldowns || {}, hpPool: p.hpPool || {}, roads: p.roads || {}, bosses: p.bosses || {} });
 }
 function saveLocal(p) {
   let old = {}; try { old = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}'); } catch (e) {}
-  localStorage.setItem('okaycubs_progress', JSON.stringify({ ...old, honey: p.honey, honeyByEra: p.honeyByEra, wins: p.wins, era: p.era, cubProg: p.cubProg, cooldowns: p.cooldowns, hpPool: p.hpPool, roads: p.roads }));
+  localStorage.setItem('okaycubs_progress', JSON.stringify({ ...old, honey: p.honey, honeyByEra: p.honeyByEra, wins: p.wins, era: p.era, cubProg: p.cubProg, cooldowns: p.cooldowns, hpPool: p.hpPool, roads: p.roads, bosses: p.bosses }));
 }
 
 // ---- HUD ----
@@ -125,6 +136,7 @@ function hud() {
   const g = road.enemies[0], p = road.p;
   bar('cubFill', 'cubGhost', p.hpNum, p.hpMax); document.getElementById('cubHP').textContent = `${Math.max(0, p.hpNum)} / ${p.hpMax}`;
   bar('gFill', 'gGhost', g.hpLeft, g.hp); document.getElementById('gHP').textContent = `${Math.max(0, g.hpLeft)} / ${g.hp}`;
+  if (g.boss) document.getElementById('gClass').innerHTML = `${enemy.cls} · phase ${g.phase + 1} · ${g.moveName}<span class="pips">${g.phases.map((_, i) => `<i class="${i <= g.phase ? 'on' : ''}"></i>`).join('')}</span>`;
   const b = document.getElementById('hudBurst');
   if (p.primed > 0) { b.textContent = '✦ PRIMED — HIT TO RELEASE'; b.className = 'burst'; }
   else if (p.burst >= 1) { b.textContent = `✦ BURST READY${p.burst >= 2 ? ' ×2' : ''} — DASH, THEN HIT`; b.className = 'burst'; }
@@ -142,22 +154,26 @@ async function init() {
   lvl = state.cubProg?.[CUB.id]?.lvl || 1;
   stats = HoneyEngine.getStats(CUB, lvl, ERA);
   // reuse an open battle with this cub, otherwise open one
-  let b = state.battle && state.battle.cubId === CUB.id ? state.battle : null;
+  let b = state.battle && state.battle.cubId === CUB.id && !!state.battle.boss === BOSS ? state.battle : null;
   if (!b) {
-    if (server) { const r = await api('/api/game/battle/start', { cubId: CUB.id }).catch(e => { fail(e); return null; }); if (!r) return; b = r.state.battle; }
-    else { const r = HoneyEngine.startBattle(prof, CUB, { now: Date.now() }); if (!r.ok) return fail(r); b = prof.battle; saveLocal(prof); }
+    const path = BOSS ? '/api/game/boss/start' : '/api/game/battle/start';
+    if (server) { const r = await api(path, { cubId: CUB.id }).catch(e => { fail(e); return null; }); if (!r) return; b = r.state.battle; }
+    else { const r = BOSS ? HoneyEngine.startBoss(prof, CUB, { now: Date.now() }) : HoneyEngine.startBattle(prof, CUB, { now: Date.now() }); if (!r.ok) return fail(r); b = prof.battle; saveLocal(prof); }
   }
   enemy = b.enemy;
   const base = HONEY_ROAD_LEVELS[ERA];
-  const level = { mode: 'hunt', title: `${enemy.name}'s Den`, honeyName: base.honeyName, next: null, length: 1500, hazard: base.hazard, palette: base.palette,
-    ground: [[0, 1500]], platforms: [{ x: 290, y: 362, w: 150 }, { x: 1060, y: 362, w: 150 }], crumble: [], movers: [], springs: [], enemies: [], honey: [], checkpoints: [], portal: Infinity,
-    guardian: { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 }, pHP: b.pHP, pMaxHP: b.pMaxHP, stats, power: HoneyEngine.powerOf(CUB.class) };
-  GameMusic.setEra(ERA);
+  const len = BOSS ? 1900 : 1500;
+  const level = { mode: 'hunt', title: BOSS ? `${enemy.name}'s Throne` : `${enemy.name}'s Den`, honeyName: base.honeyName, next: null, length: len, hazard: base.hazard, palette: base.palette,
+    ground: [[0, len]], platforms: BOSS ? [{ x: 300, y: 362, w: 150 }, { x: 870, y: 332, w: 170 }, { x: 1450, y: 362, w: 150 }] : [{ x: 290, y: 362, w: 150 }, { x: 1060, y: 362, w: 150 }], crumble: [], movers: [], springs: [], enemies: [], honey: [], checkpoints: [], portal: Infinity,
+    guardian: BOSS ? { ...enemy, x: 1400, w: 124, h: 148, speed: 95 + HoneyEngine.eraIdx(ERA) * 10 } : { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 },
+    pHP: b.pHP, pMaxHP: b.pMaxHP, stats, power: HoneyEngine.powerOf(CUB.class) };
+  GameMusic.setEra(ERA); GameMusic.setIntensity(BOSS ? 1 : 0);
   road = new HoneyRoad(cv, sprite, level, {
     onHurt: hud, onBurst: hud, onGuardianHit: hud,
     onBurstFire: () => GameMusic.duck(1400),
     onGuardianDown: r => report('win', r),
     onCubDown: r => report('lose', r),
+    onPhase: (g, ph) => { GameMusic.setIntensity(ph + 1); GameMusic.duck(900, 0.15); phaseBanner(`Phase ${ph + 1}`, `${g.moveName} — ${g.moveTip}`); hud(); },
   });
   road.paused = true; road.started = false; road.start();
   document.getElementById('cubName').textContent = `${CUB.name} · Lv ${lvl}`;
@@ -170,12 +186,19 @@ async function init() {
   document.getElementById('introTitle').textContent = `${enemy.name} guards the ${base.honeyName}`;
   const g0 = road.enemies[0];
   document.getElementById('gClass').textContent = `${enemy.cls} · ${g0.moveName}`;
-  document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${g0.moveName}</strong> — ${g0.moveTip}.`;
+  if (BOSS) {
+    document.querySelector('.plate.guard').classList.add('boss');
+    document.getElementById('gName').textContent = `👑 ${enemy.emoji} ${enemy.name} · Lv ${enemy.lvl || 1}`;
+    document.getElementById('introTitle').textContent = `${enemy.name} — the ${cap(ERA)} Era Boss`;
+    document.getElementById('startBtn').textContent = 'Face the Era Boss';
+    const names = g0.phases.map((ph, i) => `<strong style="color:#ff8a7a">${i + 1}. ${Guardian.MOVE_NAMES[ph.move] || ph.move}</strong>`).join(' → ');
+    document.getElementById('introText').innerHTML += `<br><br>Three phases, each a new attack: ${names}. Every third of its health it roars (you cannot hurt it then), shakes off burn and frost, and comes back faster.<br>Defeat it to open the ${base.honeyName} Road.`;
+  } else document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${g0.moveName}</strong> — ${g0.moveTip}.`;
   hud();
 }
 function fail(e) {
   const code = e?.code || e?.error || e?.message || 'error';
-  const msg = { cooling: 'This Cub is still recovering — pick another in the den.', scout_era: 'Scout Cubs hunt up to Archean. Become a Hunter to go further.', not_owner: 'Your wallet does not own that Cub.', unauthorized: 'Session expired — reconnect your wallet in the den.', locked: 'That era is still locked.' }[code] || code;
+  const msg = { boss_locked: 'The Era Boss has not awakened yet — win more hunts in this era first.', cooling: 'This Cub is still recovering — pick another in the den.', scout_era: 'Scout Cubs hunt up to Archean. Become a Hunter to go further.', not_owner: 'Your wallet does not own that Cub.', unauthorized: 'Session expired — reconnect your wallet in the den.', locked: 'That era is still locked.' }[code] || code;
   document.getElementById('introEmoji').textContent = '⚠';
   document.getElementById('introTitle').textContent = 'The den is closed';
   document.getElementById('introText').textContent = msg;
@@ -184,6 +207,7 @@ function fail(e) {
 function startHunt() { document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0; document.activeElement?.blur(); GameMusic.start();
   if (matchMedia('(pointer:coarse)').matches) { const el = document.documentElement; (el.requestFullscreen?.() || Promise.resolve()).then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); } }
 function togglePause() { if (!road || !road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); document.getElementById('volMusic').value = GameMusic.settings.music * 100; document.getElementById('volSfx').value = GameMusic.settings.sfx * 100; }
+function phaseBanner(big, small) { const el = document.getElementById('phaseBanner'); el.innerHTML = `${big}<small>${small}</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
 function flee() { road.finished = true; report('flee', { timeMs: Math.round(road.time * 1000), pHP: road.p.hpNum }); }
 
 // ---- outcome → server (or local engine) → rewards ----
@@ -192,8 +216,9 @@ async function report(outcome, r) {
   const title = document.getElementById('resultTitle'), text = document.getElementById('resultText'), em = document.getElementById('resultEmoji'), st = document.getElementById('resultStats'), act = document.getElementById('resultActions');
   document.getElementById('pause').classList.add('hidden');
   document.getElementById('result').classList.remove('hidden');
-  em.textContent = outcome === 'win' ? '🍯' : outcome === 'lose' ? '💀' : '🏃';
-  title.textContent = outcome === 'win' ? `${enemy.name} defeated!` : outcome === 'lose' ? `${CUB.name} has fallen` : 'You slipped out of the den';
+  em.textContent = outcome === 'win' ? (BOSS ? '👑' : '🍯') : outcome === 'lose' ? '💀' : '🏃';
+  GameMusic.setIntensity(0);
+  title.textContent = outcome === 'win' ? (BOSS ? `${enemy.name} has fallen!` : `${enemy.name} defeated!`) : outcome === 'lose' ? `${CUB.name} has fallen` : (BOSS ? 'You fled the throne' : 'You slipped out of the den');
   st.innerHTML = `<div>Time<b>${fmt(r.timeMs)}</b></div><div>Hits<b>${road.p.hits}</b></div>`;
   let res;
   try {
@@ -203,8 +228,10 @@ async function report(outcome, r) {
   if (outcome === 'win') {
     text.innerHTML = `+${res.honey} ${res.honeyName} · +${res.xp} XP (🍯 ${res.state.honey} · ${res.wins} kills)`
       + (res.ups ? `<br><strong style="color:#7cf29e">✨ ${CUB.name} reached Lv ${res.lvl}!</strong>` : '')
-      + (res.unlocked?.length ? `<br><strong style="color:#7fdbff">⛏ ${res.unlocked.map(cap).join(', ')} era unlocked!</strong>` : '');
-    act.innerHTML = `<button class="primary" onclick="location.reload()">Hunt again</button><a href="/game.html"><button>Back to the den</button></a>`;
+      + (res.unlocked?.length ? `<br><strong style="color:#7fdbff">⛏ ${res.unlocked.map(cap).join(', ')} era unlocked!</strong>` : '')
+      + (res.boss ? `<br><strong style="color:#ffb347">👑 ${res.boss.first ? `The ${cap(res.boss.era)} Honey Road is open!` : `${cap(res.boss.era)} Era Boss beaten again — +${HoneyEngine.bossHoneyBonus(res.boss.era)} bonus honey`}</strong>` : '');
+    const roadQs = new URLSearchParams({ era: ERA, id: CUB.id, name: CUB.name, img: CUB.image });
+    act.innerHTML = (res.boss ? `<a href="/honey-road.html?${roadQs}"><button class="primary">🏃 Run the Honey Road</button></a>` : `<button class="primary" onclick="location.reload()">Hunt again</button>`) + `<a href="/game.html"><button>Back to the den</button></a>`;
   } else if (outcome === 'lose') {
     text.innerHTML = `${CUB.name} needs 30 minutes to recover — or honey to revive. Send in another Cub from the den.`;
     act.innerHTML = `<a href="/game.html"><button class="primary">Back to the den</button></a>`;

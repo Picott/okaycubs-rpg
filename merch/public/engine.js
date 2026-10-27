@@ -26,7 +26,18 @@
   const scoutCub  = id => SCOUT_CUBS.find(c => c.id === id) || null;
   const levelCap  = id => isScout(id) ? SCOUT_LEVEL_CAP : MAX_LEVEL;
   const scoutEraOk = (id, era) => !isScout(id) || ERA_ORDER.indexOf(era) <= ERA_ORDER.indexOf(SCOUT_ERA_CAP);
-  // Honey Roads: the wins threshold of the NEXT era unlocks the road; finishing the road unlocks the era
+  // Era Bosses: the kill threshold wakes the boss; beating it opens the era's Honey Road. Three phases each.
+  const ERA_BOSSES = {
+    hadean:      { name:'The Caldera Queen',   emoji:'🐉', cls:'Sovereign of Magma Honey', hp:420,  atk:30, def:16, xp:60,  lvl:6,   shot:'🔥', phases:[{ family:'jumper', move:'high' }, { family:'charger', move:'stomp' }, { family:'shooter', move:'rain' }] },
+    archean:     { name:'Tectonic Titan',      emoji:'⛰',  cls:'Sovereign of Stone Honey', hp:700,  atk:42, def:30, xp:110, lvl:16,  shot:'🪨', phases:[{ family:'charger', move:'double' }, { family:'jumper', move:'hops' }, { family:'charger', move:'stomp' }] },
+    proterozoic: { name:'Snowball Leviathan',  emoji:'🐋', cls:'Sovereign of Tide Honey',  hp:900,  atk:52, def:36, xp:170, lvl:31,  shot:'🧊', phases:[{ family:'shooter', move:'rain' }, { family:'flyer', move:'twin' }, { family:'jumper', move:'high' }] },
+    paleozoic:   { name:'Reef Colossus',       emoji:'🦑', cls:'Sovereign of Bloom Honey', hp:1100, atk:60, def:42, xp:230, lvl:51,  shot:'🫧', phases:[{ family:'shooter', move:'spread' }, { family:'jumper', move:'hops' }, { family:'flyer', move:'drop' }] },
+    mesozoic:    { name:'Tyrant of Pangaea',   emoji:'🦖', cls:'Sovereign of Titan Honey', hp:1400, atk:72, def:50, xp:300, lvl:76,  shot:'☄', phases:[{ family:'charger', move:'double' }, { family:'charger', move:'stomp' }, { family:'jumper', move:'high' }] },
+    cenozoic:    { name:'The Warden of Time',  emoji:'👁', cls:'Sovereign of Frost Honey', hp:1800, atk:84, def:60, xp:400, lvl:100, shot:'⏳', phases:[{ family:'shooter', move:'spread' }, { family:'flyer', move:'drop' }, { family:'charger', move:'double' }] },
+  };
+  const bossHoneyBonus = era => 40 + eraIdx(era) * 20;
+
+  // Honey Roads: the era's boss must fall first; finishing the road unlocks the next era
   const ROADS = {
     hadean:      { next:'archean',     wins:5,   maxHoney: 36, minTimeMs: 9000 },
     archean:     { next:'proterozoic', wins:15,  maxHoney: 36, minTimeMs: 10000 },
@@ -206,11 +217,13 @@
   }
 
   function newProfile() {
-    return { honey:0, honeyByEra:{}, wins:0, era:'hadean', cubProg:{}, cooldowns:{}, hpPool:{}, battle:null, roads:{} };
+    return { honey:0, honeyByEra:{}, wins:0, era:'hadean', cubProg:{}, cooldowns:{}, hpPool:{}, battle:null, roads:{}, bosses:{} };
   }
   function prog(p, id) { return p.cubProg[id] || (p.cubProg[id] = { xp:0, lvl:1 }); }
   function isCoolingDown(p, id, now) { return !!p.cooldowns[id] && p.cooldowns[id] > now; }
-  function roadAvailable(p, era) { const r = ROADS[era]; return !!r && isEraUnlocked(p, era) && p.wins >= r.wins; }
+  function bossDone(p, era) { return !!(p.bosses && p.bosses[era] && p.bosses[era].runs > 0); }
+  function bossAvailable(p, era) { const r = ROADS[era]; return !!r && !!ERA_BOSSES[era] && isEraUnlocked(p, era) && p.wins >= r.wins; }
+  function roadAvailable(p, era) { const r = ROADS[era]; return !!r && isEraUnlocked(p, era) && p.wins >= r.wins && (!ERA_BOSSES[era] || bossDone(p, era)); }
   function roadDone(p, era) { return !!(p.roads && p.roads[era] && p.roads[era].runs > 0); }
   function isEraUnlocked(p, era) {
     if (p.wins < (ERA_UNLOCK[era] || 0)) return false;
@@ -264,6 +277,20 @@
 
   function endBattle(p) { p.battle = null; }
 
+  // The era boss replaces the guardian in an open battle; it is a hunt with phases
+  function startBoss(p, cub, opts) {
+    const now = opts.now || Date.now();
+    if (isCoolingDown(p, cub.id, now)) return fail('cooling');
+    if (!scoutEraOk(cub.id, p.era)) return fail('scout_era');
+    if (!bossAvailable(p, p.era)) return fail('boss_locked');
+    const boss = ERA_BOSSES[p.era];
+    p.battle = { cubId:null, pHP:0, pMaxHP:0, enemy:null, eHP:0, eMaxHP:0, defending:false, boss:true, era:p.era };
+    enterCub(p, cub);
+    p.battle.enemy = Object.assign({ boss:true }, boss, { phases: boss.phases.map(ph => Object.assign({}, ph)) });
+    p.battle.eHP = p.battle.eMaxHP = boss.hp;
+    return { ok:true, events:[{ t:'spawn', enemy:p.battle.enemy, eHP:boss.hp, eMaxHP:boss.hp }], p };
+  }
+
   // ---- rewards shared by every kind of fight ----
   function applyVictory(p, cub, enemy, rng) {
     const era = p.era, xpGain = enemy.xp || 10, drop = honeyDrop(era, rng);
@@ -292,7 +319,7 @@
 
   // The browser fights in real time; the server only grants what is plausible: a win cannot land
   // faster than the cub's best possible damage output, and a report must match the open battle.
-  const HUNT = { minSeconds: 4, maxHitsPerSecond: 3.5 };
+  const HUNT = { minSeconds: 4, maxHitsPerSecond: 3.5, bossMinSeconds: 20 };
   function huntMinTimeMs(cub, lvl, era, enemy) {
     const s = getStats(cub, lvl, era), perHit = (s.ATK * 0.4 + 15) * 1.8;
     return Math.max(HUNT.minSeconds * 1000, Math.floor(enemy.hp / (perHit * HUNT.maxHitsPerSecond) * 1000));
@@ -305,10 +332,21 @@
     const timeMs = Math.round(report.timeMs || 0);
     const keepHP = () => { p.hpPool[cub.id] = Math.max(1, Math.min(b.pMaxHP, Math.round(report.pHP != null ? report.pHP : b.pMaxHP))); };
     if (report.outcome === 'win') {
-      if (timeMs < huntMinTimeMs(cub, prog(p, cub.id).lvl, p.era, b.enemy)) return fail('too_fast');
+      if (timeMs < Math.max(huntMinTimeMs(cub, prog(p, cub.id).lvl, p.era, b.enemy), b.boss ? HUNT.bossMinSeconds * 1000 : 0)) return fail('too_fast');
       const v = applyVictory(p, cub, b.enemy, rng);
+      let bossResult = null;
+      if (b.boss) {
+        const era = b.era || p.era, bonus = bossHoneyBonus(era);
+        p.bosses = p.bosses || {};
+        const rec = p.bosses[era] || (p.bosses[era] = { runs:0, best:null, lastAt:0 });
+        const first = rec.runs === 0;
+        rec.runs++; rec.best = rec.best == null ? timeMs : Math.min(rec.best, timeMs); rec.lastAt = now;
+        p.honey += bonus; p.honeyByEra[era] = (p.honeyByEra[era] || 0) + bonus;
+        v.honey += bonus;
+        bossResult = { era, first, roadOpened: first && roadAvailable(p, era) };
+      }
       keepHP(); endBattle(p);
-      return Object.assign({ ok:true, outcome:'win', enemy:b.enemy, p }, v);
+      return Object.assign({ ok:true, outcome:'win', enemy:b.enemy, boss:bossResult, p }, v);
     }
     if (report.outcome === 'lose') {
       const until = applyDefeat(p, cub.id, now); endBattle(p);
@@ -350,6 +388,7 @@
     if (!ERA_UNLOCK.hasOwnProperty(era)) return fail('unknown era');
     if (!isEraUnlocked(p, era)) return fail('locked');
     if (cub && !scoutEraOk(cub.id, era)) return fail('scout_era');
+    if (p.battle && p.battle.boss && p.battle.era !== era) p.battle = null;
     p.era = era;
     const events = [];
     if (p.battle && cub) {
@@ -365,6 +404,7 @@
     hash, deriveClass, rarityForNumber, baseStats, affinity, getStats,
     ROADS, SCOUT_CUBS, SCOUT_LEVEL_CAP, SCOUT_ERA_CAP, isScout, scoutCub, levelCap, scoutEraOk, CLASS_POWER, POWERS, powerOf,
     newProfile, prog, isCoolingDown, isEraUnlocked, roadAvailable, roadDone, completeRoad,
-    COMBAT, HUNT, huntMinTimeMs, startBattle, resolveHunt, applyVictory, applyDefeat, infuse, reviveWithHoney, clearCooldown, selectEra,
+    COMBAT, HUNT, huntMinTimeMs, startBattle, startBoss, resolveHunt, applyVictory, applyDefeat, infuse, reviveWithHoney, clearCooldown, selectEra,
+    ERA_BOSSES, bossAvailable, bossDone, bossHoneyBonus,
   };
 });

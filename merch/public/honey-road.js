@@ -395,7 +395,7 @@
       g.hit = Math.max(0, g.hit - dt);
       p.frenzy = Math.max(0, (p.frenzy || 0) - dt); p.shieldFx = Math.max(0, (p.shieldFx || 0) - dt);
       if (g.frozen > 0) g.frozen -= dt;
-      if (g.burn > 0) { g.burnT -= dt; if (g.burnT <= 0) { g.burn--; g.burnT = 0.6; const d = Math.max(3, Math.floor(this.L.stats.ATK * 0.15)); g.hpLeft = Math.max(0, g.hpLeft - d); this.float(g.x, g.y - g.h - 8, `-${d} 🔥`, '#ff8a4a'); this.burst(g.x, g.y - g.h / 2, ['#ff6b35', '#ffb347'], 6, 90); this.hooks.onGuardianHit?.(g, d); if (g.hpLeft <= 0) { g.dead = 0.9; this.finished = true; this.sprite.cheer(); this.sfx('victory'); this.hooks.onGuardianDown?.({ timeMs: Math.round(this.time * 1000), pHP: p.hpNum, hits: p.hits }); return; } } }
+      if (g.burn > 0 && g.transition <= 0) { g.burnT -= dt; if (g.burnT <= 0) { g.burn--; g.burnT = 0.6; const d = Math.max(3, Math.floor(this.L.stats.ATK * 0.15)); g.hpLeft = Math.max(0, g.hpLeft - d); this.float(g.x, g.y - g.h - 8, `-${d} 🔥`, '#ff8a4a'); this.burst(g.x, g.y - g.h / 2, ['#ff6b35', '#ffb347'], 6, 90); this.hooks.onGuardianHit?.(g, d); if (g.hpLeft <= 0) { g.dead = 0.9; this.finished = true; this.sprite.cheer(); this.sfx('victory'); this.hooks.onGuardianDown?.({ timeMs: Math.round(this.time * 1000), pHP: p.hpNum, hits: p.hits }); return; } } }
       root.Guardian.step(this, g, dt);
       if (p.dead > 0) return;
       // the swing lands once per attack
@@ -413,6 +413,7 @@
     }
     hitGuardian(g, burst) {
       const p = this.p, s = this.L.stats, C = root.HoneyEngine.COMBAT;
+      if (g.transition > 0) { this.float(g.x, g.y - g.h - 10, 'immune', '#b8bcc8'); this.sfx('block'); return; }
       const crit = !burst && C.crit(s);
       let dmg = burst ? Math.floor(C.burst(s) * ((this.power?.dmg || 3) / 3)) : Math.floor(C.hit(s) * (crit ? 1.8 : 1) * (p.frenzy > 0 ? 1.6 : 1));
       dmg = Math.floor(dmg * root.Guardian.vulnerability(g) * (g.frozen > 0 ? 1.5 : 1));
@@ -425,8 +426,10 @@
       this.shake = Math.max(this.shake, crit || burst ? 0.4 : 0.15);
       this.float(g.x + (Math.random() - .5) * 40, g.y - g.h - 10, `-${dmg}${crit ? ' CRIT' : ''}`, crit ? '#ff6b35' : burst ? '#ffe27a' : '#fff');
       this.hooks.onGuardianHit?.(g, dmg);
+      const ph = root.Guardian.checkPhase(this, g);
+      if (ph >= 0) { this.projectiles = []; this.waves = []; this.hooks.onPhase?.(g, ph); }
       if (g.hpLeft <= 0) {
-        g.dead = 0.9; this.finished = true; this.sprite.cheer(); this.sfx('victory');
+        g.dead = g.boss ? 1.6 : 0.9; this.finished = true; this.sprite.cheer(); this.sfx('victory');
         this.burst(g.x, g.y - g.h / 2, ['#f5e06e', '#d4af37', '#fff2b0', '#7fdbff'], 60, 280);
         this.hooks.onGuardianDown?.({ timeMs: Math.round(this.time * 1000), pHP: p.hpNum, hits: p.hits });
       }
@@ -660,7 +663,9 @@
       if (e.stagger > 0) ctx.filter = 'saturate(0.4) brightness(1.2)';
       if (e.frozen > 0) ctx.filter = 'hue-rotate(180deg) saturate(0.5) brightness(1.3) drop-shadow(0 0 12px #7fdbff)';
       if (e.burn > 0) ctx.filter = 'drop-shadow(0 0 14px #ff6b35) saturate(1.4)';
-      if (e.dead > 0) { ctx.globalAlpha = e.dead / 0.6; ctx.scale(1 + (0.6 - e.dead), 1 - (0.6 - e.dead) * 0.8); }
+      if (e.transition > 0) { const k = 1 + Math.sin(t * 40) * 0.06 + e.transition * 0.12; ctx.filter = 'brightness(2.2) drop-shadow(0 0 30px #fff)'; ctx.scale(k, k); }
+      if (e.boss && e.transition <= 0 && e.dead <= 0 && e.phase > 0) ctx.filter = (ctx.filter === 'none' ? '' : ctx.filter + ' ') + `drop-shadow(0 0 ${10 + e.phase * 8}px ${e.phase === 2 ? '#ff3b1f' : '#ffb347'})`;
+      if (e.dead > 0) { const d = e.boss ? e.dead / 1.6 : e.dead / 0.6; ctx.globalAlpha = Math.min(1, d); ctx.scale(1 + (1 - d) * 0.6, 1 - (1 - d) * 0.5); }
       ctx.scale(e.dir, 1);
       ctx.font = `${e.h}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       if (e.hit > 0 && Math.floor(e.hit * 20) % 2 === 0) ctx.filter = 'brightness(3)';
@@ -668,6 +673,12 @@
       ctx.fillText(e.emoji, 0, Math.sin(t * 6 + e.bob) * 3);
       ctx.restore();
       if (e.guardian && e.stagger > 0) { ctx.font = '22px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', e.x + Math.sin(t * 9) * 18, e.y - e.h - 16); }
+      if (e.boss && e.hpLeft > 0) {   // the crown and the phase pips
+        ctx.save(); ctx.textAlign = 'center'; ctx.font = '22px serif'; ctx.fillText('👑', e.x, e.y - e.h - 18 + Math.sin(t * 3) * 3);
+        for (let i = 0; i < (e.phases ? e.phases.length : 3); i++) { ctx.fillStyle = i <= e.phase ? '#ff6b5a' : 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(e.x - 14 + i * 14, e.y - e.h - 44, 4, 0, 7); ctx.fill(); }
+        if (e.transition > 0) { ctx.strokeStyle = `rgba(255,120,90,${Math.min(1, e.transition)})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(e.x, e.y - e.h / 2, (1.4 - e.transition) * 260 + 20, 0, 7); ctx.stroke(); }
+        ctx.restore();
+      }
       if (!e.guardian && e.hp > 1 && e.hpLeft > 0) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(e.x - 20, e.y - e.h - 14, 40, 5); ctx.fillStyle = '#e74c3c'; ctx.fillRect(e.x - 20, e.y - e.h - 14, 40 * e.hpLeft / e.hp, 5); }
     }
   }
