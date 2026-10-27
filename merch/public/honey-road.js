@@ -129,6 +129,7 @@
       addEventListener('resize', () => this.resize());
     }
 
+    sfx(name) { try { root.GameMusic?.sfx(name); } catch (e) {} }
     reset() {
       const L = this.L;
       this.p = { x: 80, y: GROUND_Y, vx: 0, vy: 0, grounded: true, facing: 1, coyote: 0, buffer: 0, dashT: 0, dashCd: 0, dashDir: 1,
@@ -149,7 +150,8 @@
                     guardian: true, w: L.guardian.w || 84, h: L.guardian.h || 100, speed: L.guardian.speed || 95 };
         root.Guardian.init(g);
         this.enemies = [g]; this.honey = []; this.checkpoints = []; this.L.portal = Infinity;
-        this.p.hpNum = L.pHP; this.p.hpMax = L.pMaxHP; this.p.hits = 0;
+        this.p.hpNum = L.pHP; this.p.hpMax = L.pMaxHP; this.p.hits = 0; this.p.frenzy = 0; this.p.shieldFx = 0;
+        this.power = L.power || null;
       }
       this.time = 0; this.finished = false; this.started = false;
       this.cam = { x: 0, y: 0 };
@@ -201,7 +203,10 @@
       p.primed = Math.max(0, p.primed - dt);
       if (wasPrimed && p.primed <= 0) this.hooks.onBurst?.(p.burst);
       // Honey Burst is a sequence: dash (with a charge ready) primes it, hit releases it
+      p.dashGrace = Math.max(0, (p.dashGrace || 0) - dt);
+      if (p.dashT > 0 && p.dashT - dt <= 0) p.dashGrace = 0.1;
       if (i.dash && p.dashCd <= 0 && p.dashT <= 0 && p.stunned <= 0) {
+        this.sfx('dash');
         p.dashT = P.dashTime; p.dashCd = P.dashCooldown; p.dashDir = p.facing;
         if (p.burst >= 1) { p.primed = 1.2; this.burst(p.x, p.y - 30, ['#f5e06e', '#fff2b0'], 10, 120); this.hooks.onBurst?.(p.burst); }
       }
@@ -228,10 +233,10 @@
         p.vx = clamp(p.vx, -P.maxSpeed, P.maxSpeed);
       }
       if (p.grounded) p.jumpsLeft = 1;
-      if (p.buffer > 0 && p.coyote > 0 && p.stunned <= 0 && !p.blocking) { p.vy = -P.jumpVel; p.grounded = false; p.coyote = 0; p.buffer = 0; justJumped = true; }
+      if (p.buffer > 0 && p.coyote > 0 && p.stunned <= 0 && !p.blocking) { p.vy = -P.jumpVel; p.grounded = false; p.coyote = 0; p.buffer = 0; justJumped = true; this.sfx('jump'); }
       else if (p.buffer > 0 && !p.grounded && p.coyote <= 0 && p.jumpsLeft > 0 && p.stunned <= 0) {
         // double jump: a little shorter, with a honey ring under the paws
-        p.vy = -P.jumpVel * 0.88; p.jumpsLeft--; p.buffer = 0; justJumped = true;
+        p.vy = -P.jumpVel * 0.88; p.jumpsLeft--; p.buffer = 0; justJumped = true; this.sfx('djump');
         this.rings.push({ x: p.x, y: p.y, t: 0.35 });
         this.burst(p.x, p.y, ['#f5e06e', '#fff2b0'], 8, 90);
       }
@@ -261,7 +266,7 @@
           p.y = r.y + r.h + PLAYER_H; p.vy = 0;
         }
       }
-      if (landed && !p.grounded) justLanded = true;
+      if (landed && !p.grounded) { justLanded = true; this.sfx('land'); }
       p.grounded = landed; p.onRect = landed ? (onRect.type === 'mover' ? this.movers.find(m => m.cx === onRect.cx) || onRect : onRect) : null;
 
       // springs: giant mushrooms that launch the cub
@@ -284,6 +289,7 @@
 
     die(cause) {
       const p = this.p;
+      this.sfx('defeat');
       p.dead = 1.1; p.hp = 0; p.vx = 0; p.vy = 0;
       this.sprite.hurt(); this.shake = 0.5;
       const hz = HAZARDS[cause];
@@ -297,20 +303,22 @@
       p.onRect = null;
       this.hooks.onRespawn?.();
     }
-    damage(from, scale) {
+    damage(from, scale, kind) {
       const p = this.p;
       if (p.inv > 0 || p.dead > 0) return;
+      if (p.dashT > 0 || p.dashGrace > 0) { this.float(p.x, p.y - 100, 'dodged', '#7fdbff'); return; }
+      if (kind === 'ground' && !p.grounded) { this.float(p.x, p.y - 100, 'jumped it', '#7fdbff'); return; }
       if (this.L.mode === 'hunt') {
         const dmg = root.HoneyEngine.COMBAT.taken(this.L.stats, from, Math.random, scale || 1);
         p.hpNum = Math.max(0, p.hpNum - dmg); p.inv = 0.9; p.stunned = 0.25;
         p.vx = (p.x < from.x ? -1 : 1) * 280; p.vy = -360; p.grounded = false;
-        this.sprite.hurt(); this.shake = 0.35;
+        this.sprite.hurt(); this.shake = 0.35; this.sfx('hurt');
         this.float(p.x, p.y - 100, `-${dmg}`, '#ff5b4d');
         this.hooks.onHurt?.(p.hpNum);
-        if (p.hpNum <= 0) { p.dead = 1e9; this.finished = true; this.burst(p.x, p.y - 30, ['#fff', '#ff8a7a'], 26, 220); this.hooks.onCubDown?.({ timeMs: Math.round(this.time * 1000) }); }
+        if (p.hpNum <= 0) { p.dead = 1e9; this.finished = true; this.sfx('defeat'); this.burst(p.x, p.y - 30, ['#fff', '#ff8a7a'], 26, 220); this.hooks.onCubDown?.({ timeMs: Math.round(this.time * 1000) }); }
         return;
       }
-      p.hp -= 1; p.inv = 1.2; p.stunned = 0.3;
+      p.hp -= 1; p.inv = 1.2; p.stunned = 0.3; this.sfx('hurt');
       p.vx = (p.x < from.x ? -1 : 1) * 260; p.vy = -380; p.grounded = false;
       this.sprite.hurt(); this.shake = 0.35;
       this.hooks.onHurt?.(p.hp);
@@ -354,7 +362,7 @@
       for (const h of this.honey) {
         if (h.taken || p.dead > 0) continue;
         if (Math.abs(h.x - p.x) < 30 && Math.abs(h.y - (p.y - 36)) < 48) {
-          h.taken = true; p.honey++;
+          h.taken = true; p.honey++; this.sfx('honey');
           // every five drops charge a Honey Burst (up to two stored)
           if (++p.burstStreak >= 5) { p.burstStreak = 0; if (p.burst < 2) { p.burst++; this.float(p.x, p.y - 110, '✦ Burst charged', '#ffe27a'); } }
           this.burst(h.x, h.y, ['#f5e06e', '#d4af37', '#fff2b0'], 10, 90);
@@ -366,7 +374,7 @@
         q.t -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 120 * dt;
         if (p.dead <= 0 && Math.abs(q.x - p.x) < (p.blocking ? 44 : 26) && q.y > p.y - PLAYER_H - 10 && q.y < p.y) {
           q.t = 0;
-          if (p.blocking && Math.sign(q.x - p.x) === p.facing) { this.burst(q.x, q.y, ['#f5e06e', '#fff2b0'], 10, 120); this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); this.shake = Math.max(this.shake, 0.08); }
+          if (p.blocking && Math.sign(q.x - p.x) === p.facing) { this.burst(q.x, q.y, ['#f5e06e', '#fff2b0'], 10, 120); this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); this.shake = Math.max(this.shake, 0.08); this.sfx('block'); }
           else { this.damage({ x: q.x, atk: q.atk }, q.scale); this.burst(q.x, q.y, ['#fff', '#ffb347'], 6, 80); }
         }
       }
@@ -377,7 +385,7 @@
       }
       this.waves = this.waves.filter(w => w.t > 0);
       for (const sp of this.springs) sp.t = Math.max(0, sp.t - dt);
-      for (const c of this.checkpoints) if (!c.lit && p.x > c.x) { c.lit = true; p.checkpoint = c.x; this.float(c.x, GROUND_Y - 120, 'Checkpoint', '#7cf29e'); this.hooks.onCheckpoint?.(); }
+      for (const c of this.checkpoints) if (!c.lit && p.x > c.x) { c.lit = true; p.checkpoint = c.x; this.float(c.x, GROUND_Y - 120, 'Checkpoint', '#7cf29e'); this.sfx('checkpoint'); this.hooks.onCheckpoint?.(); }
       if (!this.finished && p.x > this.L.portal - 10 && p.dead <= 0) this.finish();
     }
     stepGuardian(g, dt) {
@@ -385,6 +393,9 @@
       if (g.dead > 0) { g.dead -= dt; return; }
       if (g.hpLeft <= 0) return;
       g.hit = Math.max(0, g.hit - dt);
+      p.frenzy = Math.max(0, (p.frenzy || 0) - dt); p.shieldFx = Math.max(0, (p.shieldFx || 0) - dt);
+      if (g.frozen > 0) g.frozen -= dt;
+      if (g.burn > 0) { g.burnT -= dt; if (g.burnT <= 0) { g.burn--; g.burnT = 0.6; const d = Math.max(3, Math.floor(this.L.stats.ATK * 0.15)); g.hpLeft = Math.max(0, g.hpLeft - d); this.float(g.x, g.y - g.h - 8, `-${d} 🔥`, '#ff8a4a'); this.burst(g.x, g.y - g.h / 2, ['#ff6b35', '#ffb347'], 6, 90); this.hooks.onGuardianHit?.(g, d); if (g.hpLeft <= 0) { g.dead = 0.9; this.finished = true; this.sprite.cheer(); this.sfx('victory'); this.hooks.onGuardianDown?.({ timeMs: Math.round(this.time * 1000), pHP: p.hpNum, hits: p.hits }); return; } } }
       root.Guardian.step(this, g, dt);
       if (p.dead > 0) return;
       // the swing lands once per attack
@@ -396,24 +407,26 @@
       const hitX = Math.abs(g.x - p.x) < (g.w + PLAYER_W) / 2, hitY = p.y > g.y - g.h && p.y - PLAYER_H < g.y;
       const scale = root.Guardian.contactScale(g), special = g.state === 'charge' || g.state === 'leap' || g.state === 'swoop';
       if (hitX && hitY && scale > 0) {
-        if (p.blocking && !special && Math.sign(g.x - p.x) === p.facing) { if (p.inv <= 0) { p.inv = 0.5; p.vx = -p.facing * 160; this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); } }
-        else this.damage(g, scale);
+        if (p.blocking && !special && Math.sign(g.x - p.x) === p.facing) { if (p.inv <= 0) { p.inv = 0.5; p.vx = -p.facing * 160; this.float(p.x, p.y - 100, 'blocked', '#ffe27a'); this.sfx('block'); } }
+        else this.damage(g, scale, g.state === 'charge' || g.state === 'idle' ? 'ground' : 'any');
       }
     }
     hitGuardian(g, burst) {
       const p = this.p, s = this.L.stats, C = root.HoneyEngine.COMBAT;
       const crit = !burst && C.crit(s);
-      let dmg = burst ? C.burst(s) : Math.floor(C.hit(s) * (crit ? 1.8 : 1));
-      dmg = Math.floor(dmg * root.Guardian.vulnerability(g));
+      let dmg = burst ? Math.floor(C.burst(s) * ((this.power?.dmg || 3) / 3)) : Math.floor(C.hit(s) * (crit ? 1.8 : 1) * (p.frenzy > 0 ? 1.6 : 1));
+      dmg = Math.floor(dmg * root.Guardian.vulnerability(g) * (g.frozen > 0 ? 1.5 : 1));
       g.hpLeft = Math.max(0, g.hpLeft - dmg); g.hit = 0.3; p.hits++;
-      if (burst) { g.stagger = 1.2; g.vx = 0; }
-      else if (++p.burstStreak >= 8) { p.burstStreak = 0; if (p.burst < 2) { p.burst++; this.float(p.x, p.y - 110, '✦ Burst charged', '#ffe27a'); } this.hooks.onBurst?.(p.burst); }
+      const need = p.frenzy > 0 ? 2 : 4;
+      if (burst) { g.stagger = Math.max(g.stagger, this.power?.stagger || 1.2); g.vx = 0; }
+      else if (++p.burstStreak >= need) { p.burstStreak = 0; if (p.burst < 2) { p.burst++; this.float(p.x, p.y - 110, '✦ Burst charged', '#ffe27a'); this.sfx('charged'); } this.hooks.onBurst?.(p.burst); }
+      this.sfx(burst ? 'burst' : crit ? 'crit' : 'hit');
       this.burst(g.x, g.y - g.h / 2, burst ? ['#f5e06e', '#fff2b0', '#ffb347'] : ['#fff', '#ffb347', '#ff6b35'], burst ? 40 : 16, burst ? 260 : 170);
       this.shake = Math.max(this.shake, crit || burst ? 0.4 : 0.15);
       this.float(g.x + (Math.random() - .5) * 40, g.y - g.h - 10, `-${dmg}${crit ? ' CRIT' : ''}`, crit ? '#ff6b35' : burst ? '#ffe27a' : '#fff');
       this.hooks.onGuardianHit?.(g, dmg);
       if (g.hpLeft <= 0) {
-        g.dead = 0.9; this.finished = true; this.sprite.cheer();
+        g.dead = 0.9; this.finished = true; this.sprite.cheer(); this.sfx('victory');
         this.burst(g.x, g.y - g.h / 2, ['#f5e06e', '#d4af37', '#fff2b0', '#7fdbff'], 60, 280);
         this.hooks.onGuardianDown?.({ timeMs: Math.round(this.time * 1000), pHP: p.hpNum, hits: p.hits });
       }
@@ -429,7 +442,20 @@
       for (const e of this.enemies) {
         if (e.hpLeft <= 0) continue;
         if (Math.hypot(e.x - p.x, (e.y - e.h / 2) - (p.y - 30)) >= 240) continue;
-        if (e.guardian) { this.hitGuardian(e, true); continue; }
+        if (e.guardian) {
+          this.hitGuardian(e, true);
+          const pw = this.power;
+          if (pw) {
+            if (pw.burn)   { e.burn = pw.burn; e.burnT = 0.6; }
+            if (pw.freeze) { e.frozen = pw.freeze; }
+            if (pw.shield) { p.inv = Math.max(p.inv, pw.shield); p.shieldFx = pw.shield; }
+            if (pw.heal)   { const h = Math.floor(p.hpMax * pw.heal); p.hpNum = Math.min(p.hpMax, p.hpNum + h); this.float(p.x, p.y - 120, `+${h}`, '#7cf29e'); this.hooks.onHurt?.(p.hpNum); }
+            if (pw.frenzy) { p.frenzy = pw.frenzy; }
+            this.float(p.x, p.y - 140, `${pw.icon} ${pw.name}`, '#ffe27a');
+            this.sfx('power');
+          }
+          continue;
+        }
         e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); if (e.hpLeft > 0) { e.hit = 0; this.hitEnemy(e, Math.sign(e.x - p.x) || 1); }
       }
       this.hooks.onBurst?.(p.burst);
@@ -439,11 +465,11 @@
       e.hpLeft -= 1; e.hit = 0.4;
       this.burst(e.x, e.y - e.h / 2, ['#fff', '#ffb347', '#ff6b35'], stomp ? 14 : 18, 180);
       this.shake = Math.max(this.shake, 0.2);
-      if (e.hpLeft <= 0) { e.dead = 0.6; this.float(e.x, e.y - e.h, e.name + ' down!', '#ff8a7a'); this.hooks.onKill?.(e); }
-      else { e.x += (dir || 0) * 30; this.float(e.x, e.y - e.h, 'hit', '#fff'); }
+      if (e.hpLeft <= 0) { e.dead = 0.6; this.float(e.x, e.y - e.h, e.name + ' down!', '#ff8a7a'); this.sfx('crit'); this.hooks.onKill?.(e); }
+      else { e.x += (dir || 0) * 30; this.float(e.x, e.y - e.h, 'hit', '#fff'); this.sfx('hit'); }
     }
     finish() {
-      this.finished = true; this.sprite.cheer();
+      this.finished = true; this.sprite.cheer(); this.sfx('portal');
       this.burst(this.p.x, this.p.y - 40, ['#f5e06e', '#d4af37', '#fff2b0', '#7fdbff'], 60, 260);
       this.hooks.onFinish?.({ timeMs: Math.round(this.time * 1000), honey: this.p.honey });
     }
@@ -538,6 +564,14 @@
         ctx.beginPath(); ctx.ellipse(this.p.x, this.p.y - 36, 48 + pulse * 6, 60 + pulse * 6, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
       if (this.p.dead <= 0) { if (this.p.inv > 0 && Math.floor(this.p.inv * 14) % 2 === 0) ctx.globalAlpha = 0.45; this.sprite.draw(ctx, this.p.x, this.p.y, 1, 0); ctx.globalAlpha = 1; }
+      if (this.p.shieldFx > 0 && this.p.dead <= 0) {
+        ctx.save(); ctx.globalAlpha = 0.6; ctx.strokeStyle = '#d9c38a'; ctx.lineWidth = 4; ctx.shadowColor = '#f5e06e'; ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.ellipse(this.p.x, this.p.y - 40, 52, 66, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
+      if (this.p.frenzy > 0 && this.p.dead <= 0) {
+        ctx.save(); ctx.globalAlpha = 0.5 + Math.sin(t * 20) * 0.2; ctx.strokeStyle = '#a3ff8f'; ctx.lineWidth = 3; ctx.shadowColor = '#2ecc71'; ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.ellipse(this.p.x, this.p.y - 40, 46, 60, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
       if (this.p.blocking && this.p.dead <= 0) {
         const f = this.sprite.facing, px = this.p.x + f * 34, py = this.p.y - 40;
         ctx.save(); ctx.translate(px, py); ctx.scale(f, 1);
@@ -623,6 +657,8 @@
       if (e.chargeT > 0 || e.state === 'charge' || e.state === 'swoop') ctx.filter = 'drop-shadow(0 0 10px #ff6b35)';
       if (e.state === 'tell') ctx.filter = `drop-shadow(0 0 ${14 + Math.sin(t * 30) * 6}px #ff3b1f) brightness(1.5)`;
       if (e.stagger > 0) ctx.filter = 'saturate(0.4) brightness(1.2)';
+      if (e.frozen > 0) ctx.filter = 'hue-rotate(180deg) saturate(0.5) brightness(1.3) drop-shadow(0 0 12px #7fdbff)';
+      if (e.burn > 0) ctx.filter = 'drop-shadow(0 0 14px #ff6b35) saturate(1.4)';
       if (e.dead > 0) { ctx.globalAlpha = e.dead / 0.6; ctx.scale(1 + (0.6 - e.dead), 1 - (0.6 - e.dead) * 0.8); }
       ctx.scale(e.dir, 1);
       ctx.font = `${e.h}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';

@@ -102,6 +102,23 @@
     'Tectonic Guard':   ['Stone Honey Slam','Titan Honey Crush','Honey Strike'],
     'Stratum Keeper':   ['Stone Honey Slam','Primal Honey','Honey Strike'],
   };
+  // Honey Power: what a Cub's Honey Burst does in the den, by trait family
+  const CLASS_POWER = {
+    'Magma Warden':'magma', 'Ember Knight':'magma',
+    'Stratum Knight':'stone', 'Tectonic Guard':'stone', 'Stratum Keeper':'stone', 'Sediment Scout':'stone',
+    'Glacial Scout':'tide', 'Tidal Rogue':'tide',
+    'Quartz Sage':'crystal', 'Crystal Mage':'crystal',
+    'Desert Fossil':'primal', 'Fossil Rogue':'primal', 'Carbonite Ranger':'primal', 'Void Stalker':'primal',
+  };
+  const POWERS = {
+    magma:   { name:'Magma Nova',     icon:'🌋', dmg:3.5, burn:3,   desc:'A blast of molten honey — heavy damage, and the guardian burns for three ticks.' },
+    stone:   { name:'Stone Bulwark',  icon:'🪨', dmg:2.0, shield:2.5, stagger:1.8, desc:'Honey hardens into stone — a long stagger, and nothing can touch you for 2.5 seconds.' },
+    tide:    { name:'Tide Surge',     icon:'🌊', dmg:2.2, heal:0.25, desc:'A wave of living honey — damage, and a quarter of your health flows back.' },
+    crystal: { name:'Crystal Prism',  icon:'💎', dmg:2.4, freeze:4,  desc:'Honey crystallises around the guardian — it crawls for four seconds and takes extra damage.' },
+    primal:  { name:'Primal Rush',    icon:'🌿', dmg:2.0, frenzy:6,  desc:'Ancient honey in the blood — six seconds of frenzy: every hit ×1.6, and the next Burst needs only two.' },
+  };
+  function powerOf(cls) { return POWERS[CLASS_POWER[cls] || 'primal']; }
+
   const CLASS_AFFINITY = {
     'Magma Warden':     { strong:'hadean',      weak:'proterozoic' },
     'Ember Knight':     { strong:'hadean',      weak:'cenozoic' },
@@ -346,7 +363,7 @@
     ERA_ORDER, ERA_UNLOCK, ERA_HONEY, ERA_LVL, ERA_ENEMIES, GEO_BURSTS, CLASS_BURSTS, CLASS_AFFINITY,
     COOLDOWN_MS, MAX_LEVEL, eraIdx, drinkCost, switchCost, reviveCost, infuseCost, xpToNext,
     hash, deriveClass, rarityForNumber, baseStats, affinity, getStats,
-    ROADS, SCOUT_CUBS, SCOUT_LEVEL_CAP, SCOUT_ERA_CAP, isScout, scoutCub, levelCap, scoutEraOk,
+    ROADS, SCOUT_CUBS, SCOUT_LEVEL_CAP, SCOUT_ERA_CAP, isScout, scoutCub, levelCap, scoutEraOk, CLASS_POWER, POWERS, powerOf,
     newProfile, prog, isCoolingDown, isEraUnlocked, roadAvailable, roadDone, completeRoad,
     COMBAT, HUNT, huntMinTimeMs, startBattle, resolveHunt, applyVictory, applyDefeat, infuse, reviveWithHoney, clearCooldown, selectEra,
   };

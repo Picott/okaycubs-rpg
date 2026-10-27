@@ -73,7 +73,7 @@
     <div class="keys">← → run · space jump (press again in the air to double-jump) · X hit · Z dash · every 5 drops charge a Honey Burst: dash to prime, hit to release · stomp Ember Sentinels, hit Golems twice</div>
   </div>
 </div>
-<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button onclick="restart()">Restart</button><a href="/game.html"><button>Leave</button></a></div></div></div>
+<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><p style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px">MUSIC <input type="range" min="0" max="100" id="volMusic" oninput="GameMusic.setMusic(this.value/100)"> &nbsp; SFX <input type="range" min="0" max="100" id="volSfx" oninput="GameMusic.setSfx(this.value/100)"></p><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button onclick="this.textContent = GameMusic.toggleMute() ? 'Unmute' : 'Mute'">Mute</button><button onclick="restart()">Restart</button><a href="/game.html"><button>Leave</button></a></div></div></div>
 <div class="overlay hidden" id="result">
   <div class="card">
     <h1 id="resultTitle">🍯 Road complete!</h1>
@@ -86,7 +86,7 @@
 <script src="/engine.js"></script>
 <script src="/sprite.js"></script>
 <script src="/honey-road.js"></script>
-<script src="/music.js" data-position="top" data-lift="touch"></script>
+<script src="/gamemusic.js"></script>
 <script>
 const q = new URLSearchParams(location.search);
 const ERA = HONEY_ROAD_LEVELS[q.get('era')] ? q.get('era') : 'hadean';
@@ -127,15 +127,16 @@ async function init() {
   } catch (e) {}
   road = new HoneyRoad(cv, sprite, ERA, {
     onHoney: hud, onHurt: hud, onRespawn: hud, onDeath: hud, onBurst: hud,
-    onBurstFire: () => window.Music?.duck(1400),
+    onBurstFire: () => GameMusic.duck(1400),
     onFinish: r => showResult(r),
   });
   road.start();
+  GameMusic.setEra(ERA);
   hud();
 }
 function startRun() {
   document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0;
-  document.activeElement?.blur();   // otherwise the space bar keeps re-activating the button
+  document.activeElement?.blur(); GameMusic.start();   // otherwise the space bar keeps re-activating the button
   // phones: go full screen and ask for landscape where the platform allows it (Android); iOS ignores both quietly
   if (matchMedia('(pointer:coarse)').matches) {
     const el = document.documentElement;
@@ -143,7 +144,7 @@ function startRun() {
   }
 }
 function restart() { road.reset(); submitted = false; document.getElementById('result').classList.add('hidden'); document.getElementById('pause').classList.add('hidden'); road.paused = false; road.started = true; hud(); }
-function togglePause() { if (!road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); }
+function togglePause() { if (!road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); document.getElementById('volMusic').value = GameMusic.settings.music * 100; document.getElementById('volSfx').value = GameMusic.settings.sfx * 100; }
 
 // ---- saving the run: server when the wallet session exists, otherwise the local profile ----
 async function showResult({ timeMs, honey }) {
@@ -184,6 +185,7 @@ addEventListener('keydown', e => {
   if (e.key.toLowerCase() === 'x' && !e.repeat) road.input.attack = true;
   if (e.key.toLowerCase() === 'z' && !e.repeat) road.input.dash = true;
   if ((e.key === 'Escape' || e.key.toLowerCase() === 'p') && !e.repeat) togglePause();
+  if (e.key.toLowerCase() === 'm' && !e.repeat) GameMusic.toggleMute();
   if (e.key === 'Enter' && !document.getElementById('intro').classList.contains('hidden')) startRun();
 });
 addEventListener('keyup', e => {

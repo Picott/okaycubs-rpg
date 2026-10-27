@@ -50,7 +50,7 @@
         } else {
           g.vx = dist > 70 ? dir * g.speed * 0.9 : 0;
         }
-        if (g.t > T.cooldown && (g.family === 'shooter' ? dist < 700 : dist < 320)) { g.state = 'tell'; g.t = 0; g.vx = 0; game.float(g.x, g.y - g.h - 12, '!', '#ff8a7a'); }
+        if (g.t > T.cooldown * (g.frozen > 0 ? 2 : 1) && (g.family === 'shooter' ? dist < 700 : dist < 320)) { g.state = 'tell'; g.t = 0; g.vx = 0; game.float(g.x, g.y - g.h - 12, '!', '#ff8a7a'); game.sfx?.('tell'); }
         break;
       }
       case 'tell': {
@@ -105,6 +105,7 @@
         break;
       }
     }
+    if (g.frozen > 0) g.vx *= 0.4;
     g.x += g.vx * dt;
     g.x = Math.max(g.range[0], Math.min(g.range[1], g.x));
     if (g.x === g.range[0] || g.x === g.range[1]) { if (g.state === 'charge') { g.state = 'rest'; g.t = 0; g.vx = 0; } }

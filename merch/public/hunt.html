@@ -72,7 +72,7 @@
   <div class="row"><button class="primary" id="startBtn" onclick="startHunt()">Face the guardian</button><a href="/game.html"><button>Back to the den</button></a></div>
   <div class="keys">← → move · space jump (again in the air to double-jump) · X hit · Z dash · C / Shift / ↓ hold to block · Esc pause</div>
 </div></div>
-<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button class="danger" onclick="flee()">Flee the den</button></div></div></div>
+<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><p style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px">MUSIC <input type="range" min="0" max="100" id="volMusic" oninput="GameMusic.setMusic(this.value/100)"> &nbsp; SFX <input type="range" min="0" max="100" id="volSfx" oninput="GameMusic.setSfx(this.value/100)"></p><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button onclick="this.textContent = GameMusic.toggleMute() ? 'Unmute' : 'Mute'">Mute</button><button class="danger" onclick="flee()">Flee the den</button></div></div></div>
 <div class="overlay hidden" id="result"><div class="card">
   <div class="guardian" id="resultEmoji">🍯</div>
   <h1 id="resultTitle">Guardian defeated!</h1>
@@ -85,7 +85,7 @@
 <script src="/sprite.js"></script>
 <script src="/guardian.js"></script>
 <script src="/honey-road.js"></script>
-<script src="/music.js" data-position="top" data-lift="touch"></script>
+<script src="/gamemusic.js"></script>
 <script>
 const q = new URLSearchParams(location.search);
 const CUB = { id: q.get('id') || 'scout-35', name: q.get('name') || 'Scout Cub #35', image: q.get('img') || '/cubs/35.png',
@@ -128,7 +128,7 @@ function hud() {
   const b = document.getElementById('hudBurst');
   if (p.primed > 0) { b.textContent = '✦ PRIMED — HIT TO RELEASE'; b.className = 'burst'; }
   else if (p.burst >= 1) { b.textContent = `✦ BURST READY${p.burst >= 2 ? ' ×2' : ''} — DASH, THEN HIT`; b.className = 'burst'; }
-  else { b.textContent = `✦ burst ${p.burstStreak} / 8 hits`; b.className = 'burst empty'; }
+  else { b.textContent = `✦ ${road.power ? road.power.name : 'burst'} ${p.burstStreak} / ${p.frenzy > 0 ? 2 : 4} hits`; b.className = 'burst empty'; }
 }
 setInterval(() => { if (road && road.started && !road.paused && !road.finished) document.getElementById('hudTime').textContent = fmt(road.time * 1000); }, 100);
 
@@ -151,16 +151,19 @@ async function init() {
   const base = HONEY_ROAD_LEVELS[ERA];
   const level = { mode: 'hunt', title: `${enemy.name}'s Den`, honeyName: base.honeyName, next: null, length: 1500, hazard: base.hazard, palette: base.palette,
     ground: [[0, 1500]], platforms: [{ x: 290, y: 362, w: 150 }, { x: 1060, y: 362, w: 150 }], crumble: [], movers: [], springs: [], enemies: [], honey: [], checkpoints: [], portal: Infinity,
-    guardian: { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 }, pHP: b.pHP, pMaxHP: b.pMaxHP, stats };
+    guardian: { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 }, pHP: b.pHP, pMaxHP: b.pMaxHP, stats, power: HoneyEngine.powerOf(CUB.class) };
+  GameMusic.setEra(ERA);
   road = new HoneyRoad(cv, sprite, level, {
     onHurt: hud, onBurst: hud, onGuardianHit: hud,
-    onBurstFire: () => window.Music?.duck(1400),
+    onBurstFire: () => GameMusic.duck(1400),
     onGuardianDown: r => report('win', r),
     onCubDown: r => report('lose', r),
   });
   road.paused = true; road.started = false; road.start();
   document.getElementById('cubName').textContent = `${CUB.name} · Lv ${lvl}`;
-  document.getElementById('cubClass').textContent = CUB.class + (HoneyEngine.affinity(CUB.class, ERA) === 1 ? ' · strong here' : HoneyEngine.affinity(CUB.class, ERA) === -1 ? ' · weak here' : '');
+  const pw = HoneyEngine.powerOf(CUB.class);
+  document.getElementById('cubClass').textContent = CUB.class + (HoneyEngine.affinity(CUB.class, ERA) === 1 ? ' · strong here' : HoneyEngine.affinity(CUB.class, ERA) === -1 ? ' · weak here' : '') + ` · ${pw.icon} ${pw.name}`;
+  document.getElementById('introText').innerHTML = `Watch for the red flash — that is the tell. Hold block to stop projectiles and shoves, dash through anything, jump over charges, then strike while the guardian recovers.<br><br><strong style="color:#f5e06e">${pw.icon} ${pw.name}</strong> — ${pw.desc} Lands 4 hits to charge: dash to prime, hit to release.`;
   document.getElementById('gName').textContent = `${enemy.emoji} ${enemy.name} · Lv ${enemy.lvl || 1}`;
   document.getElementById('gClass').textContent = enemy.cls;
   document.getElementById('introEmoji').textContent = enemy.emoji;
@@ -175,9 +178,9 @@ function fail(e) {
   document.getElementById('introText').textContent = msg;
   document.getElementById('startBtn').style.display = 'none';
 }
-function startHunt() { document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0; document.activeElement?.blur();
+function startHunt() { document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0; document.activeElement?.blur(); GameMusic.start();
   if (matchMedia('(pointer:coarse)').matches) { const el = document.documentElement; (el.requestFullscreen?.() || Promise.resolve()).then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); } }
-function togglePause() { if (!road || !road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); }
+function togglePause() { if (!road || !road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); document.getElementById('volMusic').value = GameMusic.settings.music * 100; document.getElementById('volSfx').value = GameMusic.settings.sfx * 100; }
 function flee() { road.finished = true; report('flee', { timeMs: Math.round(road.time * 1000), pHP: road.p.hpNum }); }
 
 // ---- outcome → server (or local engine) → rewards ----
@@ -219,6 +222,7 @@ addEventListener('keydown', e => {
   if (e.key.toLowerCase() === 'z' && !e.repeat) road.input.dash = true;
   if (e.key.toLowerCase() === 'c' || e.key === 'Shift' || e.key === 'ArrowDown') { road.input.block = true; if (e.key === 'ArrowDown') e.preventDefault(); }
   if ((e.key === 'Escape' || e.key.toLowerCase() === 'p') && !e.repeat) togglePause();
+  if (e.key.toLowerCase() === 'm' && !e.repeat) GameMusic.toggleMute();
   if (e.key === 'Enter' && !document.getElementById('intro').classList.contains('hidden') && document.getElementById('startBtn').style.display !== 'none') startHunt();
 });
 addEventListener('keyup', e => { if (!road) return; if (KEYS[e.key]) road.input[KEYS[e.key]] = false; if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') road.input.jumpHeld = false; if (e.key.toLowerCase() === 'c' || e.key === 'Shift' || e.key === 'ArrowDown') road.input.block = false; });

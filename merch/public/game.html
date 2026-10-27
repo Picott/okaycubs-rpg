@@ -501,6 +501,7 @@
       <a href="/faq.html" class="nav-link">❓ FAQ</a>
       <a href="/" class="nav-link">🛍 Merch</a>
       <button class="nav-btn" onclick="toggleChronicle()">🍯 Chronicle</button>
+      <button class="nav-btn" id="muteBtn" onclick="document.getElementById('muteBtn').textContent = GameMusic.toggleMute() ? '🔇 Muted' : '🔊 Sound'">🔊 Sound</button>
     </div>
     <div id="floorPrice" class="floor-price"></div>
     <div class="eras">
@@ -663,7 +664,7 @@
 
 </div>
 
-<script src="/music.js" data-position="bottom"></script>
+<script src="/gamemusic.js"></script>
 <script>
 // ─────────────────────────────────────────
 // CONFIG
@@ -1452,6 +1453,7 @@ function applyEraTheme(era) {
   if (!den) return;
   den.dataset.era = era;
   den.style.setProperty('--era', meta.color);
+  window.GameMusic?.setEra(era);
 }
 function addLog(msg, cls='ls') {
   const log = document.getElementById('log');
@@ -1470,7 +1472,8 @@ function renderDenCub() {
   const src = cubPortrait(c), aff = affinity(c);
   el.innerHTML = `${src ? `<img src="${src}" alt="${c.name}">` : '<div class="sprite-emoji" style="font-size:96px">🐻</div>'}
     <div class="den-name">${c.name} · Lv ${getLevel(c)}</div>
-    <div class="den-class">${c.class}${aff === 1 ? ' · ▲ strong here' : aff === -1 ? ' · ▼ weak here' : ''}</div>`;
+    <div class="den-class">${c.class}${aff === 1 ? ' · ▲ strong here' : aff === -1 ? ' · ▼ weak here' : ''}</div>
+    <div class="den-class" style="color:#f5e06e;opacity:.85">${HoneyEngine.powerOf(c.class).icon} ${HoneyEngine.powerOf(c.class).name}</div>`;
 }
 function updateDen() {
   const era = G.currentEra, meta = ERA_META[era] || ERA_META.hadean, road = HoneyEngine.ROADS[era];
