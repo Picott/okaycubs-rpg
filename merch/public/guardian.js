@@ -44,7 +44,7 @@
     if (!MOVE_NAMES[g.move]) g.move = DEFAULT_MOVE[g.family];
     g.moveName = MOVE_NAMES[g.move]; g.moveTip = MOVE_TIPS[g.move];
     g.state = 'idle'; g.t = 0; g.vx = 0; g.vy = 0; g.airborne = false;
-    g.stagger = 0; g.shotsLeft = 0; g.shotT = 0; g.hopsLeft = 0; g.chargesLeft = 0; g.divesLeft = 0;
+    g.stagger = 0; g.shotsLeft = 0; g.shotT = 0; g.hopsLeft = 0; g.chargesLeft = 0; g.divesLeft = 0; g.midMove = false;
     g.baseY = GROUND_Y; g.y = GROUND_Y;
     if (g.family === 'flyer') { g.y = GROUND_Y - TUNE.flyer.hover; g.fly = true; } else g.fly = false;
     g.hpLeft = g.hp;
@@ -83,7 +83,7 @@
         if (g.family === 'flyer' && g.move === 'drop') g.x += (g.aim.x - g.x) * Math.min(1, dt * 3);   // slides over the cub before dropping
         if (g.t >= T.tell) {
           g.t = 0;
-          if (g.family === 'charger')      { g.state = 'charge'; g.chargesLeft = g.move === 'double' ? 1 : 0; g.vx = g.dir * T.chargeSpeed; game.shake = Math.max(game.shake, 0.15); }
+          if (g.family === 'charger')      { g.state = 'charge'; if (!g.midMove) g.chargesLeft = g.move === 'double' ? 1 : 0; g.midMove = false; g.vx = g.dir * T.chargeSpeed; game.shake = Math.max(game.shake, 0.15); }
           else if (g.family === 'jumper')  {
             if (g.move === 'hops') { g.state = 'hop'; g.hopsLeft = 2; g.vx = g.dir * T.leapVX * 0.8; g.vy = -T.leapVY * 0.55; }
             else { g.state = 'leap'; g.vx = g.dir * T.leapVX; g.vy = -T.leapVY * 1.15; }
@@ -102,7 +102,7 @@
       }
       case 'charge': {
         if (g.t >= T.chargeTime) {
-          if (g.chargesLeft > 0) { g.chargesLeft--; g.state = 'tell'; g.t = T.tell - 0.25; g.vx = 0; g.dir = p.x < g.x ? -1 : 1; g.aim = { x: p.x, y: p.y }; game.float(g.x, g.y - g.h - 12, '!', '#ff8a7a'); }
+          if (g.chargesLeft > 0) { g.chargesLeft--; g.midMove = true; g.state = 'tell'; g.t = T.tell - 0.25; g.vx = 0; g.dir = p.x < g.x ? -1 : 1; g.aim = { x: p.x, y: p.y }; game.float(g.x, g.y - g.h - 12, '!', '#ff8a7a'); }
           else if (g.move === 'stomp') { g.state = 'rest'; g.t = 0; g.vx = 0; game.shake = Math.max(game.shake, 0.35); game.burst(g.x, g.y, ['#ffb347', '#fff'], 14, 140); game.waves.push({ x: g.x, dir: -1, t: 1.0, scale: 0.9, atk: g.atk }, { x: g.x, dir: 1, t: 1.0, scale: 0.9, atk: g.atk }); }
           else { g.state = 'rest'; g.t = 0; g.vx = 0; game.burst(g.x, g.y - 10, ['#ddd', '#aaa'], 8, 80); }
         }
