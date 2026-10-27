@@ -1493,6 +1493,8 @@ function updateDen() {
     const need = road.wins, pct = Math.min(100, Math.floor(G.wins / need * 100));
     prog.innerHTML = (bossBeaten
       ? `👑 ${boss.name} defeated${bossRec?.best ? ` · best ${(bossRec.best / 1000).toFixed(1)}s` : ''} — the ${meta.badge} Honey Road is open`
+      : bossUp && bossRec?.hpLeft > 0
+      ? `👑 ${boss.name} is wounded — ${bossRec.hpLeft} / ${boss.hp} HP left after ${bossRec.attempts || 1} attempt${(bossRec.attempts || 1) === 1 ? '' : 's'}. Finish it to open the ${meta.badge} Honey Road`
       : bossUp
       ? `👑 ${G.wins} kills — ${boss.name} has awakened. Defeat it to open the ${meta.badge} Honey Road`
       : `⚔ ${G.wins} / ${need} kills to wake the ${meta.badge} Era Boss`) + `<div class="bar"><i style="width:${pct}%"></i></div>`;
@@ -1505,9 +1507,9 @@ function updateDen() {
   if (bossBtn) {
     bossBtn.style.display = boss && bossUp ? '' : 'none';
     bossBtn.disabled = btn.disabled;
-    bossBtn.textContent = resumingBoss ? '👑 Resume the boss fight' : bossBeaten ? '👑 Challenge the Era Boss again' : '👑 Face the Era Boss';
+    bossBtn.textContent = resumingBoss ? '👑 Resume the boss fight' : bossBeaten ? '👑 Challenge the Era Boss again' : bossRec?.hpLeft > 0 ? '👑 Finish the Era Boss' : '👑 Face the Era Boss';
   }
-  hint.textContent = !c ? 'Pick a Cub from your roster to enter.' : cooling ? `${c.name} is recovering — revive it or pick another Cub.` : scoutBlocked ? 'Scout Cubs hunt up to Archean — become a Hunter to go further.' : bossUp && !bossBeaten ? `${boss.name} fights in three phases — each one a new attack. Beat it to open the road.` : 'Real-time hunt — read the guardian\'s tell, dodge, and punish its recovery.';
+  hint.textContent = !c ? 'Pick a Cub from your roster to enter.' : cooling ? `${c.name} is recovering — revive it or pick another Cub.` : scoutBlocked ? 'Scout Cubs hunt up to Archean — become a Hunter to go further.' : bossUp && !bossBeaten ? `${boss.name} fights in three phases — each one a new attack. Its wounds stay between attempts, and Honey Bursts hit it for ×${HoneyEngine.HUNT.bossBurst}.` : 'Real-time hunt — read the guardian\'s tell, dodge, and punish its recovery.';
   renderDenCub();
 }
 function enterDen(boss) {

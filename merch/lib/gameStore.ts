@@ -14,7 +14,7 @@ interface EngineApi {
   startBoss(p: Profile, cub: CubInfo, opts: { now?: number }): EngineResult;
   bossAvailable(p: Profile, era: string): boolean;
   bossDone(p: Profile, era: string): boolean;
-  resolveHunt(p: Profile, cub: CubInfo, report: { outcome: string; timeMs: number; pHP?: number }, opts: { now?: number }): EngineResult & Record<string, unknown>;
+  resolveHunt(p: Profile, cub: CubInfo, report: { outcome: string; timeMs: number; pHP?: number; eHP?: number }, opts: { now?: number }): EngineResult & Record<string, unknown>;
   infuse(p: Profile, cub: CubInfo): EngineResult;
   reviveWithHoney(p: Profile, cubId: string, now: number): EngineResult;
   clearCooldown(p: Profile, cubId: string): EngineResult;
@@ -36,7 +36,7 @@ export interface Profile {
   honey: number; honeyByEra: Record<string, number>; wins: number; era: string;
   cubProg: Record<string, CubProg>; cooldowns: Record<string, number>; hpPool: Record<string, number>;
   battle: Battle | null; roads?: Record<string, { runs: number; best: number | null; honey: number; lastAt: number }>;
-  bosses?: Record<string, { runs: number; best: number | null; lastAt: number }>; updatedAt?: number;
+  bosses?: Record<string, { runs: number; best: number | null; lastAt: number; hpLeft?: number; attempts?: number }>; updatedAt?: number;
 }
 export interface CubInfo {
   id: string; name: string; number: number | null; rarity: string; class: string;

@@ -51,8 +51,9 @@
     g.state = 'idle'; g.t = 0; g.vx = 0; g.vy = 0; g.airborne = false;
     g.stagger = 0; g.shotsLeft = 0; g.shotT = 0; g.hopsLeft = 0; g.chargesLeft = 0; g.divesLeft = 0; g.midMove = false;
     g.baseY = GROUND_Y; g.y = GROUND_Y;
+    g.hpLeft = g.hpLeft > 0 && g.hpLeft < g.hp ? g.hpLeft : g.hp;   // a sieged boss starts wounded
+    if (g.boss && g.phases && g.phases.length) applyPhase(g, Math.min(g.phases.length - 1, phaseFor(g)));
     if (g.family === 'flyer') { g.y = GROUND_Y - TUNE.flyer.hover; g.fly = true; } else g.fly = false;
-    g.hpLeft = g.hp;
   }
 
   // ---- era bosses: three phases, each a different family + signature move, faster every time ----

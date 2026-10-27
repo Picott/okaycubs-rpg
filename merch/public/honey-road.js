@@ -415,7 +415,7 @@
       const p = this.p, s = this.L.stats, C = root.HoneyEngine.COMBAT;
       if (g.transition > 0) { this.float(g.x, g.y - g.h - 10, 'immune', '#b8bcc8'); this.sfx('block'); return; }
       const crit = !burst && C.crit(s);
-      let dmg = burst ? Math.floor(C.burst(s) * ((this.power?.dmg || 3) / 3)) : Math.floor(C.hit(s) * (crit ? 1.8 : 1) * (p.frenzy > 0 ? 1.6 : 1));
+      let dmg = burst ? Math.floor(C.burst(s) * ((this.power?.dmg || 3) / 3) * (g.boss ? root.HoneyEngine.HUNT.bossBurst : 1)) : Math.floor(C.hit(s) * (crit ? 1.8 : 1) * (p.frenzy > 0 ? 1.6 : 1));
       dmg = Math.floor(dmg * root.Guardian.vulnerability(g) * (g.frozen > 0 ? 1.5 : 1));
       g.hpLeft = Math.max(0, g.hpLeft - dmg); g.hit = 0.3; p.hits++;
       const need = p.frenzy > 0 ? 2 : 4;

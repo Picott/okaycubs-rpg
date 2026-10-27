@@ -165,7 +165,7 @@ async function init() {
   const len = BOSS ? 1900 : 1500;
   const level = { mode: 'hunt', title: BOSS ? `${enemy.name}'s Throne` : `${enemy.name}'s Den`, honeyName: base.honeyName, next: null, length: len, hazard: base.hazard, palette: base.palette,
     ground: [[0, len]], platforms: BOSS ? [{ x: 300, y: 362, w: 150 }, { x: 870, y: 332, w: 170 }, { x: 1450, y: 362, w: 150 }] : [{ x: 290, y: 362, w: 150 }, { x: 1060, y: 362, w: 150 }], crumble: [], movers: [], springs: [], enemies: [], honey: [], checkpoints: [], portal: Infinity,
-    guardian: BOSS ? { ...enemy, x: 1400, w: 124, h: 148, speed: 95 + HoneyEngine.eraIdx(ERA) * 10 } : { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 },
+    guardian: BOSS ? { ...enemy, hpLeft: b.eHP, x: 1400, w: 124, h: 148, speed: 95 + HoneyEngine.eraIdx(ERA) * 10 } : { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 },
     pHP: b.pHP, pMaxHP: b.pMaxHP, stats, power: HoneyEngine.powerOf(CUB.class) };
   GameMusic.setEra(ERA); GameMusic.setIntensity(BOSS ? 1 : 0);
   road = new HoneyRoad(cv, sprite, level, {
@@ -192,7 +192,10 @@ async function init() {
     document.getElementById('introTitle').textContent = `${enemy.name} — the ${cap(ERA)} Era Boss`;
     document.getElementById('startBtn').textContent = 'Face the Era Boss';
     const names = g0.phases.map((ph, i) => `<strong style="color:#ff8a7a">${i + 1}. ${Guardian.MOVE_NAMES[ph.move] || ph.move}</strong>`).join(' → ');
-    document.getElementById('introText').innerHTML += `<br><br>Three phases, each a new attack: ${names}. Every third of its health it roars (you cannot hurt it then), shakes off burn and frost, and comes back faster.<br>Defeat it to open the ${base.honeyName} Road.`;
+    const wounded = b.eHP < b.eMaxHP;
+    document.getElementById('introText').innerHTML += `<br><br>Three phases, each a new attack: ${names}. Every third of its health it roars (you cannot hurt it then), shakes off burn and frost, and comes back faster. <strong style="color:#f5e06e">Honey Bursts hit it for ×${HoneyEngine.HUNT.bossBurst}.</strong><br>`
+      + (wounded ? `<strong style="color:#ffb347">Its wounds remain: ${b.eHP} / ${b.eMaxHP} HP left${g0.phase > 0 ? ` — it is already in phase ${g0.phase + 1}` : ''}.</strong> ` : `Its wounds stay between attempts — every hit counts. `)
+      + `Defeat it to open the ${base.honeyName} Road.`;
   } else document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${g0.moveName}</strong> — ${g0.moveTip}.`;
   hud();
 }
@@ -209,6 +212,7 @@ function startHunt() { document.getElementById('intro').classList.add('hidden');
 function togglePause() { if (!road || !road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); document.getElementById('volMusic').value = GameMusic.settings.music * 100; document.getElementById('volSfx').value = GameMusic.settings.sfx * 100; }
 function phaseBanner(big, small) { const el = document.getElementById('phaseBanner'); el.innerHTML = `${big}<small>${small}</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
 function flee() { road.finished = true; report('flee', { timeMs: Math.round(road.time * 1000), pHP: road.p.hpNum }); }
+const bossHP = () => (BOSS && road ? road.enemies[0].hpLeft : undefined);
 
 // ---- outcome → server (or local engine) → rewards ----
 async function report(outcome, r) {
@@ -222,8 +226,8 @@ async function report(outcome, r) {
   st.innerHTML = `<div>Time<b>${fmt(r.timeMs)}</b></div><div>Hits<b>${road.p.hits}</b></div>`;
   let res;
   try {
-    if (server) res = await api('/api/game/hunt/report', { outcome, timeMs: r.timeMs, pHP: r.pHP });
-    else { res = HoneyEngine.resolveHunt(prof, CUB, { outcome, timeMs: r.timeMs, pHP: r.pHP }, { now: Date.now() }); if (!res.ok) throw Object.assign(new Error(res.error), { code: res.error }); saveLocal(prof); res.state = prof; }
+    if (server) res = await api('/api/game/hunt/report', { outcome, timeMs: r.timeMs, pHP: r.pHP, eHP: bossHP() });
+    else { res = HoneyEngine.resolveHunt(prof, CUB, { outcome, timeMs: r.timeMs, pHP: r.pHP, eHP: bossHP() }, { now: Date.now() }); if (!res.ok) throw Object.assign(new Error(res.error), { code: res.error }); saveLocal(prof); res.state = prof; }
   } catch (e) { text.textContent = `The hunt was not recorded: ${e.code === 'too_fast' ? 'that was faster than the guardian allows — try again' : (e.message || e)}`; act.innerHTML = `<a href="/game.html"><button>Back to the den</button></a>`; return; }
   if (outcome === 'win') {
     text.innerHTML = `+${res.honey} ${res.honeyName} · +${res.xp} XP (🍯 ${res.state.honey} · ${res.wins} kills)`
@@ -233,10 +237,13 @@ async function report(outcome, r) {
     const roadQs = new URLSearchParams({ era: ERA, id: CUB.id, name: CUB.name, img: CUB.image });
     act.innerHTML = (res.boss ? `<a href="/honey-road.html?${roadQs}"><button class="primary">🏃 Run the Honey Road</button></a>` : `<button class="primary" onclick="location.reload()">Hunt again</button>`) + `<a href="/game.html"><button>Back to the den</button></a>`;
   } else if (outcome === 'lose') {
-    text.innerHTML = `${CUB.name} needs 30 minutes to recover — or honey to revive. Send in another Cub from the den.`;
+    text.innerHTML = `${CUB.name} needs 30 minutes to recover — or honey to revive. Send in another Cub from the den.`
+      + (res.boss ? `<br><strong style="color:#ffb347">👑 ${enemy.name} keeps its wounds: ${res.boss.hpLeft} / ${res.boss.hpMax} HP left.</strong>` : '');
     act.innerHTML = `<a href="/game.html"><button class="primary">Back to the den</button></a>`;
   } else {
-    text.textContent = 'No honey, no kill — but the Cub keeps its wounds and lives to hunt again.';
+    text.innerHTML = 'No honey, no kill — but the Cub keeps its wounds and lives to hunt again.'
+      + (res.boss ? `<br><strong style="color:#ffb347">👑 ${enemy.name} keeps its wounds too: ${res.boss.hpLeft} / ${res.boss.hpMax} HP left.</strong>` : '');
+    if (res.boss) act.innerHTML = `<button class="primary" onclick="location.reload()">Back into the throne</button><a href="/game.html"><button>Back to the den</button></a>`; else
     act.innerHTML = `<a href="/game.html"><button class="primary">Back to the den</button></a>`;
   }
 }

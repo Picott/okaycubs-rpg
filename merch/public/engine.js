@@ -31,9 +31,9 @@
     hadean:      { name:'The Caldera Queen',   emoji:'🐉', cls:'Sovereign of Magma Honey', hp:420,  atk:30, def:16, xp:60,  lvl:6,   shot:'🔥', phases:[{ family:'jumper', move:'high' }, { family:'charger', move:'stomp' }, { family:'shooter', move:'rain' }] },
     archean:     { name:'Tectonic Titan',      emoji:'⛰',  cls:'Sovereign of Stone Honey', hp:700,  atk:42, def:30, xp:110, lvl:16,  shot:'🪨', phases:[{ family:'charger', move:'double' }, { family:'jumper', move:'hops' }, { family:'charger', move:'stomp' }] },
     proterozoic: { name:'Snowball Leviathan',  emoji:'🐋', cls:'Sovereign of Tide Honey',  hp:900,  atk:52, def:36, xp:170, lvl:31,  shot:'🧊', phases:[{ family:'shooter', move:'rain' }, { family:'flyer', move:'twin' }, { family:'jumper', move:'high' }] },
-    paleozoic:   { name:'Reef Colossus',       emoji:'🦑', cls:'Sovereign of Bloom Honey', hp:1100, atk:60, def:42, xp:230, lvl:51,  shot:'🫧', phases:[{ family:'shooter', move:'spread' }, { family:'jumper', move:'hops' }, { family:'flyer', move:'drop' }] },
-    mesozoic:    { name:'Tyrant of Pangaea',   emoji:'🦖', cls:'Sovereign of Titan Honey', hp:1400, atk:72, def:50, xp:300, lvl:76,  shot:'☄', phases:[{ family:'charger', move:'double' }, { family:'charger', move:'stomp' }, { family:'jumper', move:'high' }] },
-    cenozoic:    { name:'The Warden of Time',  emoji:'👁', cls:'Sovereign of Frost Honey', hp:1800, atk:84, def:60, xp:400, lvl:100, shot:'⏳', phases:[{ family:'shooter', move:'spread' }, { family:'flyer', move:'drop' }, { family:'charger', move:'double' }] },
+    paleozoic:   { name:'Reef Colossus',       emoji:'🦑', cls:'Sovereign of Bloom Honey', hp:1100, atk:54, def:42, xp:230, lvl:51,  shot:'🫧', phases:[{ family:'shooter', move:'spread' }, { family:'jumper', move:'hops' }, { family:'flyer', move:'drop' }] },
+    mesozoic:    { name:'Tyrant of Pangaea',   emoji:'🦖', cls:'Sovereign of Titan Honey', hp:1250, atk:60, def:50, xp:300, lvl:76,  shot:'☄', phases:[{ family:'charger', move:'double' }, { family:'charger', move:'stomp' }, { family:'jumper', move:'high' }] },
+    cenozoic:    { name:'The Warden of Time',  emoji:'👁', cls:'Sovereign of Frost Honey', hp:1600, atk:68, def:60, xp:400, lvl:100, shot:'⏳', phases:[{ family:'shooter', move:'spread' }, { family:'flyer', move:'drop' }, { family:'charger', move:'double' }] },
   };
   const bossHoneyBonus = era => 40 + eraIdx(era) * 20;
 
@@ -287,7 +287,9 @@
     p.battle = { cubId:null, pHP:0, pMaxHP:0, enemy:null, eHP:0, eMaxHP:0, defending:false, boss:true, era:p.era };
     enterCub(p, cub);
     p.battle.enemy = Object.assign({ boss:true }, boss, { phases: boss.phases.map(ph => Object.assign({}, ph)) });
-    p.battle.eHP = p.battle.eMaxHP = boss.hp;
+    const rec = p.bosses && p.bosses[p.era];
+    p.battle.eMaxHP = boss.hp;
+    p.battle.eHP = rec && rec.hpLeft > 0 && rec.hpLeft < boss.hp ? Math.floor(rec.hpLeft) : boss.hp;   // siege: wounds persist
     return { ok:true, events:[{ t:'spawn', enemy:p.battle.enemy, eHP:boss.hp, eMaxHP:boss.hp }], p };
   }
 
@@ -319,10 +321,15 @@
 
   // The browser fights in real time; the server only grants what is plausible: a win cannot land
   // faster than the cub's best possible damage output, and a report must match the open battle.
-  const HUNT = { minSeconds: 4, maxHitsPerSecond: 3.5, bossMinSeconds: 20 };
+  const HUNT = { minSeconds: 4, maxHitsPerSecond: 3.5, bossMinSeconds: 20, bossBurst: 1.5 };   // bosses take ×1.5 from Honey Bursts
   function huntMinTimeMs(cub, lvl, era, enemy) {
     const s = getStats(cub, lvl, era), perHit = (s.ATK * 0.4 + 15) * 1.8;
     return Math.max(HUNT.minSeconds * 1000, Math.floor(enemy.hp / (perHit * HUNT.maxHitsPerSecond) * 1000));
+  }
+  // the most damage a cub could plausibly deal in a span (swings at the cap, every one a crit, bursts on top)
+  function huntMaxDamage(cub, lvl, era, timeMs) {
+    const s = getStats(cub, lvl, era), perHit = (s.ATK * 0.4 + 15) * 1.8;
+    return Math.ceil(perHit * HUNT.maxHitsPerSecond * (timeMs / 1000) * 1.6);
   }
   function resolveHunt(p, cub, report, opts) {
     opts = opts || {};
@@ -332,7 +339,8 @@
     const timeMs = Math.round(report.timeMs || 0);
     const keepHP = () => { p.hpPool[cub.id] = Math.max(1, Math.min(b.pMaxHP, Math.round(report.pHP != null ? report.pHP : b.pMaxHP))); };
     if (report.outcome === 'win') {
-      if (timeMs < Math.max(huntMinTimeMs(cub, prog(p, cub.id).lvl, p.era, b.enemy), b.boss ? HUNT.bossMinSeconds * 1000 : 0)) return fail('too_fast');
+      const remaining = Object.assign({}, b.enemy, { hp: b.eHP });   // a sieged boss only has its remaining HP to lose
+      if (timeMs < Math.max(huntMinTimeMs(cub, prog(p, cub.id).lvl, p.era, remaining), b.boss ? Math.floor(HUNT.bossMinSeconds * 1000 * b.eHP / b.eMaxHP) : 0)) return fail('too_fast');
       const v = applyVictory(p, cub, b.enemy, rng);
       let bossResult = null;
       if (b.boss) {
@@ -340,7 +348,7 @@
         p.bosses = p.bosses || {};
         const rec = p.bosses[era] || (p.bosses[era] = { runs:0, best:null, lastAt:0 });
         const first = rec.runs === 0;
-        rec.runs++; rec.best = rec.best == null ? timeMs : Math.min(rec.best, timeMs); rec.lastAt = now;
+        rec.runs++; rec.best = rec.best == null ? timeMs : Math.min(rec.best, timeMs); rec.lastAt = now; delete rec.hpLeft; rec.attempts = 0;
         p.honey += bonus; p.honeyByEra[era] = (p.honeyByEra[era] || 0) + bonus;
         v.honey += bonus;
         bossResult = { era, first, roadOpened: first && roadAvailable(p, era) };
@@ -348,11 +356,23 @@
       keepHP(); endBattle(p);
       return Object.assign({ ok:true, outcome:'win', enemy:b.enemy, boss:bossResult, p }, v);
     }
+    // siege: a boss keeps the wounds it took, clamped to what the cub could plausibly have dealt in that time
+    const keepBossHP = () => {
+      if (!b.boss) return null;
+      const era = b.era || p.era, lvl = prog(p, cub.id).lvl;
+      const reported = Number.isFinite(report.eHP) ? Math.max(1, Math.floor(report.eHP)) : b.eHP;
+      const dealt = Math.max(0, Math.min(b.eHP - reported, huntMaxDamage(cub, lvl, era, timeMs)));
+      p.bosses = p.bosses || {};
+      const rec = p.bosses[era] || (p.bosses[era] = { runs:0, best:null, lastAt:0 });
+      rec.hpLeft = Math.max(1, b.eHP - dealt); rec.attempts = (rec.attempts || 0) + 1;
+      return { era, hpLeft: rec.hpLeft, hpMax: b.eMaxHP, dealt };
+    };
     if (report.outcome === 'lose') {
+      const boss = keepBossHP();
       const until = applyDefeat(p, cub.id, now); endBattle(p);
-      return { ok:true, outcome:'lose', cooldownUntil: until, p };
+      return { ok:true, outcome:'lose', cooldownUntil: until, boss, p };
     }
-    if (report.outcome === 'flee') { keepHP(); endBattle(p); return { ok:true, outcome:'flee', p }; }
+    if (report.outcome === 'flee') { const boss = keepBossHP(); keepHP(); endBattle(p); return { ok:true, outcome:'flee', boss, p }; }
     return fail('bad outcome');
   }
 
@@ -404,7 +424,7 @@
     hash, deriveClass, rarityForNumber, baseStats, affinity, getStats,
     ROADS, SCOUT_CUBS, SCOUT_LEVEL_CAP, SCOUT_ERA_CAP, isScout, scoutCub, levelCap, scoutEraOk, CLASS_POWER, POWERS, powerOf,
     newProfile, prog, isCoolingDown, isEraUnlocked, roadAvailable, roadDone, completeRoad,
-    COMBAT, HUNT, huntMinTimeMs, startBattle, startBoss, resolveHunt, applyVictory, applyDefeat, infuse, reviveWithHoney, clearCooldown, selectEra,
+    COMBAT, HUNT, huntMinTimeMs, huntMaxDamage, startBattle, startBoss, resolveHunt, applyVictory, applyDefeat, infuse, reviveWithHoney, clearCooldown, selectEra,
     ERA_BOSSES, bossAvailable, bossDone, bossHoneyBonus,
   };
 });
