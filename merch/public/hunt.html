@@ -118,11 +118,11 @@ async function api(path, body) {
 }
 function localProfile() {
   let p = {}; try { p = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}'); } catch (e) {}
-  return Object.assign(HoneyEngine.newProfile(), { honey: p.honey || 0, honeyByEra: p.honeyByEra || {}, wins: p.wins || 0, era: p.era || 'hadean', cubProg: p.cubProg || {}, cooldowns: p.cooldowns || {}, hpPool: p.hpPool || {}, roads: p.roads || {}, bosses: p.bosses || {} });
+  return Object.assign(HoneyEngine.newProfile(), { honey: p.honey || 0, honeyByEra: p.honeyByEra || {}, wins: p.wins || 0, era: p.era || 'hadean', cubProg: p.cubProg || {}, cooldowns: p.cooldowns || {}, hpPool: p.hpPool || {}, roads: p.roads || {}, bosses: p.bosses || {}, burstBank: p.burstBank || 0 });
 }
 function saveLocal(p) {
   let old = {}; try { old = JSON.parse(localStorage.getItem('okaycubs_progress') || '{}'); } catch (e) {}
-  localStorage.setItem('okaycubs_progress', JSON.stringify({ ...old, honey: p.honey, honeyByEra: p.honeyByEra, wins: p.wins, era: p.era, cubProg: p.cubProg, cooldowns: p.cooldowns, hpPool: p.hpPool, roads: p.roads, bosses: p.bosses }));
+  localStorage.setItem('okaycubs_progress', JSON.stringify({ ...old, honey: p.honey, honeyByEra: p.honeyByEra, wins: p.wins, era: p.era, cubProg: p.cubProg, cooldowns: p.cooldowns, hpPool: p.hpPool, roads: p.roads, bosses: p.bosses, burstBank: p.burstBank || 0 }));
 }
 
 // ---- HUD ----
@@ -178,10 +178,11 @@ async function init() {
     onPhase: (g, ph) => { GameMusic.setIntensity(ph + 1); GameMusic.duck(900, 0.15); phaseBanner(`Phase ${ph + 1}`, `${g.moveName} — ${g.moveTip}`); hud(); },
   });
   road.paused = true; road.started = false; road.start();
+  if (b.burst > 0) { road.p.burst = Math.min(HoneyEngine.MAX_BURST, b.burst); road.float(road.p.x, road.p.y - 120, `✦ inherited Burst${b.burst > 1 ? ' ×' + b.burst : ''}`, '#ffe27a'); }
   document.getElementById('cubName').textContent = `${CUB.name} · Lv ${lvl}`;
   const pw = HoneyEngine.powerOf(CUB.class);
   document.getElementById('cubClass').textContent = CUB.class + (HoneyEngine.affinity(CUB.class, ERA) === 1 ? ' · strong here' : HoneyEngine.affinity(CUB.class, ERA) === -1 ? ' · weak here' : '') + ` · ${pw.icon} ${pw.name}`;
-  document.getElementById('introText').innerHTML = `Watch for the red flash — that is the tell. Hold block to stop projectiles and shoves, dash through anything, jump over charges, then strike while the guardian recovers.<br><br><strong style="color:#f5e06e">${pw.icon} ${pw.name}</strong> — ${pw.desc} Lands 4 hits to charge: dash to prime, hit to release. <strong style="color:#ff8a7a">Fire a second Burst within 4 seconds and it chains: ×2, then ×3…</strong>`;
+  document.getElementById('introText').innerHTML = (b.burst > 0 ? `<strong style="color:#ffe27a">✦ ${CUB.name} inherits ${b.burst > 1 ? b.burst + ' Honey Bursts' : 'a Honey Burst'} from a fallen sibling — dash, then hit to release.</strong><br><br>` : '') + `Watch for the red flash — that is the tell. Hold block to stop projectiles and shoves, dash through anything, jump over charges, then strike while the guardian recovers.<br><br><strong style="color:#f5e06e">${pw.icon} ${pw.name}</strong> — ${pw.desc} Lands 4 hits to charge: dash to prime, hit to release. <strong style="color:#ff8a7a">Fire a second Burst within 4 seconds and it chains: ×2, then ×3…</strong>`;
   document.getElementById('gName').textContent = `${enemy.emoji} ${enemy.name} · Lv ${enemy.lvl || 1}`;
   document.getElementById('gClass').textContent = enemy.cls;
   document.getElementById('introEmoji').textContent = enemy.emoji;
@@ -228,8 +229,9 @@ async function report(outcome, r) {
   st.innerHTML = `<div>Time<b>${fmt(r.timeMs)}</b></div><div>Hits<b>${road.p.hits}</b></div>`;
   let res;
   try {
-    if (server) res = await api('/api/game/hunt/report', { outcome, timeMs: r.timeMs, pHP: r.pHP, eHP: bossHP() });
-    else { res = HoneyEngine.resolveHunt(prof, CUB, { outcome, timeMs: r.timeMs, pHP: r.pHP, eHP: bossHP() }, { now: Date.now() }); if (!res.ok) throw Object.assign(new Error(res.error), { code: res.error }); saveLocal(prof); res.state = prof; }
+    const burst = road.p.burst || 0;
+    if (server) res = await api('/api/game/hunt/report', { outcome, timeMs: r.timeMs, pHP: r.pHP, eHP: bossHP(), burst });
+    else { res = HoneyEngine.resolveHunt(prof, CUB, { outcome, timeMs: r.timeMs, pHP: r.pHP, eHP: bossHP(), burst }, { now: Date.now() }); if (!res.ok) throw Object.assign(new Error(res.error), { code: res.error }); saveLocal(prof); res.state = prof; }
   } catch (e) { text.textContent = `The hunt was not recorded: ${e.code === 'too_fast' ? 'that was faster than the guardian allows — try again' : (e.message || e)}`; act.innerHTML = `<a href="/game.html"><button>Back to the den</button></a>`; return; }
   if (outcome === 'win') {
     text.innerHTML = `+${res.honey} ${res.honeyName} · +${res.xp} XP (🍯 ${res.state.honey} · ${res.wins} kills)`
@@ -240,6 +242,7 @@ async function report(outcome, r) {
     act.innerHTML = (res.boss ? `<a href="/honey-road.html?${roadQs}"><button class="primary">🏃 Run the Honey Road</button></a>` : `<button class="primary" onclick="location.reload()">Hunt again</button>`) + `<a href="/game.html"><button>Back to the den</button></a>`;
   } else if (outcome === 'lose') {
     text.innerHTML = `${CUB.name} needs 30 minutes to recover — or honey to revive. Send in another Cub from the den.`
+      + (res.inherited > 0 ? `<br><strong style="color:#ffe27a">✦ ${res.inherited > 1 ? res.inherited + ' charged Honey Bursts pass' : 'A charged Honey Burst passes'} to the next Cub that enters.</strong>` : '')
       + (res.boss ? `<br><strong style="color:#ffb347">👑 ${enemy.name} keeps its wounds: ${res.boss.hpLeft} / ${res.boss.hpMax} HP left.</strong>` : '');
     act.innerHTML = `<a href="/game.html"><button class="primary">Back to the den</button></a>`;
   } else {

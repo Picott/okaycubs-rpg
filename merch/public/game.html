@@ -1157,7 +1157,7 @@ function cubName(id) { return cubById(id)?.name || `Cub ${id}`; }
 function profileFromG() {
   return {
     honey: G.honey, honeyByEra: G.honeyByEra, wins: G.wins, era: G.currentEra,
-    cubProg: G.cubProg, cooldowns: G.cooldowns, hpPool: G.hpPool, roads: G.roads, bosses: G.bosses || {},
+    cubProg: G.cubProg, cooldowns: G.cooldowns, hpPool: G.hpPool, roads: G.roads, bosses: G.bosses || {}, burstBank: G.burstBank || 0,
     battle: G.active && G.selected
       ? { cubId: G.selected.id, pHP: G.pHP, pMaxHP: G.pMaxHP, enemy: G.enemy, eHP: G.eHP, eMaxHP: G.eMaxHP, defending: false, boss: !!(G.enemy && G.enemy.boss), era: G.currentEra }
       : null,
@@ -1165,7 +1165,7 @@ function profileFromG() {
 }
 function syncFromProfile(p) {
   G.honey = p.honey || 0; G.honeyByEra = p.honeyByEra || {}; G.wins = p.wins || 0; G.currentEra = p.era || 'hadean';
-  G.cubProg = p.cubProg || {}; G.cooldowns = p.cooldowns || {}; G.hpPool = p.hpPool || {}; G.roads = p.roads || {}; G.bosses = p.bosses || {};
+  G.cubProg = p.cubProg || {}; G.cooldowns = p.cooldowns || {}; G.hpPool = p.hpPool || {}; G.roads = p.roads || {}; G.bosses = p.bosses || {}; G.burstBank = p.burstBank || 0;
   const b = p.battle, cub = b && cubById(b.cubId);
   if (b && b.enemy && cub) {
     G.active = true; G.selected = cub;
@@ -1502,6 +1502,7 @@ function updateDen() {
   const btn = document.getElementById('denBtn'), bossBtn = document.getElementById('bossBtn'), hint = document.getElementById('denHint');
   const c = G.selected, cooling = c && isCoolingDown(c.id), scoutBlocked = c && !HoneyEngine.scoutEraOk(c.id, era);
   const resumingBoss = G.active && c && G.enemy && G.enemy.boss;
+  const legacy = !G.active && G.burstBank > 0 ? ` ✦ ${G.burstBank > 1 ? G.burstBank + ' Honey Bursts wait' : 'A Honey Burst waits'} for the next Cub — inherited from a fallen sibling.` : '';
   btn.disabled = !c || cooling || scoutBlocked || G.busy;
   btn.textContent = G.active && c && !resumingBoss ? '⚔ Resume the hunt' : '⚔ Enter the Den';
   if (bossBtn) {
@@ -1509,7 +1510,7 @@ function updateDen() {
     bossBtn.disabled = btn.disabled;
     bossBtn.textContent = resumingBoss ? '👑 Resume the boss fight' : bossBeaten ? '👑 Challenge the Era Boss again' : bossRec?.hpLeft > 0 ? '👑 Finish the Era Boss' : '👑 Face the Era Boss';
   }
-  hint.textContent = !c ? 'Pick a Cub from your roster to enter.' : cooling ? `${c.name} is recovering — revive it or pick another Cub.` : scoutBlocked ? 'Scout Cubs hunt up to Archean — become a Hunter to go further.' : bossUp && !bossBeaten ? `${boss.name} fights in three phases — each one a new attack. Its wounds stay between attempts, and every roar drops healing honey.` : 'Real-time hunt — read the guardian\'s tell, dodge, and punish its recovery.';
+  hint.textContent = (!c ? 'Pick a Cub from your roster to enter.' : cooling ? `${c.name} is recovering — revive it or pick another Cub.` : scoutBlocked ? 'Scout Cubs hunt up to Archean — become a Hunter to go further.' : bossUp && !bossBeaten ? `${boss.name} fights in three phases — each one a new attack. Its wounds stay between attempts, and every roar drops healing honey.` : 'Real-time hunt — read the guardian\'s tell, dodge, and punish its recovery.') + legacy;
   renderDenCub();
 }
 function enterDen(boss) {
@@ -1606,7 +1607,7 @@ function saveProgress() {
   try {
     localStorage.setItem('okaycubs_progress', JSON.stringify({
       wins: G.wins, era: G.currentEra, cooldowns: G.cooldowns,
-      honey: G.honey, honeyByEra: G.honeyByEra, cubProg: G.cubProg, roads: G.roads, bosses: G.bosses || {},
+      honey: G.honey, honeyByEra: G.honeyByEra, cubProg: G.cubProg, roads: G.roads, bosses: G.bosses || {}, burstBank: G.burstBank || 0,
     }));
   } catch(e) {}
 }
@@ -1621,6 +1622,7 @@ function loadProgress() {
     G.cubProg    = saved.cubProg || {};
     G.roads      = saved.roads || {};
     G.bosses     = saved.bosses || {};
+    G.burstBank  = saved.burstBank || 0;
     // Load cooldowns, drop any already expired
     const now = Date.now();
     G.cooldowns = {};

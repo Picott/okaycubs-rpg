@@ -269,13 +269,17 @@
     const now = opts.now || Date.now(), rng = opts.rng || Math.random;
     if (isCoolingDown(p, cub.id, now)) return fail('cooling');
     if (!scoutEraOk(cub.id, p.era)) return fail('scout_era');
-    p.battle = { cubId:null, pHP:0, pMaxHP:0, enemy:null, eHP:0, eMaxHP:0, defending:false };
+    p.battle = { cubId:null, pHP:0, pMaxHP:0, enemy:null, eHP:0, eMaxHP:0, defending:false, burst: takeBurstBank(p) };
     enterCub(p, cub);
     const events = [spawnEnemy(p, rng)];
     return { ok:true, events, p };
   }
 
   function endBattle(p) { p.battle = null; }
+  // A fallen cub's charged Honey Bursts pass to the next cub that enters the den (up to two)
+  const MAX_BURST = 2;
+  function takeBurstBank(p) { const n = Math.max(0, Math.min(MAX_BURST, Math.floor(p.burstBank || 0))); p.burstBank = 0; return n; }
+  function bankBurst(p, n) { p.burstBank = Math.max(0, Math.min(MAX_BURST, Math.floor(Number.isFinite(n) ? n : 0))); return p.burstBank; }
 
   // The era boss replaces the guardian in an open battle; it is a hunt with phases
   function startBoss(p, cub, opts) {
@@ -284,7 +288,7 @@
     if (!scoutEraOk(cub.id, p.era)) return fail('scout_era');
     if (!bossAvailable(p, p.era)) return fail('boss_locked');
     const boss = ERA_BOSSES[p.era];
-    p.battle = { cubId:null, pHP:0, pMaxHP:0, enemy:null, eHP:0, eMaxHP:0, defending:false, boss:true, era:p.era };
+    p.battle = { cubId:null, pHP:0, pMaxHP:0, enemy:null, eHP:0, eMaxHP:0, defending:false, boss:true, era:p.era, burst: takeBurstBank(p) };
     enterCub(p, cub);
     p.battle.enemy = Object.assign({ boss:true }, boss, { phases: boss.phases.map(ph => Object.assign({}, ph)) });
     const rec = p.bosses && p.bosses[p.era];
@@ -368,9 +372,9 @@
       return { era, hpLeft: rec.hpLeft, hpMax: b.eMaxHP, dealt };
     };
     if (report.outcome === 'lose') {
-      const boss = keepBossHP();
+      const boss = keepBossHP(), inherited = bankBurst(p, report.burst);
       const until = applyDefeat(p, cub.id, now); endBattle(p);
-      return { ok:true, outcome:'lose', cooldownUntil: until, boss, p };
+      return { ok:true, outcome:'lose', cooldownUntil: until, boss, inherited, p };
     }
     if (report.outcome === 'flee') { const boss = keepBossHP(); keepHP(); endBattle(p); return { ok:true, outcome:'flee', boss, p }; }
     return fail('bad outcome');
@@ -424,7 +428,7 @@
     hash, deriveClass, rarityForNumber, baseStats, affinity, getStats,
     ROADS, SCOUT_CUBS, SCOUT_LEVEL_CAP, SCOUT_ERA_CAP, isScout, scoutCub, levelCap, scoutEraOk, CLASS_POWER, POWERS, powerOf,
     newProfile, prog, isCoolingDown, isEraUnlocked, roadAvailable, roadDone, completeRoad,
-    COMBAT, HUNT, huntMinTimeMs, huntMaxDamage, startBattle, startBoss, resolveHunt, applyVictory, applyDefeat, infuse, reviveWithHoney, clearCooldown, selectEra,
+    COMBAT, HUNT, MAX_BURST, huntMinTimeMs, huntMaxDamage, startBattle, startBoss, resolveHunt, applyVictory, applyDefeat, infuse, reviveWithHoney, clearCooldown, selectEra,
     ERA_BOSSES, bossAvailable, bossDone, bossHoneyBonus,
   };
 });
