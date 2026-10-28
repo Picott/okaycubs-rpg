@@ -138,8 +138,9 @@ function hud() {
   bar('gFill', 'gGhost', g.hpLeft, g.hp); document.getElementById('gHP').textContent = `${Math.max(0, g.hpLeft)} / ${g.hp}`;
   if (g.boss) document.getElementById('gClass').innerHTML = `${enemy.cls} · phase ${g.phase + 1} · ${g.moveName}<span class="pips">${g.phases.map((_, i) => `<i class="${i <= g.phase ? 'on' : ''}"></i>`).join('')}</span>`;
   const b = document.getElementById('hudBurst');
-  if (p.primed > 0) { b.textContent = '✦ PRIMED — HIT TO RELEASE'; b.className = 'burst'; }
-  else if (p.burst >= 1) { b.textContent = `✦ BURST READY${p.burst >= 2 ? ' ×2' : ''} — DASH, THEN HIT`; b.className = 'burst'; }
+  const chain = p.chainT > 0 && p.chain >= 1 ? ` · CHAIN ×${p.chain + 1} if you fire again` : '';
+  if (p.primed > 0) { b.textContent = '✦ PRIMED — HIT TO RELEASE' + (p.chainT > 0 ? ` ×${(p.chain || 0) + 1}` : ''); b.className = 'burst'; }
+  else if (p.burst >= 1) { b.textContent = `✦ BURST READY${p.burst >= 2 ? ' ×2' : ''} — DASH, THEN HIT${chain}`; b.className = 'burst'; }
   else { b.textContent = `✦ ${road.power ? road.power.name : 'burst'} ${p.burstStreak} / ${p.frenzy > 0 ? 2 : 4} hits`; b.className = 'burst empty'; }
 }
 setInterval(() => { if (road && road.started && !road.paused && !road.finished) document.getElementById('hudTime').textContent = fmt(road.time * 1000); }, 100);
@@ -167,7 +168,7 @@ async function init() {
     ground: [[0, len]], platforms: BOSS ? [{ x: 300, y: 362, w: 150 }, { x: 870, y: 332, w: 170 }, { x: 1450, y: 362, w: 150 }] : [{ x: 290, y: 362, w: 150 }, { x: 1060, y: 362, w: 150 }], crumble: [], movers: [], springs: [], enemies: [], honey: [], checkpoints: [], portal: Infinity,
     guardian: BOSS ? { ...enemy, hpLeft: b.eHP, x: 1400, w: 124, h: 148, speed: 95 + HoneyEngine.eraIdx(ERA) * 10 } : { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 },
     pHP: b.pHP, pMaxHP: b.pMaxHP, stats, power: HoneyEngine.powerOf(CUB.class),
-    heal: BOSS ? { every: 13, first: 8, pct: 0.2, ttl: 9 } : { every: 18, first: 10, pct: 0.15, ttl: 8 } };
+    heal: BOSS ? { pct: 0.2, ttl: 10 } : null };
   GameMusic.setEra(ERA); GameMusic.setIntensity(BOSS ? 1 : 0);
   road = new HoneyRoad(cv, sprite, level, {
     onHurt: hud, onBurst: hud, onGuardianHit: hud,
@@ -180,7 +181,7 @@ async function init() {
   document.getElementById('cubName').textContent = `${CUB.name} · Lv ${lvl}`;
   const pw = HoneyEngine.powerOf(CUB.class);
   document.getElementById('cubClass').textContent = CUB.class + (HoneyEngine.affinity(CUB.class, ERA) === 1 ? ' · strong here' : HoneyEngine.affinity(CUB.class, ERA) === -1 ? ' · weak here' : '') + ` · ${pw.icon} ${pw.name}`;
-  document.getElementById('introText').innerHTML = `Watch for the red flash — that is the tell. Hold block to stop projectiles and shoves, dash through anything, jump over charges, then strike while the guardian recovers.<br><br><strong style="color:#f5e06e">${pw.icon} ${pw.name}</strong> — ${pw.desc} Lands 4 hits to charge: dash to prime, hit to release.`;
+  document.getElementById('introText').innerHTML = `Watch for the red flash — that is the tell. Hold block to stop projectiles and shoves, dash through anything, jump over charges, then strike while the guardian recovers.<br><br><strong style="color:#f5e06e">${pw.icon} ${pw.name}</strong> — ${pw.desc} Lands 4 hits to charge: dash to prime, hit to release. <strong style="color:#ff8a7a">Fire a second Burst within 4 seconds and it chains: ×2, then ×3…</strong>`;
   document.getElementById('gName').textContent = `${enemy.emoji} ${enemy.name} · Lv ${enemy.lvl || 1}`;
   document.getElementById('gClass').textContent = enemy.cls;
   document.getElementById('introEmoji').textContent = enemy.emoji;
@@ -194,10 +195,10 @@ async function init() {
     document.getElementById('startBtn').textContent = 'Face the Era Boss';
     const names = g0.phases.map((ph, i) => `<strong style="color:#ff8a7a">${i + 1}. ${Guardian.MOVE_NAMES[ph.move] || ph.move}</strong>`).join(' → ');
     const wounded = b.eHP < b.eMaxHP;
-    document.getElementById('introText').innerHTML += `<br><br><strong style="color:#7cf29e">🍯 Healing honey</strong> drops every few seconds and after every roar — grab it (it fades if ignored) to heal 20%.<br>Three phases, each a new attack: ${names}. Every third of its health it roars (you cannot hurt it then), shakes off burn and frost, and comes back faster. <strong style="color:#f5e06e">Honey Bursts hit it for ×${HoneyEngine.HUNT.bossBurst}.</strong><br>`
+    document.getElementById('introText').innerHTML += `<br><br>Three phases, each a new attack: ${names}. Every third of its health it roars (you cannot hurt it then), shakes off burn and frost, and comes back faster. <strong style="color:#7cf29e">Each roar drops a jar of healing honey</strong> — grab it before it fades to heal 20%.<br>`
       + (wounded ? `<strong style="color:#ffb347">Its wounds remain: ${b.eHP} / ${b.eMaxHP} HP left${g0.phase > 0 ? ` — it is already in phase ${g0.phase + 1}` : ''}.</strong> ` : `Its wounds stay between attempts — every hit counts. `)
       + `Defeat it to open the ${base.honeyName} Road.`;
-  } else document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${g0.moveName}</strong> — ${g0.moveTip}.<br><strong style="color:#7cf29e">🍯 Healing honey</strong> drops now and then — grab it to heal 15%.`;
+  } else document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${g0.moveName}</strong> — ${g0.moveTip}.`;
   hud();
 }
 function fail(e) {

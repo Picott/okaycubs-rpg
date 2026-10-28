@@ -1509,7 +1509,7 @@ function updateDen() {
     bossBtn.disabled = btn.disabled;
     bossBtn.textContent = resumingBoss ? '👑 Resume the boss fight' : bossBeaten ? '👑 Challenge the Era Boss again' : bossRec?.hpLeft > 0 ? '👑 Finish the Era Boss' : '👑 Face the Era Boss';
   }
-  hint.textContent = !c ? 'Pick a Cub from your roster to enter.' : cooling ? `${c.name} is recovering — revive it or pick another Cub.` : scoutBlocked ? 'Scout Cubs hunt up to Archean — become a Hunter to go further.' : bossUp && !bossBeaten ? `${boss.name} fights in three phases — each one a new attack. Its wounds stay between attempts, and Honey Bursts hit it for ×${HoneyEngine.HUNT.bossBurst}.` : 'Real-time hunt — read the guardian\'s tell, dodge, and punish its recovery.';
+  hint.textContent = !c ? 'Pick a Cub from your roster to enter.' : cooling ? `${c.name} is recovering — revive it or pick another Cub.` : scoutBlocked ? 'Scout Cubs hunt up to Archean — become a Hunter to go further.' : bossUp && !bossBeaten ? `${boss.name} fights in three phases — each one a new attack. Its wounds stay between attempts, and every roar drops healing honey.` : 'Real-time hunt — read the guardian\'s tell, dodge, and punish its recovery.';
   renderDenCub();
 }
 function enterDen(boss) {

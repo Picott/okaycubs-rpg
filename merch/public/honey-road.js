@@ -152,8 +152,8 @@
         this.enemies = [g]; this.honey = []; this.checkpoints = []; this.L.portal = Infinity;
         this.p.hpNum = L.pHP; this.p.hpMax = L.pMaxHP; this.p.hits = 0; this.p.frenzy = 0; this.p.shieldFx = 0;
         this.power = L.power || null;
-        // healing honey: a jar drops every few seconds (and on every boss phase), heals a share of max HP, fades if ignored
-        this.heal = Object.assign({ every: 16, first: 9, pct: 0.15, ttl: 9 }, L.heal || {}); this.healT = this.heal.first;
+        // healing honey: a jar drops when the boss changes phase, heals a share of max HP, fades if ignored
+        this.heal = L.heal ? Object.assign({ pct: 0.2, ttl: 10 }, L.heal) : null;
       }
       this.time = 0; this.finished = false; this.started = false;
       this.cam = { x: 0, y: 0 };
@@ -203,6 +203,7 @@
       p.burstFx = Math.max(0, p.burstFx - dt);
       const wasPrimed = p.primed > 0;
       p.primed = Math.max(0, p.primed - dt);
+      if (p.chainT > 0) { p.chainT -= dt; if (p.chainT <= 0) { p.chain = 0; this.hooks.onBurst?.(p.burst); } }
       if (wasPrimed && p.primed <= 0) this.hooks.onBurst?.(p.burst);
       // Honey Burst is a sequence: dash (with a charge ready) primes it, hit releases it
       p.dashGrace = Math.max(0, (p.dashGrace || 0) - dt);
@@ -361,9 +362,7 @@
         }
         this.damage(e);
       }
-      if (this.L.mode === 'hunt' && this.heal && p.dead <= 0 && !this.finished) {
-        this.healT -= dt;
-        if (this.healT <= 0) { this.healT = this.heal.every; this.spawnHealDrop(); }
+      if (this.L.mode === 'hunt' && p.dead <= 0 && !this.finished) {
         for (const h of this.honey) if (h.heal && !h.taken) { h.ttl -= dt; if (h.ttl <= 0) { h.taken = true; this.float(h.x, h.y - 10, 'gone', '#b8bcc8'); } }
       }
       for (const h of this.honey) {
@@ -426,6 +425,7 @@
       }
     }
     spawnHealDrop() {
+      if (!this.heal) return;
       if (this.honey.some(h => h.heal && !h.taken)) return;   // one jar at a time
       const L = this.L, p = this.p, g = this.enemies[0];
       // ground spot away from the guardian, or one of the platforms — whichever is farther from the guardian
@@ -440,7 +440,7 @@
       const p = this.p, s = this.L.stats, C = root.HoneyEngine.COMBAT;
       if (g.transition > 0) { this.float(g.x, g.y - g.h - 10, 'immune', '#b8bcc8'); this.sfx('block'); return; }
       const crit = !burst && C.crit(s);
-      let dmg = burst ? Math.floor(C.burst(s) * ((this.power?.dmg || 3) / 3) * (g.boss ? root.HoneyEngine.HUNT.bossBurst : 1)) : Math.floor(C.hit(s) * (crit ? 1.8 : 1) * (p.frenzy > 0 ? 1.6 : 1));
+      let dmg = burst ? Math.floor(C.burst(s) * ((this.power?.dmg || 3) / 3) * Math.max(1, p.chain || 1)) : Math.floor(C.hit(s) * (crit ? 1.8 : 1) * (p.frenzy > 0 ? 1.6 : 1));
       dmg = Math.floor(dmg * root.Guardian.vulnerability(g) * (g.frozen > 0 ? 1.5 : 1));
       g.hpLeft = Math.max(0, g.hpLeft - dmg); g.hit = 0.3; p.hits++;
       const need = p.frenzy > 0 ? 2 : 4;
@@ -449,7 +449,7 @@
       this.sfx(burst ? 'burst' : crit ? 'crit' : 'hit');
       this.burst(g.x, g.y - g.h / 2, burst ? ['#f5e06e', '#fff2b0', '#ffb347'] : ['#fff', '#ffb347', '#ff6b35'], burst ? 40 : 16, burst ? 260 : 170);
       this.shake = Math.max(this.shake, crit || burst ? 0.4 : 0.15);
-      this.float(g.x + (Math.random() - .5) * 40, g.y - g.h - 10, `-${dmg}${crit ? ' CRIT' : ''}`, crit ? '#ff6b35' : burst ? '#ffe27a' : '#fff');
+      this.float(g.x + (Math.random() - .5) * 40, g.y - g.h - 10, `-${dmg}${crit ? ' CRIT' : burst && p.chain > 1 ? ` ×${p.chain} CHAIN` : ''}`, crit ? '#ff6b35' : burst ? '#ffe27a' : '#fff');
       this.hooks.onGuardianHit?.(g, dmg);
       const ph = root.Guardian.checkPhase(this, g);
       if (ph >= 0) { this.projectiles = []; this.waves = []; this.spawnHealDrop(); this.hooks.onPhase?.(g, ph); }
@@ -461,12 +461,15 @@
     }
     honeyBurst() {
       const p = this.p;
+      // bursts fired within a few seconds of each other chain: the second hits ×2, the third ×3…
+      p.chain = (p.chainT || 0) > 0 ? (p.chain || 1) + 1 : 1; p.chainT = root.HoneyEngine.HUNT.chainWindow;
       p.burst -= 1; p.primed = 0; p.burstFx = 0.7; p.inv = Math.max(p.inv, 1.1); p.dashT = 0;
       p.vy = Math.min(p.vy, -200); p.grounded = false;
       this.sprite.cheerT = 0.6; this.shake = 0.6;
       this.rings.push({ x: p.x, y: p.y - 30, t: 0.7, big: true });
       this.burst(p.x, p.y - 30, ['#f5e06e', '#d4af37', '#fff2b0', '#ffb347'], 70, 320);
-      this.float(p.x, p.y - 110, '✦ HONEY BURST ✦', '#ffe27a');
+      this.float(p.x, p.y - 110, p.chain > 1 ? `✦ HONEY BURST ×${p.chain} ✦` : '✦ HONEY BURST ✦', p.chain > 1 ? '#ff8a7a' : '#ffe27a');
+      if (p.chain > 1) { this.shake = 0.8; setTimeout(() => this.rings.push({ x: p.x, y: p.y - 30, t: 0.7, big: true }), 120); }
       for (const e of this.enemies) {
         if (e.hpLeft <= 0) continue;
         if (Math.hypot(e.x - p.x, (e.y - e.h / 2) - (p.y - 30)) >= 240) continue;

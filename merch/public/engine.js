@@ -31,9 +31,9 @@
     hadean:      { name:'The Caldera Queen',   emoji:'🐉', cls:'Sovereign of Magma Honey', hp:420,  atk:30, def:16, xp:60,  lvl:6,   shot:'🔥', phases:[{ family:'jumper', move:'high' }, { family:'charger', move:'stomp' }, { family:'shooter', move:'rain' }] },
     archean:     { name:'Tectonic Titan',      emoji:'⛰',  cls:'Sovereign of Stone Honey', hp:700,  atk:42, def:30, xp:110, lvl:16,  shot:'🪨', phases:[{ family:'charger', move:'double' }, { family:'jumper', move:'hops' }, { family:'charger', move:'stomp' }] },
     proterozoic: { name:'Snowball Leviathan',  emoji:'🐋', cls:'Sovereign of Tide Honey',  hp:900,  atk:52, def:36, xp:170, lvl:31,  shot:'🧊', phases:[{ family:'shooter', move:'rain' }, { family:'flyer', move:'twin' }, { family:'jumper', move:'high' }] },
-    paleozoic:   { name:'Reef Colossus',       emoji:'🦑', cls:'Sovereign of Bloom Honey', hp:1100, atk:54, def:42, xp:230, lvl:51,  shot:'🫧', phases:[{ family:'shooter', move:'spread' }, { family:'jumper', move:'hops' }, { family:'flyer', move:'drop' }] },
-    mesozoic:    { name:'Tyrant of Pangaea',   emoji:'🦖', cls:'Sovereign of Titan Honey', hp:1250, atk:60, def:50, xp:300, lvl:76,  shot:'☄', phases:[{ family:'charger', move:'double' }, { family:'charger', move:'stomp' }, { family:'jumper', move:'high' }] },
-    cenozoic:    { name:'The Warden of Time',  emoji:'👁', cls:'Sovereign of Frost Honey', hp:1600, atk:68, def:60, xp:400, lvl:100, shot:'⏳', phases:[{ family:'shooter', move:'spread' }, { family:'flyer', move:'drop' }, { family:'charger', move:'double' }] },
+    paleozoic:   { name:'Reef Colossus',       emoji:'🦑', cls:'Sovereign of Bloom Honey', hp:1100, atk:60, def:42, xp:230, lvl:51,  shot:'🫧', phases:[{ family:'shooter', move:'spread' }, { family:'jumper', move:'hops' }, { family:'flyer', move:'drop' }] },
+    mesozoic:    { name:'Tyrant of Pangaea',   emoji:'🦖', cls:'Sovereign of Titan Honey', hp:1400, atk:72, def:50, xp:300, lvl:76,  shot:'☄', phases:[{ family:'charger', move:'double' }, { family:'charger', move:'stomp' }, { family:'jumper', move:'high' }] },
+    cenozoic:    { name:'The Warden of Time',  emoji:'👁', cls:'Sovereign of Frost Honey', hp:1800, atk:84, def:60, xp:400, lvl:100, shot:'⏳', phases:[{ family:'shooter', move:'spread' }, { family:'flyer', move:'drop' }, { family:'charger', move:'double' }] },
   };
   const bossHoneyBonus = era => 40 + eraIdx(era) * 20;
 
@@ -321,7 +321,7 @@
 
   // The browser fights in real time; the server only grants what is plausible: a win cannot land
   // faster than the cub's best possible damage output, and a report must match the open battle.
-  const HUNT = { minSeconds: 4, maxHitsPerSecond: 3.5, bossMinSeconds: 20, bossBurst: 1.5 };   // bosses take ×1.5 from Honey Bursts
+  const HUNT = { minSeconds: 4, maxHitsPerSecond: 3.5, bossMinSeconds: 20, chainWindow: 4 };   // bursts within chainWindow seconds chain: ×2, ×3…
   function huntMinTimeMs(cub, lvl, era, enemy) {
     const s = getStats(cub, lvl, era), perHit = (s.ATK * 0.4 + 15) * 1.8;
     return Math.max(HUNT.minSeconds * 1000, Math.floor(enemy.hp / (perHit * HUNT.maxHitsPerSecond) * 1000));
