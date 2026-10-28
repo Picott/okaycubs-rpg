@@ -85,6 +85,7 @@
 
 <script src="/engine.js"></script>
 <script src="/sprite.js"></script>
+<script src="/guardian.js"></script>
 <script src="/honey-road.js"></script>
 <script src="/gamemusic.js"></script>
 <script>
@@ -111,6 +112,7 @@ async function init() {
   document.getElementById('hudTitle').textContent = L.title;
   document.getElementById('introTitle').textContent = `${L.title} · ${CUB.name}`;
   document.getElementById('introText').textContent = L.intro;
+  const W = HONEY_ROAD_WARDENS[ERA]; if (W) document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${W.emoji} ${W.name}</strong> sleeps before the portal and seals it. Wake it, read its tell (${W.tip}), and bring it down — bursts count for four, hits in its recovery for two. Beating it restores your hearts.`;
   document.getElementById('hudHoney').textContent = `🍯 0 / ${TOTAL_HONEY}`;
   try { await sprite.load(CUB.img); } catch (e) { await sprite.load('/cubs/35.png'); }
   // is this run going to count? (server profile when signed in, local profile otherwise)
@@ -128,6 +130,8 @@ async function init() {
   road = new HoneyRoad(cv, sprite, ERA, {
     onHoney: hud, onHurt: hud, onRespawn: hud, onDeath: hud, onBurst: hud,
     onBurstFire: () => GameMusic.duck(1400),
+    onWarden: g => { document.getElementById('hudTitle').textContent = `⚔ ${g.name}`; GameMusic.duck(900, 0.2); },
+    onWardenDown: () => { document.getElementById('hudTitle').textContent = `${L.title} · portal open`; },
     onFinish: r => showResult(r),
   });
   road.start();

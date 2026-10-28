@@ -90,6 +90,17 @@
     ice:   { top: '#e8f6ff', mid: '#8ec5e8', deep: '#1b4a6b', foam: 'rgba(255,255,255,.6)', name: 'glacial water' },
   };
 
+  // Portal Wardens: one per road, asleep before the portal until the cub comes close. Hits-based like the
+  // other road enemies (bursts count for four, hits in its recovery window for two). The portal stays sealed
+  // until it falls; beating it refills the hearts.
+  const WARDENS = {
+    hadean:      { name:'Gate of Embers',    emoji:'👹', hits:10, family:'jumper',  move:'hops',   tip:'three hops, three small waves — jump each one' },
+    archean:     { name:'Fault Gatekeeper',  emoji:'🗿', hits:12, family:'charger', move:'stomp',  tip:'the charge ends in a shockwave — stay airborne' },
+    proterozoic: { name:'Glacier Warden',    emoji:'🧊', hits:14, family:'shooter', move:'spread', tip:'fan shots — block them, then punish the reload' },
+    paleozoic:   { name:'Reef Gatekeeper',   emoji:'🦂', hits:16, family:'jumper',  move:'high',   tip:'one huge leap — the wave is wide, jump late' },
+    mesozoic:    { name:'Sky Gatekeeper',    emoji:'🦅', hits:18, family:'flyer',   move:'twin',   tip:'two dives in a row — dodge, then dodge again' },
+    cenozoic:    { name:'Gate of Ages',      emoji:'⏳', hits:22, family:'charger', move:'double', tip:'it comes back — jump or dash twice' },
+  };
   const ENEMY_TYPES = {
     ember:     { emoji: '🔥', hp: 1, speed: 95,  w: 44, h: 52, stompable: true,  name: 'Ember Sentinel' },
     golem:     { emoji: '🗿', hp: 2, speed: 42,  w: 56, h: 66, stompable: false, name: 'Cinder Golem' },
@@ -144,6 +155,15 @@
       this.honey = L.honey.map(([x, y]) => ({ x, y, taken: false, t: Math.random() * 6 }));
       this.checkpoints = L.checkpoints.map(x => ({ x, lit: false }));
       this.particles = []; this.floats = []; this.trail = []; this.rings = []; this.projectiles = []; this.waves = [];
+      this.warden = null;
+      if (L.mode !== 'hunt' && Number.isFinite(L.portal)) {
+        const W = L.warden || WARDENS[typeof this.era === 'string' ? this.era : 'hadean'];
+        if (W) {
+          const g = { ...W, type: 'warden-' + W.family, hp: W.hits, atk: 10, x: L.portal - 300, home: L.portal - 300, y: GROUND_Y, range: [L.portal - 640, L.portal - 60], dir: -1, dead: 0, hit: 0, bob: 0,
+                      guardian: true, warden: true, asleep: true, w: 92, h: 110, speed: 90 + (root.HoneyEngine ? root.HoneyEngine.eraIdx(this.era) : 0) * 10 };
+          root.Guardian.init(g); this.enemies.push(g); this.warden = g;
+        }
+      }
       if (L.mode === 'hunt') {
         // one guardian with a brain, numeric HP on both sides, no honey or portal — the fight is the level
         const g = { ...L.guardian, x: L.guardian.x || L.length - 400, y: GROUND_Y, range: [120, L.length - 120], dir: -1, dead: 0, hit: 0, bob: 0,
@@ -302,6 +322,7 @@
     respawn() {
       const p = this.p;
       p.x = p.checkpoint; p.y = GROUND_Y; p.vx = 0; p.vy = 0; p.hp = 3; p.inv = 1.5; p.grounded = true;
+      const g = this.warden; if (g && g.hpLeft > 0 && !g.asleep) { g.asleep = true; g.x = g.home; g.state = 'idle'; g.t = 0; g.vx = 0; g.vy = 0; g.stagger = 0; g.y = g.fly ? GROUND_Y - 130 : GROUND_Y; this.projectiles = []; this.waves = []; try { root.GameMusic?.setIntensity?.(0); } catch (e) {} }
       this.crumbles.forEach(c => { c.gone = false; c.fall = 0; c.timer = 0; });
       p.onRect = null;
       this.hooks.onRespawn?.();
@@ -399,12 +420,27 @@
       this.waves = this.waves.filter(w => w.t > 0);
       for (const sp of this.springs) sp.t = Math.max(0, sp.t - dt);
       for (const c of this.checkpoints) if (!c.lit && p.x > c.x) { c.lit = true; p.checkpoint = c.x; this.float(c.x, GROUND_Y - 120, 'Checkpoint', '#7cf29e'); this.sfx('checkpoint'); this.hooks.onCheckpoint?.(); }
-      if (!this.finished && p.x > this.L.portal - 10 && p.dead <= 0) this.finish();
+      if (this.portalSealed()) {
+        if (p.x > this.L.portal - 70 && p.dead <= 0) { p.x = this.L.portal - 70; p.vx = -220; if (!this.sealT || this.time - this.sealT > 1) { this.sealT = this.time; this.float(this.L.portal, GROUND_Y - 190, 'SEALED — defeat the warden', '#b8bcc8'); this.sfx('block'); } }
+      } else if (!this.finished && p.x > this.L.portal - 10 && p.dead <= 0) this.finish();
     }
+    portalSealed() { return !!(this.warden && this.warden.hpLeft > 0); }
     stepGuardian(g, dt) {
       const p = this.p;
       if (g.dead > 0) { g.dead -= dt; return; }
       if (g.hpLeft <= 0) return;
+      if (g.asleep) {   // a sleeping warden wakes when the cub steps into its hall
+        g.bob += dt;
+        if (p.dead <= 0 && Math.abs(p.x - g.x) < 420) {
+          g.asleep = false; g.t = 0; g.state = 'idle';
+          this.shake = Math.max(this.shake, 0.6); this.sfx('roar');
+          this.burst(g.x, g.y - g.h / 2, ['#fff', '#ff6b5a', '#f5e06e'], 30, 260);
+          this.float(g.x, g.y - g.h - 30, `${g.name.toUpperCase()} AWAKENS`, '#ff8a7a');
+          try { root.GameMusic?.setIntensity?.(1); } catch (e) {}
+          this.hooks.onWarden?.(g);
+        }
+        return;
+      }
       g.hit = Math.max(0, g.hit - dt);
       p.frenzy = Math.max(0, (p.frenzy || 0) - dt); p.shieldFx = Math.max(0, (p.shieldFx || 0) - dt);
       if (g.frozen > 0) g.frozen -= dt;
@@ -436,7 +472,28 @@
       this.honey.push({ x: s.x, y: s.y, taken: false, t: Math.random() * 6, heal: true, ttl: this.heal.ttl });
       this.float(s.x, s.y - 30, '🍯 honey!', '#7cf29e'); this.sfx('honey');
     }
+    hitWarden(g, burst) {
+      const p = this.p;
+      if (g.transition > 0) return;
+      const vul = root.Guardian.vulnerability(g) > 1;
+      const dmg = burst ? 4 * Math.max(1, p.chain || 1) : vul ? 2 : 1;
+      g.hpLeft = Math.max(0, g.hpLeft - dmg); g.hit = 0.3;
+      if (burst) { g.stagger = Math.max(g.stagger, 1.2); g.vx = 0; }
+      this.sfx(burst ? 'burst' : vul ? 'crit' : 'hit');
+      this.burst(g.x, g.y - g.h / 2, burst ? ['#f5e06e', '#fff2b0', '#ffb347'] : ['#fff', '#ffb347', '#ff6b35'], burst ? 40 : 14, burst ? 260 : 160);
+      this.shake = Math.max(this.shake, burst ? 0.4 : 0.15);
+      this.float(g.x + (Math.random() - .5) * 40, g.y - g.h - 10, `-${dmg}${vul && !burst ? ' PUNISH' : burst && p.chain > 1 ? ` ×${p.chain} CHAIN` : ''}`, vul && !burst ? '#ff6b35' : burst ? '#ffe27a' : '#fff');
+      if (g.hpLeft <= 0) {
+        g.dead = 1.4; this.sprite.cheer(); this.sfx('victory'); this.projectiles = []; this.waves = [];
+        p.hp = 3; this.hooks.onHurt?.(p.hp);
+        this.burst(g.x, g.y - g.h / 2, ['#f5e06e', '#d4af37', '#fff2b0', '#7fdbff'], 60, 280);
+        this.float(this.L.portal, GROUND_Y - 190, '✦ THE PORTAL OPENS ✦', '#7fdbff'); this.float(p.x, p.y - 110, 'hearts restored', '#7cf29e');
+        try { root.GameMusic?.setIntensity?.(0); } catch (e) {}
+        this.hooks.onWardenDown?.(g);
+      }
+    }
     hitGuardian(g, burst) {
+      if (this.L.mode !== 'hunt') return this.hitWarden(g, burst);
       const p = this.p, s = this.L.stats, C = root.HoneyEngine.COMBAT;
       if (g.transition > 0) { this.float(g.x, g.y - g.h - 10, 'immune', '#b8bcc8'); this.sfx('block'); return; }
       const crit = !burst && C.crit(s);
@@ -663,6 +720,13 @@
     }
     drawPortal(t) {
       const ctx = this.ctx, x = this.L.portal, y = GROUND_Y - 80;
+      if (this.portalSealed()) {   // dim rings, a lock, no glow — the warden's seal
+        ctx.save(); ctx.globalAlpha = 0.45;
+        for (let i = 0; i < 3; i++) { ctx.save(); ctx.translate(x, y); ctx.rotate(t * 0.15 * (i % 2 ? -1 : 1)); ctx.strokeStyle = '#8a93a8'; ctx.lineWidth = 3 - i * 0.5; ctx.setLineDash([8, 10]); ctx.beginPath(); ctx.ellipse(0, 0, 46 + i * 12, 70 + i * 10, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+        ctx.globalAlpha = 0.9; ctx.font = '34px serif'; ctx.textAlign = 'center'; ctx.fillText('🔒', x, y + 12);
+        ctx.font = 'bold 10px Cinzel, serif'; ctx.fillStyle = '#b8bcc8'; ctx.fillText('SEALED', x, y + 100);
+        ctx.restore(); return;
+      }
       for (let i = 0; i < 3; i++) {
         ctx.save(); ctx.translate(x, y); ctx.rotate(t * (0.6 + i * 0.4) * (i % 2 ? -1 : 1));
         ctx.strokeStyle = ['#3498db', '#7fdbff', '#f5e06e'][i]; ctx.lineWidth = 4 - i; ctx.shadowColor = '#7fdbff'; ctx.shadowBlur = 18;
@@ -700,7 +764,8 @@
       if (e.burn > 0) ctx.filter = 'drop-shadow(0 0 14px #ff6b35) saturate(1.4)';
       if (e.transition > 0) { const k = 1 + Math.sin(t * 40) * 0.06 + e.transition * 0.12; ctx.filter = 'brightness(2.2) drop-shadow(0 0 30px #fff)'; ctx.scale(k, k); }
       if (e.boss && e.transition <= 0 && e.dead <= 0 && e.phase > 0) ctx.filter = (ctx.filter === 'none' ? '' : ctx.filter + ' ') + `drop-shadow(0 0 ${10 + e.phase * 8}px ${e.phase === 2 ? '#ff3b1f' : '#ffb347'})`;
-      if (e.dead > 0) { const d = e.boss ? e.dead / 1.6 : e.dead / 0.6; ctx.globalAlpha = Math.min(1, d); ctx.scale(1 + (1 - d) * 0.6, 1 - (1 - d) * 0.5); }
+      if (e.asleep) { ctx.globalAlpha = 0.75; ctx.filter = 'saturate(0.5) brightness(0.8)'; }
+      if (e.dead > 0) { const d = e.boss ? e.dead / 1.6 : e.warden ? e.dead / 1.4 : e.dead / 0.6; ctx.globalAlpha = Math.min(1, d); ctx.scale(1 + (1 - d) * 0.6, 1 - (1 - d) * 0.5); }
       ctx.scale(e.dir, 1);
       ctx.font = `${e.h}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       if (e.hit > 0 && Math.floor(e.hit * 20) % 2 === 0) ctx.filter = 'brightness(3)';
@@ -708,6 +773,17 @@
       ctx.fillText(e.emoji, 0, Math.sin(t * 6 + e.bob) * 3);
       ctx.restore();
       if (e.guardian && e.stagger > 0) { ctx.font = '22px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', e.x + Math.sin(t * 9) * 18, e.y - e.h - 16); }
+      if (e.warden && e.hpLeft > 0) {
+        ctx.save(); ctx.textAlign = 'center';
+        if (e.asleep) { ctx.font = '20px serif'; ctx.globalAlpha = 0.6 + Math.sin(t * 2) * 0.3; ctx.fillText('💤', e.x + 30, e.y - e.h - 10 - Math.sin(t * 2) * 6); }
+        else {
+          ctx.font = 'bold 10px Cinzel, serif'; ctx.fillStyle = '#ffd2cc'; ctx.fillText(e.name.toUpperCase(), e.x, e.y - e.h - 30);
+          ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(e.x - 60, e.y - e.h - 24, 120, 7);
+          ctx.fillStyle = '#e74c3c'; ctx.fillRect(e.x - 60, e.y - e.h - 24, 120 * e.hpLeft / e.hp, 7);
+          ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.strokeRect(e.x - 60, e.y - e.h - 24, 120, 7);
+        }
+        ctx.restore();
+      }
       if (e.boss && e.hpLeft > 0) {   // the crown and the phase pips
         ctx.save(); ctx.textAlign = 'center'; ctx.font = '22px serif'; ctx.fillText('👑', e.x, e.y - e.h - 18 + Math.sin(t * 3) * 3);
         for (let i = 0; i < (e.phases ? e.phases.length : 3); i++) { ctx.fillStyle = i <= e.phase ? '#ff6b5a' : 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(e.x - 14 + i * 14, e.y - e.h - 44, 4, 0, 7); ctx.fill(); }
@@ -721,4 +797,5 @@
   root.HoneyRoad = HoneyRoad;
   root.HONEY_ROAD_LEVELS = LEVELS;
   root.HONEY_ROAD_HAZARDS = HAZARDS;
+  root.HONEY_ROAD_WARDENS = WARDENS;
 })(typeof self !== 'undefined' ? self : this);
