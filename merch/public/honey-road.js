@@ -152,6 +152,8 @@
         this.enemies = [g]; this.honey = []; this.checkpoints = []; this.L.portal = Infinity;
         this.p.hpNum = L.pHP; this.p.hpMax = L.pMaxHP; this.p.hits = 0; this.p.frenzy = 0; this.p.shieldFx = 0;
         this.power = L.power || null;
+        // healing honey: a jar drops every few seconds (and on every boss phase), heals a share of max HP, fades if ignored
+        this.heal = Object.assign({ every: 16, first: 9, pct: 0.15, ttl: 9 }, L.heal || {}); this.healT = this.heal.first;
       }
       this.time = 0; this.finished = false; this.started = false;
       this.cam = { x: 0, y: 0 };
@@ -359,9 +361,21 @@
         }
         this.damage(e);
       }
+      if (this.L.mode === 'hunt' && this.heal && p.dead <= 0 && !this.finished) {
+        this.healT -= dt;
+        if (this.healT <= 0) { this.healT = this.heal.every; this.spawnHealDrop(); }
+        for (const h of this.honey) if (h.heal && !h.taken) { h.ttl -= dt; if (h.ttl <= 0) { h.taken = true; this.float(h.x, h.y - 10, 'gone', '#b8bcc8'); } }
+      }
       for (const h of this.honey) {
         if (h.taken || p.dead > 0) continue;
         if (Math.abs(h.x - p.x) < 30 && Math.abs(h.y - (p.y - 36)) < 48) {
+          if (h.heal) {
+            h.taken = true; const amt = Math.max(1, Math.floor(p.hpMax * this.heal.pct));
+            p.hpNum = Math.min(p.hpMax, p.hpNum + amt); this.sfx('power');
+            this.burst(h.x, h.y, ['#7cf29e', '#f5e06e', '#fff2b0'], 16, 120);
+            this.float(h.x, h.y - 24, `+${amt} ❤`, '#7cf29e'); this.hooks.onHurt?.(p.hpNum);
+            continue;
+          }
           h.taken = true; p.honey++; this.sfx('honey');
           // every five drops charge a Honey Burst (up to two stored)
           if (++p.burstStreak >= 5) { p.burstStreak = 0; if (p.burst < 2) { p.burst++; this.float(p.x, p.y - 110, '✦ Burst charged', '#ffe27a'); } }
@@ -411,6 +425,17 @@
         else this.damage(g, scale, g.state === 'charge' || g.state === 'idle' ? 'ground' : 'any');
       }
     }
+    spawnHealDrop() {
+      if (this.honey.some(h => h.heal && !h.taken)) return;   // one jar at a time
+      const L = this.L, p = this.p, g = this.enemies[0];
+      // ground spot away from the guardian, or one of the platforms — whichever is farther from the guardian
+      const spots = [{ x: 160 + Math.random() * (L.length - 320), y: GROUND_Y - 36 }];
+      for (const pl of L.platforms || []) spots.push({ x: pl.x + pl.w / 2, y: pl.y - 36 });
+      spots.sort((a, b) => Math.abs(b.x - (g ? g.x : p.x)) - Math.abs(a.x - (g ? g.x : p.x)));
+      const s = spots[Math.floor(Math.random() * Math.min(2, spots.length))];
+      this.honey.push({ x: s.x, y: s.y, taken: false, t: Math.random() * 6, heal: true, ttl: this.heal.ttl });
+      this.float(s.x, s.y - 30, '🍯 honey!', '#7cf29e'); this.sfx('honey');
+    }
     hitGuardian(g, burst) {
       const p = this.p, s = this.L.stats, C = root.HoneyEngine.COMBAT;
       if (g.transition > 0) { this.float(g.x, g.y - g.h - 10, 'immune', '#b8bcc8'); this.sfx('block'); return; }
@@ -427,7 +452,7 @@
       this.float(g.x + (Math.random() - .5) * 40, g.y - g.h - 10, `-${dmg}${crit ? ' CRIT' : ''}`, crit ? '#ff6b35' : burst ? '#ffe27a' : '#fff');
       this.hooks.onGuardianHit?.(g, dmg);
       const ph = root.Guardian.checkPhase(this, g);
-      if (ph >= 0) { this.projectiles = []; this.waves = []; this.hooks.onPhase?.(g, ph); }
+      if (ph >= 0) { this.projectiles = []; this.waves = []; this.spawnHealDrop(); this.hooks.onPhase?.(g, ph); }
       if (g.hpLeft <= 0) {
         g.dead = g.boss ? 1.6 : 0.9; this.finished = true; this.sprite.cheer(); this.sfx('victory');
         this.burst(g.x, g.y - g.h / 2, ['#f5e06e', '#d4af37', '#fff2b0', '#7fdbff'], 60, 280);
@@ -553,7 +578,7 @@
       for (const c of this.checkpoints) this.drawTotem(c, t);
       if (Number.isFinite(this.L.portal)) this.drawPortal(t);
       // honey
-      for (const h of this.honey) if (!h.taken) this.drawHoney(h, t);
+      for (const h of this.honey) if (!h.taken) { if (h.heal && h.ttl < 2.5 && Math.floor(t * 8) % 2) continue; this.drawHoney(h, t); if (h.heal) this.drawHealRing(h, t); }
       // enemies
       for (const e of this.enemies) if (e.guardian) root.Guardian.drawTelegraph(ctx, e, this);
       for (const e of this.enemies) this.drawEnemy(e, t);
@@ -643,6 +668,13 @@
       const g = ctx.createRadialGradient(x, y, 5, x, y, 60); g.addColorStop(0, 'rgba(127,219,255,.45)'); g.addColorStop(1, 'rgba(52,152,219,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, 44, 66, 0, 0, 7); ctx.fill();
       ctx.font = 'bold 11px Cinzel, serif'; ctx.fillStyle = this.L.next ? '#7fdbff' : '#f5e06e'; ctx.textAlign = 'center'; ctx.fillText(this.L.next ? this.L.next.toUpperCase() : '✦ THE GOLDEN DROP ✦', x, y + 100);
+    }
+    drawHealRing(h, t) {
+      const ctx = this.ctx, y = h.y + Math.sin(t * 3 + h.t) * 5, k = 0.5 + Math.sin(t * 5) * 0.5;
+      ctx.save(); ctx.strokeStyle = `rgba(124,242,158,${0.35 + 0.4 * k})`; ctx.lineWidth = 2.5; ctx.setLineDash([6, 6]); ctx.lineDashOffset = -t * 30;
+      ctx.beginPath(); ctx.arc(h.x, y - 2, 24 + k * 4, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = 'bold 13px serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#7cf29e'; ctx.fillText('❤', h.x + 16, y - 20);
+      ctx.restore();
     }
     drawHoney(h, t) {
       const ctx = this.ctx, y = h.y + Math.sin(t * 3 + h.t) * 5;

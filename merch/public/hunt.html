@@ -166,7 +166,8 @@ async function init() {
   const level = { mode: 'hunt', title: BOSS ? `${enemy.name}'s Throne` : `${enemy.name}'s Den`, honeyName: base.honeyName, next: null, length: len, hazard: base.hazard, palette: base.palette,
     ground: [[0, len]], platforms: BOSS ? [{ x: 300, y: 362, w: 150 }, { x: 870, y: 332, w: 170 }, { x: 1450, y: 362, w: 150 }] : [{ x: 290, y: 362, w: 150 }, { x: 1060, y: 362, w: 150 }], crumble: [], movers: [], springs: [], enemies: [], honey: [], checkpoints: [], portal: Infinity,
     guardian: BOSS ? { ...enemy, hpLeft: b.eHP, x: 1400, w: 124, h: 148, speed: 95 + HoneyEngine.eraIdx(ERA) * 10 } : { ...enemy, x: 1120, w: 84, h: 100, speed: 85 + HoneyEngine.eraIdx(ERA) * 12 },
-    pHP: b.pHP, pMaxHP: b.pMaxHP, stats, power: HoneyEngine.powerOf(CUB.class) };
+    pHP: b.pHP, pMaxHP: b.pMaxHP, stats, power: HoneyEngine.powerOf(CUB.class),
+    heal: BOSS ? { every: 13, first: 8, pct: 0.2, ttl: 9 } : { every: 18, first: 10, pct: 0.15, ttl: 8 } };
   GameMusic.setEra(ERA); GameMusic.setIntensity(BOSS ? 1 : 0);
   road = new HoneyRoad(cv, sprite, level, {
     onHurt: hud, onBurst: hud, onGuardianHit: hud,
@@ -193,10 +194,10 @@ async function init() {
     document.getElementById('startBtn').textContent = 'Face the Era Boss';
     const names = g0.phases.map((ph, i) => `<strong style="color:#ff8a7a">${i + 1}. ${Guardian.MOVE_NAMES[ph.move] || ph.move}</strong>`).join(' → ');
     const wounded = b.eHP < b.eMaxHP;
-    document.getElementById('introText').innerHTML += `<br><br>Three phases, each a new attack: ${names}. Every third of its health it roars (you cannot hurt it then), shakes off burn and frost, and comes back faster. <strong style="color:#f5e06e">Honey Bursts hit it for ×${HoneyEngine.HUNT.bossBurst}.</strong><br>`
+    document.getElementById('introText').innerHTML += `<br><br><strong style="color:#7cf29e">🍯 Healing honey</strong> drops every few seconds and after every roar — grab it (it fades if ignored) to heal 20%.<br>Three phases, each a new attack: ${names}. Every third of its health it roars (you cannot hurt it then), shakes off burn and frost, and comes back faster. <strong style="color:#f5e06e">Honey Bursts hit it for ×${HoneyEngine.HUNT.bossBurst}.</strong><br>`
       + (wounded ? `<strong style="color:#ffb347">Its wounds remain: ${b.eHP} / ${b.eMaxHP} HP left${g0.phase > 0 ? ` — it is already in phase ${g0.phase + 1}` : ''}.</strong> ` : `Its wounds stay between attempts — every hit counts. `)
       + `Defeat it to open the ${base.honeyName} Road.`;
-  } else document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${g0.moveName}</strong> — ${g0.moveTip}.`;
+  } else document.getElementById('introText').innerHTML += `<br><br><strong style="color:#ff8a7a">${g0.moveName}</strong> — ${g0.moveTip}.<br><strong style="color:#7cf29e">🍯 Healing honey</strong> drops now and then — grab it to heal 15%.`;
   hud();
 }
 function fail(e) {
