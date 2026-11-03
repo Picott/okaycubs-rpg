@@ -1,9 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+
+export const dynamic = 'force-dynamic';
 
 // GET /api/printful/store-info
 // Shows what Printful returns for /store and /stores so we can determine store_id.
 // Open this URL in your browser to debug.
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
   const apiKey = process.env.PRINTFUL_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'PRINTFUL_API_KEY not set' }, { status: 503 });

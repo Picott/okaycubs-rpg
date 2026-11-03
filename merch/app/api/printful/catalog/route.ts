@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+
+export const dynamic = 'force-dynamic';
 
 // GET /api/printful/catalog
 // Returns the real variant IDs AND available print placements for each product.
 // Open this URL in your browser to find the correct IDs and placements for products.ts
 // No secret needed — the API key stays server-side.
 export async function GET(req: NextRequest) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
   const apiKey = process.env.PRINTFUL_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'PRINTFUL_API_KEY not set' }, { status: 503 });

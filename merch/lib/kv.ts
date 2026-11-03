@@ -50,6 +50,9 @@ export const kv = {
     return (await cmd<string | null>('SET', key, JSON.stringify(value), 'EX', ttlSec, 'NX')) === 'OK';
   },
   del(key: string) { return cmd<number>('DEL', key); },
+  lpush(key: string, value: string) { return cmd<number>('LPUSH', key, value); },
+  ltrim(key: string, start: number, stop: number) { return cmd<string>('LTRIM', key, start, stop); },
+  lrange(key: string, start: number, stop: number) { return cmd<string[]>('LRANGE', key, start, stop); },
 };
 
 // Short per-wallet lock so two overlapping requests cannot both read-modify-write a profile
