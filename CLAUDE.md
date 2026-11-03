@@ -1,0 +1,1 @@
+Lee `AGENTS.md` antes de hacer nada: ahí están la regla del Board, cómo correr y probar el código, los nombres de los secretos y el estado pendiente. Los roles y rutinas de la operación están en `ops/`.
