@@ -2,12 +2,29 @@ import type { PrintPosition } from './products';
 
 const PRINTFUL_API = 'https://api.printful.com';
 
-function headers() {
+// Account-level API keys must name the store on orders and rate quotes. PRINTFUL_STORE_ID wins;
+// otherwise the first "native" (API) store of the account is looked up once per instance.
+let storeIdCache: string | null = process.env.PRINTFUL_STORE_ID || null;
+export async function getStoreId(): Promise<string | null> {
+  if (storeIdCache) return storeIdCache;
+  if (!process.env.PRINTFUL_API_KEY) return null;
+  try {
+    const res = await fetch(`${PRINTFUL_API}/stores`, { headers: { Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}` }, signal: AbortSignal.timeout(10_000) });
+    const data = await res.json() as { result?: { id: number; type?: string }[] };
+    const stores = data.result ?? [];
+    const pick = stores.find(s => s.type === 'native') ?? stores[0];
+    if (pick) storeIdCache = String(pick.id);
+  } catch (e) { console.warn('[printful] could not resolve store id:', e instanceof Error ? e.message : e); }
+  return storeIdCache;
+}
+
+export async function printfulHeaders(): Promise<Record<string, string>> {
   const h: Record<string, string> = {
     Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
     'Content-Type': 'application/json',
   };
-  if (process.env.PRINTFUL_STORE_ID) h['X-PF-Store-Id'] = process.env.PRINTFUL_STORE_ID;
+  const storeId = await getStoreId();
+  if (storeId) h['X-PF-Store-Id'] = storeId;
   return h;
 }
 
@@ -60,7 +77,7 @@ export async function createOrder(items: PrintfulOrderItem[], shipping: Shipping
   };
 
   const res = await fetch(`${PRINTFUL_API}/orders?confirm=true`, {
-    method: 'POST', headers: headers(), body: JSON.stringify(body), signal: AbortSignal.timeout(25_000),
+    method: 'POST', headers: await printfulHeaders(), body: JSON.stringify(body), signal: AbortSignal.timeout(25_000),
   });
   const data = await res.json().catch(() => ({})) as { code?: number; result?: { id?: number; status?: string } | string; error?: { message?: string } };
   if (!res.ok || typeof data.result === 'string' || !data.result?.id) {
@@ -72,7 +89,7 @@ export async function createOrder(items: PrintfulOrderItem[], shipping: Shipping
 
 /** Lightweight status read for Ops (tracking, shipments). */
 export async function getOrder(printfulOrderId: number) {
-  const res = await fetch(`${PRINTFUL_API}/orders/${printfulOrderId}`, { headers: headers(), signal: AbortSignal.timeout(15_000) });
+  const res = await fetch(`${PRINTFUL_API}/orders/${printfulOrderId}`, { headers: await printfulHeaders(), signal: AbortSignal.timeout(15_000) });
   const data = await res.json().catch(() => ({})) as { result?: { id: number; status: string; shipments?: { tracking_number?: string; tracking_url?: string; carrier?: string }[] } };
   if (!res.ok || !data.result) throw new PrintfulError(`Printful ${res.status}`, res.status || 502, data);
   return data.result;

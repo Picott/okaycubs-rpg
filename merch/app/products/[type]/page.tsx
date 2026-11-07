@@ -222,7 +222,7 @@ function ProductPageInner() {
     );
   }
 
-  const needsSize   = product.variants.some(v => v.size);
+  const needsSize   = product.variants.some(v => !!v.size);
   const canCheckout = !!selectedCub && !!variant && (!needsSize || !!selectedSize);
   const priceUsd    = product.basePrice / 100;
   const totalUsd    = quote ? quote.totalCents / 100 : priceUsd;
@@ -379,7 +379,7 @@ function ProductPageInner() {
             ) : (
               <div className="text-center py-12">
                 <div className="text-5xl mb-4">
-                  {type === 'hoodie' ? '🧥' : type === 'joggers' ? '👖' : '🧢'}
+                  {product.icon}
                 </div>
                 <div className="font-cinzel text-[10px] tracking-[3px] text-gold opacity-50 uppercase">Select your Cub below</div>
               </div>

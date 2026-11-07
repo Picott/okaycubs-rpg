@@ -1,5 +1,6 @@
 import { kv, kvConfigured } from './kv';
 import { PRODUCTS, ProductType } from './products';
+import { printfulHeaders } from './printful';
 import { COUNTRIES, COUNTRY_CODES, EU, STATE_REQUIRED } from './countries';
 export { COUNTRIES, COUNTRY_CODES, EU, STATE_REQUIRED };
 
@@ -60,7 +61,7 @@ export async function quoteShipping(type: ProductType, variantId: number, to: Sh
   try {
     const res = await fetch('https://api.printful.com/shipping/rates', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      headers: await printfulHeaders(),
       body: JSON.stringify({
         recipient: { address1: to.address1 || '', city: to.city || '', country_code: country, state_code: state || undefined, zip: zip || undefined },
         items: [{ variant_id: variantId, quantity: 1 }],
