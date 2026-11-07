@@ -38,7 +38,7 @@ Se puede hacer sin preguntar:
 ## Estado conocido (nov 2026)
 
 Pendiente urgente antes de vender en serio (ver `ops/README.md`):
-1. Rotar la clave de Printful que estuvo commiteada en `merch/probe-printful.mjs` (archivo ya eliminado).
+1. ~~Rotar la clave de Printful que estuvo commiteada en `merch/probe-printful.mjs`~~ Hecho el 7 nov 2026 (archivo eliminado, clave vieja revocada; la vieja sigue en el historial de git pero ya no sirve).
 2. Pago en SOL: el precio de SOL llega del navegador (`merch/app/api/checkout/solana/route.ts`); calcularlo en servidor y hacer la referencia idempotente.
 3. Pedidos Printful: `lib/printful.ts` crea la orden sin confirmar y sin comprobar errores; enviar la imagen alojada en Blob, no la IPFS; guardar el pedido en Redis; email de confirmación con tracking.
 4. Envío: hoy no se cobra. Cotizar por país con la API de Printful y abrir Colombia y UE con aviso de aduana.
