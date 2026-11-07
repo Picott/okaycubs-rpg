@@ -38,12 +38,13 @@ Se puede hacer sin preguntar:
 ## Estado conocido (nov 2026)
 
 Pendiente urgente antes de vender en serio (ver `ops/README.md`):
-1. Rotar la clave de Printful que estuvo commiteada en `merch/probe-printful.mjs` (archivo ya eliminado).
-2. Pago en SOL: el precio de SOL llega del navegador (`merch/app/api/checkout/solana/route.ts`); calcularlo en servidor y hacer la referencia idempotente.
-3. Pedidos Printful: `lib/printful.ts` crea la orden sin confirmar y sin comprobar errores; enviar la imagen alojada en Blob, no la IPFS; guardar el pedido en Redis; email de confirmación con tracking.
-4. Envío: hoy no se cobra. Cotizar por país con la API de Printful y abrir Colombia y UE con aviso de aduana.
-5. Rutas de depuración abiertas: `merch/app/api/printful/test*`, `catalog`, `store-info`. Proteger o borrar.
+1. ~~Rotar la clave de Printful que estuvo commiteada en `merch/probe-printful.mjs`~~ Hecho el 7 nov 2026 (archivo eliminado, clave vieja revocada; la vieja sigue en el historial de git pero ya no sirve).
+2. ~~Pago en SOL con precio del navegador~~ Resuelto en la rama `claude/store-sprint-1` (precio en servidor, intención en Redis, fulfil idempotente). Pendiente: fusionar tras aprobación.
+3. ~~Pedidos Printful en borrador / sin comprobar errores / imagen IPFS~~ Resuelto en la misma rama (confirm=true, errores visibles, imagen en Blob, pedidos en Redis, email al cliente para el aviso de envío).
+4. ~~Envío no cobrado~~ Resuelto en la misma rama: tarifa viva de Printful por país, 60+ países con Colombia y UE, aviso de aduana.
+5. ~~Rutas de depuración abiertas~~ Resuelto en la misma rama: `test*` eliminadas; `catalog` y `store-info` detrás de `ADMIN_KEY`. Nuevo `/api/orders` (admin) para la rutina de pedidos.
 6. Proxy de Tensor devuelve 502 (floor price apagado). Conectar okaycubs.space en Vercel.
+7. Variables nuevas que deben existir en Vercel antes de fusionar la rama: `ADMIN_KEY`, `PRINTFUL_STORE_ID` (17852645). Catálogo verificado en `ops/reports/catalogo.md`.
 
 Backlog del juego: ranking semanal de tiempos (roads y jefes), perfil público de hunter, osos como agentes (idea, sin prioridad).
 

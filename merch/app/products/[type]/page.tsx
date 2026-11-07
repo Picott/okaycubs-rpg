@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import { PRODUCTS, ProductType, UNIQUE_COLORS, SIZES, SIZE_CHARTS, getVariant } from '@/lib/products';
+import { COUNTRIES, STATE_REQUIRED } from '@/lib/countries';
 
 interface Cub {
   id: string;
@@ -36,17 +37,19 @@ function ProductPageInner() {
   const mockupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mockupReqId   = useRef(0);
   const [paying, setPaying]         = useState(false);
-  const [solPrice, setSolPrice]     = useState<number>(0);
+  const [checkoutError, setCheckoutError] = useState<string>('');
+  // Shipping destination + live quote (item + standard shipping, SOL conversion)
+  const [country, setCountry]       = useState<string>('US');
+  const [quote, setQuote]           = useState<{ itemCents: number; shippingCents: number; totalCents: number; estimated: boolean; customs: boolean; minDays: number | null; maxDays: number | null; stateRequired: boolean; solPrice: number | null; totalSol: string | null } | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [qrUrl, setQrUrl]           = useState<string>('');
   const [payMode, setPayMode]       = useState<'card' | 'sol'>('card');
   // Solana Pay — reference key + order snapshot for post-payment fulfillment
-  const [solReference, setSolReference] = useState<string>('');
-  const [solLamports, setSolLamports]   = useState<number>(0);
   const [solStatus, setSolStatus]       = useState<'idle'|'waiting'|'confirmed'|'failed'>('idle');
   const solPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Shipping form (required for SOL checkout)
   const [showShipping, setShowShipping] = useState(false);
-  const [shipping, setShipping] = useState({ name:'', address1:'', city:'', state:'', country:'US', zip:'' });
+  const [shipping, setShipping] = useState({ name:'', email:'', address1:'', city:'', state:'', zip:'' });
 
   const colors   = product ? UNIQUE_COLORS(type) : [];
   const sizes    = selectedColor ? SIZES(type, selectedColor) : [];
@@ -68,13 +71,19 @@ function ProductPageInner() {
     if (colors.length) setColor(colors[0].color);
   }, [type]);
 
-  // Fetch SOL price
+  // Shipping quote for the chosen variant + destination (the server prices the real checkout the same way)
   useEffect(() => {
-    fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd')
+    if (!variant || !country) { setQuote(null); return; }
+    let alive = true;
+    setQuoteLoading(true);
+    const qs = new URLSearchParams({ productType: type, variantId: String(variant.printfulVariantId), country, state: shipping.state, zip: shipping.zip });
+    fetch(`/api/shipping/quote?${qs}`)
       .then(r => r.json())
-      .then(d => setSolPrice(d?.solana?.usd ?? 0))
-      .catch(() => {});
-  }, []);
+      .then(d => { if (alive) setQuote(d && !d.error ? d : null); })
+      .catch(() => { if (alive) setQuote(null); })
+      .finally(() => { if (alive) setQuoteLoading(false); });
+    return () => { alive = false; };
+  }, [type, variant?.printfulVariantId, country, shipping.state, shipping.zip]);
 
   // Generate mockup when cub + variant are ready — debounced to avoid 429s
   useEffect(() => {
@@ -213,12 +222,17 @@ function ProductPageInner() {
     );
   }
 
-  const canCheckout = !!selectedCub && !!variant && (type === 'cap' || !!selectedSize);
+  const needsSize   = product.variants.some(v => !!v.size);
+  const canCheckout = !!selectedCub && !!variant && (!needsSize || !!selectedSize);
   const priceUsd    = product.basePrice / 100;
-  const priceSol    = solPrice ? (priceUsd / solPrice).toFixed(4) : '…';
+  const totalUsd    = quote ? quote.totalCents / 100 : priceUsd;
+  const priceSol    = quote?.totalSol ?? '…';
+  const solPrice    = quote?.solPrice ?? 0;
+  const countryName = COUNTRIES.find(c => c.code === country)?.name ?? country;
 
   async function handleStripeCheckout() {
     if (!canCheckout) return;
+    setCheckoutError('');
     setPaying(true);
     try {
       const res = await fetch('/api/checkout/stripe', {
@@ -233,10 +247,11 @@ function ProductPageInner() {
             ? (selectedCub!.image.startsWith('http') ? selectedCub!.image : window.location.origin + selectedCub!.image)
             : '',
           mockupUrl,
+          country, state: shipping.state, zip: shipping.zip,
         }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const { url, error } = await res.json();
+      if (url) window.location.href = url; else setCheckoutError(error || 'Checkout failed, please try again.');
     } finally {
       setPaying(false);
     }
@@ -250,31 +265,30 @@ function ProductPageInner() {
   // Show shipping form before generating QR
   function initiateSolanaCheckout() {
     if (!canCheckout || !solPrice) return;
+    setCheckoutError('');
     setShowShipping(true);
   }
 
+  const shippingComplete = !!shipping.name && !!shipping.email && !!shipping.address1 && !!shipping.city && !!country && (!STATE_REQUIRED.has(country) || !!shipping.state);
+
   async function handleSolanaCheckout() {
-    if (!canCheckout || !solPrice) return;
-    // Validate shipping
-    if (!shipping.name || !shipping.address1 || !shipping.city || !shipping.country) return;
+    if (!canCheckout || !shippingComplete) return;
 
     setShowShipping(false);
     setPaying(true);
     setSolStatus('idle');
+    setCheckoutError('');
     stopSolPoll();
 
     try {
+      const cubImage = selectedCub!.image ? (selectedCub!.image.startsWith('http') ? selectedCub!.image : window.location.origin + selectedCub!.image) : '';
       const res = await fetch('/api/checkout/solana', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productType: type, cubId: selectedCub!.id, solPriceUsd: solPrice }),
+        body: JSON.stringify({ productType: type, variantId: variant!.printfulVariantId, cubId: selectedCub!.id, cubImage, shipping: { ...shipping, country } }),
       });
-      const data = await res.json() as { url?: string; solAmount?: string; memo?: string; reference?: string; lamports?: number };
-      if (!data.url) return;
-
-      // Save reference + lamports for fulfillment polling
-      if (data.reference) setSolReference(data.reference);
-      if (data.lamports)  setSolLamports(data.lamports);
+      const data = await res.json() as { url?: string; solAmount?: string; reference?: string; lamports?: number; error?: string };
+      if (!data.url || !data.reference) { setCheckoutError(data.error || 'Could not start the SOL payment.'); setShowShipping(true); return; }
 
       if (/Mobi|Android/i.test(navigator.userAgent)) {
         window.location.href = data.url;
@@ -289,30 +303,20 @@ function ProductPageInner() {
         solPollRef.current = setInterval(async () => {
           attempts++;
           if (attempts > 75) { stopSolPoll(); setSolStatus('failed'); return; }
-          if (!data.reference || !data.lamports) return;
 
           try {
+            // the server already knows the amount, product and address for this reference
             const fulfillRes = await fetch('/api/checkout/solana/fulfill', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                reference:   data.reference,
-                lamports:    data.lamports,
-                productType: type,
-                variantId:   variant!.printfulVariantId,
-                cubId:       selectedCub!.id,
-                cubImage:    selectedCub!.image
-                  ? (selectedCub!.image.startsWith('http') ? selectedCub!.image : window.location.origin + selectedCub!.image)
-                  : '',
-                shipping,
-              }),
+              body: JSON.stringify({ reference: data.reference }),
             });
-            const result = await fulfillRes.json() as { verified?: boolean; pending?: boolean };
-            if (result.verified) {
+            const result = await fulfillRes.json() as { verified?: boolean; pending?: boolean; printfulOrderId?: number | null; orderId?: string; needsAttention?: boolean };
+            if (result.verified && !result.pending) {
               stopSolPoll();
               setSolStatus('confirmed');
-              // Redirect to success after short delay
-              setTimeout(() => { window.location.href = '/order/success'; }, 1500);
+              const qs = new URLSearchParams({ method: 'sol', ...(result.orderId ? { order: result.orderId } : {}), ...(result.printfulOrderId ? { pf: String(result.printfulOrderId) } : {}), ...(result.needsAttention ? { attention: '1' } : {}) });
+              setTimeout(() => { window.location.href = `/order/success?${qs}`; }, 1500);
             }
             // if pending: keep polling
           } catch { /* network hiccup — keep polling */ }
@@ -375,7 +379,7 @@ function ProductPageInner() {
             ) : (
               <div className="text-center py-12">
                 <div className="text-5xl mb-4">
-                  {type === 'hoodie' ? '🧥' : type === 'joggers' ? '👖' : '🧢'}
+                  {product.icon}
                 </div>
                 <div className="font-cinzel text-[10px] tracking-[3px] text-gold opacity-50 uppercase">Select your Cub below</div>
               </div>
@@ -385,11 +389,14 @@ function ProductPageInner() {
           {/* Price */}
           <div className="text-center">
             <div className="font-cinzel-deco text-gold text-2xl">${priceUsd.toFixed(2)}</div>
-            {solPrice > 0 && (
-              <div className="font-cinzel text-[10px] tracking-[2px] opacity-40 mt-1">
-                ≈ {priceSol} SOL
+            {quote && (
+              <div className="font-cinzel text-[10px] tracking-[2px] opacity-60 mt-2 space-y-1">
+                <div>+ ${(quote.shippingCents / 100).toFixed(2)} shipping to {countryName}{quote.minDays && quote.maxDays ? ` · ${quote.minDays}–${quote.maxDays} business days` : ''}{quote.estimated ? ' (estimate)' : ''}</div>
+                <div className="text-gold">Total ${totalUsd.toFixed(2)}{solPrice > 0 ? ` · ≈ ${priceSol} SOL` : ''}</div>
+                {quote.customs && <div className="opacity-70 normal-case tracking-[1px] font-crimson italic text-[12px]">Ships from the US · import duties and taxes may be charged on delivery.</div>}
               </div>
             )}
+            {quoteLoading && !quote && <div className="font-cinzel text-[9px] tracking-[2px] opacity-30 mt-2">Quoting shipping…</div>}
           </div>
         </div>
 
@@ -493,6 +500,17 @@ function ProductPageInner() {
           )}
 
           {/* Payment buttons */}
+            {/* Destination — the quote and both checkouts use it */}
+            <div className="space-y-2">
+              <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-60 uppercase">Ship to</div>
+              <select
+                value={country}
+                onChange={e => setCountry(e.target.value)}
+                className="w-full bg-black/30 border border-white/10 text-silver text-[12px] px-3 py-2 font-crimson focus:border-gold/50 outline-none"
+              >
+                {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </select>
+            </div>
           <div className="space-y-3 pt-2">
             <div className="flex gap-3">
               <button
@@ -519,7 +537,7 @@ function ProductPageInner() {
                 disabled={!canCheckout || paying}
                 onClick={handleStripeCheckout}
               >
-                {paying ? 'Redirecting…' : `Pay $${priceUsd.toFixed(2)} with Card`}
+                {paying ? 'Redirecting…' : `Pay $${totalUsd.toFixed(2)} with Card`}
               </button>
             ) : (
               <>
@@ -527,26 +545,20 @@ function ProductPageInner() {
                 {showShipping && (
                   <div className="card-border p-4 space-y-3 animate-fade-up">
                     <div className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-60 uppercase mb-1">Shipping Address</div>
-                    {(['name','address1','city','state','zip'] as const).map(field => (
+                    {(['name','email','address1','city','state','zip'] as const).map(field => (
                       <input
                         key={field}
-                        type="text"
-                        placeholder={field === 'address1' ? 'Address' : field === 'name' ? 'Full Name' : field.charAt(0).toUpperCase() + field.slice(1)}
+                        type={field === 'email' ? 'email' : 'text'}
+                        placeholder={field === 'address1' ? 'Address' : field === 'name' ? 'Full Name' : field === 'email' ? 'Email (shipping updates)' : field === 'state' ? (STATE_REQUIRED.has(country) ? 'State / province code (required)' : 'State / province (optional)') : field.charAt(0).toUpperCase() + field.slice(1)}
                         value={shipping[field]}
                         onChange={e => setShipping(s => ({ ...s, [field]: e.target.value }))}
                         className="w-full bg-black/30 border border-white/10 text-silver text-[12px] px-3 py-2 font-crimson focus:border-gold/50 outline-none"
                       />
                     ))}
-                    <select
-                      value={shipping.country}
-                      onChange={e => setShipping(s => ({ ...s, country: e.target.value }))}
-                      className="w-full bg-black/30 border border-white/10 text-silver text-[12px] px-3 py-2 font-crimson focus:border-gold/50 outline-none"
-                    >
-                      {['US','CA','GB','AU','DE','FR','ES','MX'].map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    <div className="font-crimson text-[12px] opacity-50">Shipping to <span className="text-silver">{countryName}</span> — change it above.</div>
                     <button
                       onClick={handleSolanaCheckout}
-                      disabled={!shipping.name || !shipping.address1 || !shipping.city || !shipping.country}
+                      disabled={!shippingComplete || paying}
                       className="btn-sol w-full"
                     >
                       Generate QR · {priceSol} SOL
@@ -588,6 +600,9 @@ function ProductPageInner() {
               </>
             )}
 
+            {checkoutError && (
+              <div className="font-crimson text-[13px] text-red-400/80 text-center">{checkoutError}</div>
+            )}
             {!canCheckout && (
               <div className="font-cinzel text-[9px] tracking-[2px] text-center opacity-30 uppercase">
                 {!selectedCub ? 'Select a Cub' : !selectedColor ? 'Select a color' : 'Select a size'}

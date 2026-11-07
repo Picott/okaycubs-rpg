@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PRODUCTS } from '@/lib/products';
+import { PRODUCTS, PRODUCT_ORDER } from '@/lib/products';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -12,12 +12,6 @@ interface Cub {
   number: number;
 }
 
-
-const PRODUCT_ICONS: Record<string, string> = {
-  hoodie:  '🧥',
-  joggers: '👖',
-  cap:     '🧢',
-};
 
 export default function HomePage() {
   const [wallet, setWallet]   = useState<string | null>(null);
@@ -99,14 +93,14 @@ export default function HomePage() {
         <div className="font-cinzel text-[11px] tracking-[5px] text-gold opacity-55 uppercase text-center mb-5">
           ✦ Choose Your Item ✦
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-16">
-          {Object.values(PRODUCTS).map(p => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-16">
+          {PRODUCT_ORDER.map(k => PRODUCTS[k]).map(p => (
             <Link
               key={p.type}
               href={`/products/${p.type}${wallet ? `?wallet=${wallet}` : ''}`}
               className="card-border p-6 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
             >
-              <div className="text-4xl mb-3">{PRODUCT_ICONS[p.type]}</div>
+              <div className="text-4xl mb-3">{p.icon}</div>
               <div className="font-cinzel text-[13px] font-semibold text-quartz mb-1 group-hover:text-gold transition-colors">
                 {p.name.replace('OkayCubs ', '')}
               </div>
