@@ -25,6 +25,7 @@ const BACKYARD = [
 ];
 
 const HIGHLIGHTS = [
+  { k: 'Nov · 2026 · BKR 48',            t: 'Back in the House · Bucaramanga', img: '/picott/bkr48.jpg',    href: IG, cta: 'View' },
   { k: 'Sep · 2026 · Aura Fest',        t: 'Concept Vibes · Cali',     img: '/picott/aura-fest.jpg',       href: 'https://www.instagram.com/p/DdkZcMFEZFY/?img_index=9', cta: 'View' },
   { k: 'May · 2026 · Culture',          t: 'All Black Everything',     img: '/picott/culture.jpg',         href: 'https://www.instagram.com/reel/DYsDUMdRBJG/', cta: 'View' },
   { k: 'Mar · 2026 · Flash DC',         t: 'Connectribe · Live',       img: '/picott/flash-dc.jpg',        href: 'https://www.instagram.com/reel/DWbqna2Efxi/', cta: 'Watch' },
@@ -124,7 +125,7 @@ export default function PicottPage() {
       {/* Next up */}
       <section className="card-border p-7 grid sm:grid-cols-3 gap-6 items-center text-center sm:text-left">
         <div><div className={label}>Next up · 2026</div><div className="font-cinzel-deco text-xl text-quartz mt-2">Open dates · Q4 → 2027</div></div>
-        <div className="font-crimson text-silver/70 italic">Colombia · U.S. · Festivals. Last played: Aura Fest, Cali · 26 Sep.</div>
+        <div className="font-crimson text-silver/70 italic">Colombia · U.S. · Festivals. Last played: BKR 48, Bucaramanga · 5 Nov (Back in the House) · Aura Fest, Cali · 26 Sep.</div>
         <div className="sm:text-right"><a href={`mailto:${EMAIL}?subject=Booking%20%CF%80cott`} className={pill}>Book →</a></div>
       </section>
 
@@ -139,7 +140,7 @@ export default function PicottPage() {
           </p>
           <p className="font-crimson text-silver/80 leading-relaxed mt-4">
             As part of the <em>Sunday at Backyard</em> series with the Connectribe collective, he helped shape the party culture in D.C. In September 2026 he played the
-            Concept Vibes stage at Aura Fest&apos;s second anniversary in Cali, Colombia, a slot won as one of the winners of the Concept Academy DJ Contest, out of 40+ sets. Back home in Santander he has played BKR 48 in Bucaramanga.
+            Concept Vibes stage at Aura Fest&apos;s second anniversary in Cali, Colombia, a slot won as one of the winners of the Concept Academy DJ Contest, out of 40+ sets. Back home in Santander he opened November 2026 at BKR 48 in Bucaramanga with <em>Back in the House</em>.
           </p>
         </div>
         <div className="card-border p-7">
@@ -151,7 +152,7 @@ export default function PicottPage() {
           </p>
           <p className="font-crimson text-silver/80 leading-relaxed mt-4">
             Como parte de la serie <em>Sunday at Backyard</em> con el colectivo Connectribe ayudó a dar forma a la cultura de fiesta de D.C. En septiembre de 2026 tocó en el
-            escenario Concept Vibes del segundo aniversario de Aura Fest en Cali, un cupo ganado como uno de los ganadores del Concept Academy DJ Contest entre más de 40 sets. De vuelta en Santander ha tocado en BKR 48, Bucaramanga.
+            escenario Concept Vibes del segundo aniversario de Aura Fest en Cali, un cupo ganado como uno de los ganadores del Concept Academy DJ Contest entre más de 40 sets. De vuelta en Santander abrió noviembre de 2026 en BKR 48, Bucaramanga, con <em>Back in the House</em>.
           </p>
         </div>
       </section>
