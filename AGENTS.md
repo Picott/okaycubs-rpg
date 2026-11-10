@@ -5,7 +5,7 @@ Reportes y conversación con Juan en español; todo lo que ve un cliente (tienda
 
 ## Qué es esto
 
-- `merch/` — app Next.js 14 desplegada en Vercel (raíz del proyecto en Vercel = `merch/`). Producción: https://okaycubs-rpg.vercel.app (dominio okaycubs.space comprado, pendiente de conectar).
+- `merch/` — app Next.js 14 desplegada en Vercel (raíz del proyecto en Vercel = `merch/`). Producción: https://www.okaycubs.space (alias https://okaycubs-rpg.vercel.app).
   - Tienda de merch print-on-demand: el holder conecta su wallet Solana, elige su Cub y lo ve en hoodie / joggers / gorra con mockups reales de Printful. Paga con Stripe o con SOL. El pedido se crea en Printful.
   - Juego "OkayCubs: The Honey Chronicles" en `merch/public/` (game.html, hunt.html, honey-road.html) con motor compartido `engine.js` y progreso firmado en servidor (Upstash Redis, Sign-In with Solana).
 - Archivos HTML en la raíz del repo (index, about, blog…) son páginas antiguas; los que sirven están en `merch/public/`.
@@ -43,8 +43,9 @@ Pendiente urgente antes de vender en serio (ver `ops/README.md`):
 3. ~~Pedidos Printful en borrador / sin comprobar errores / imagen IPFS~~ Resuelto en la misma rama (confirm=true, errores visibles, imagen en Blob, pedidos en Redis, email al cliente para el aviso de envío).
 4. ~~Envío no cobrado~~ Resuelto en la misma rama: tarifa viva de Printful por país, 60+ países con Colombia y UE, aviso de aduana.
 5. ~~Rutas de depuración abiertas~~ Resuelto en la misma rama: `test*` eliminadas; `catalog` y `store-info` detrás de `ADMIN_KEY`. Nuevo `/api/orders` (admin) para la rutina de pedidos.
-6. Proxy de Tensor devuelve 502 (floor price apagado). Conectar okaycubs.space en Vercel.
-7. Variables nuevas que deben existir en Vercel antes de fusionar la rama: `ADMIN_KEY`, `PRINTFUL_STORE_ID` (17852645). Catálogo verificado en `ops/reports/catalogo.md`.
+6. Proxy de Tensor devuelve 502 (floor price apagado).
+7. Sprint 1 fusionado el 8 nov 2026. `ADMIN_KEY` configurada; el store id de Printful se resuelve solo. Catálogo verificado en `ops/reports/catalogo.md`.
+8. Primer pedido real de prueba creado el 10 nov 2026 (Printful #185932064, gorra a Girón, pagado en Stripe test). Lecciones ya codificadas: Stripe entrega la dirección en `collected_information`; los bordados exigen `embroidery_type` + `thread_colors` (se derivan del arte); `external_id` de Printful ≤ 32 caracteres; la página `/order/success` crea el pedido si el webhook no llegó. Stripe test y live tienen webhooks y secretos distintos: al pasar a live hay que poner `sk_live` y el `whsec` del endpoint live en Vercel.
 
 Backlog del juego: ranking semanal de tiempos (roads y jefes), perfil público de hunter, osos como agentes (idea, sin prioridad).
 
