@@ -45,7 +45,8 @@ Pendiente urgente antes de vender en serio (ver `ops/README.md`):
 5. ~~Rutas de depuración abiertas~~ Resuelto en la misma rama: `test*` eliminadas; `catalog` y `store-info` detrás de `ADMIN_KEY`. Nuevo `/api/orders` (admin) para la rutina de pedidos.
 6. Proxy de Tensor devuelve 502 (floor price apagado).
 7. Sprint 1 fusionado el 8 nov 2026. `ADMIN_KEY` configurada; el store id de Printful se resuelve solo. Catálogo verificado en `ops/reports/catalogo.md`.
-8. Primer pedido real de prueba creado el 10 nov 2026 (Printful #185932064, gorra a Girón, pagado en Stripe test). Lecciones ya codificadas: Stripe entrega la dirección en `collected_information`; los bordados exigen `embroidery_type` + `thread_colors` (se derivan del arte); `external_id` de Printful ≤ 32 caracteres; la página `/order/success` crea el pedido si el webhook no llegó. Stripe test y live tienen webhooks y secretos distintos: al pasar a live hay que poner `sk_live` y el `whsec` del endpoint live en Vercel.
+8. Primer pedido real de prueba creado el 10 nov 2026 (Printful #185932064, gorra a Girón, pagado en Stripe test). Lecciones ya codificadas: Stripe entrega la dirección en `collected_information`; los bordados exigen `embroidery_type` + `thread_colors` (se derivan del arte); `external_id` de Printful ≤ 32 caracteres; la página `/order/success` crea el pedido si el webhook no llegó. Stripe test y live tienen webhooks y secretos distintos.
+9. **Stripe en modo live desde el 10 nov 2026**: `sk_live` y el `whsec` del endpoint live en Vercel (Production). Las tarjetas de prueba ya no funcionan en producción; para probar el checkout sin cobrar, usar un deployment de preview con las claves de test. La tienda ya vende de verdad.
 
 Backlog del juego: ranking semanal de tiempos (roads y jefes), perfil público de hunter, osos como agentes (idea, sin prioridad).
 
