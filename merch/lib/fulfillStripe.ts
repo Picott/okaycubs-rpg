@@ -4,6 +4,7 @@ import { PRODUCTS, ProductType } from './products';
 import { printReadyImageUrl } from './images';
 import { kv, kvConfigured } from './kv';
 import { getOrder, recordOrder, type OrderRecord } from './orders';
+import { buildOrderItem } from './orderItem';
 
 export type FulfillOutcome =
   | { status: 'created'; order: OrderRecord }
@@ -50,7 +51,7 @@ export async function fulfillStripeSession(session: Stripe.Checkout.Session): Pr
   };
   try {
     const result = await createOrder(
-      [{ variantId, quantity: 1, files: [{ url: image.url, placement: product.printPlacement, position: product.printPosition }] }],
+      [await buildOrderItem(product, variantId, image.url)],
       {
         name, address1: addr.line1, address2: addr.line2 ?? undefined, city: addr.city,
         state_code: addr.state ?? '', country_code: addr.country, zip: addr.postal_code ?? '', email, phone,

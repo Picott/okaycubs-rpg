@@ -32,6 +32,7 @@ export interface PrintfulOrderItem {
   variantId: number;
   quantity: number;
   files: { url: string; placement: string; position?: PrintPosition }[];
+  options?: { id: string; value: string | string[] }[];   // e.g. embroidery_type / thread_colors
 }
 
 export interface ShippingAddress {
@@ -73,6 +74,7 @@ export async function createOrder(items: PrintfulOrderItem[], shipping: Shipping
       variant_id: i.variantId,
       quantity: i.quantity,
       files: i.files.map(f => ({ type: f.placement, url: f.url, ...(f.position ? { position: f.position } : {}) })),
+      ...(i.options ? { options: i.options } : {}),
     })),
   };
 

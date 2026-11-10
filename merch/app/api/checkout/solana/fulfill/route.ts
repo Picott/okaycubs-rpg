@@ -5,6 +5,7 @@ import { PRODUCTS } from '@/lib/products';
 import { printReadyImageUrl } from '@/lib/images';
 import { kv, kvConfigured } from '@/lib/kv';
 import { recordOrder, getOrder } from '@/lib/orders';
+import { buildOrderItem } from '@/lib/orderItem';
 import { intentKey, type SolIntent } from '@/lib/solIntent';
 
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
   };
   try {
     const result = await createOrder(
-      [{ variantId: intent.variantId, quantity: 1, files: [{ url: image.url, placement: product.printPlacement, position: product.printPosition }] }],
+      [await buildOrderItem(product, intent.variantId, image.url)],
       {
         name: intent.shipping.name, address1: intent.shipping.address1, address2: intent.shipping.address2, city: intent.shipping.city,
         state_code: intent.shipping.state, country_code: intent.shipping.country, zip: intent.shipping.zip,
