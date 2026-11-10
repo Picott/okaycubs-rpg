@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// trimmed: a stray space or newline from the dashboard paste would otherwise break every call
+export const stripe = new Stripe((process.env.STRIPE_SECRET_KEY || '').trim(), {
   apiVersion: '2025-02-24.acacia',
 });
 

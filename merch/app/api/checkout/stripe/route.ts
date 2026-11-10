@@ -39,6 +39,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error('Stripe error:', err);
-    return NextResponse.json({ error: 'Checkout creation failed' }, { status: 500 });
+    // surface Stripe's own reason (no secrets in it) so a misconfigured key or an unactivated account is visible
+    const e = err as { type?: string; code?: string; message?: string; statusCode?: number };
+    const reason = e?.type?.startsWith('Stripe') ? `${e.type}${e.code ? ` (${e.code})` : ''}: ${e.message ?? ''}`.slice(0, 300) : undefined;
+    return NextResponse.json({ error: 'Checkout creation failed', reason }, { status: 500 });
   }
 }
