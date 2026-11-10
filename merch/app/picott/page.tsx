@@ -54,7 +54,7 @@ export default function PicottPage() {
       <section className="text-center">
         <div className={label + ' mb-3'}>Now booking — 2026 · Santander · Colombia</div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/picott/logo.png" alt="πcott" className="mx-auto h-14 sm:h-20 w-auto opacity-95" />
+        <img src="/picott/logo.png" alt="πcott" className="mx-auto h-14 sm:h-20 w-auto invert sepia saturate-[3] hue-rotate-[5deg] brightness-110 drop-shadow-[0_0_18px_rgba(212,175,55,.35)]" />
         <p className="font-cinzel text-[12px] tracking-[4px] text-silver/70 uppercase mt-5">Tech House · Latin House · Global Sounds</p>
         <p className="font-crimson italic text-silver/70 text-lg mt-3 max-w-xl mx-auto">Layered, intentional, built to hold a room. Est. since the cold rooms of D.C.</p>
         <div className="flex flex-wrap gap-3 justify-center mt-7">
