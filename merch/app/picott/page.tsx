@@ -12,7 +12,7 @@ const IG = 'https://www.instagram.com/picot.tt/';
 const EMAIL = 'Juandabpicott@gmail.com';
 
 const VENUES = [
-  ['Aura Fest · Cali', 'Festival'], ['Flash DC', 'Club'], ['Culture', 'Club'], ['Artemis', 'Club'], ['Mala Fama', 'Club'],
+  ['Aura Fest · Cali', 'Festival'], ['BKR 48 · Bucaramanga', 'Club'], ['Flash DC', 'Club'], ['Culture', 'Club'], ['Artemis', 'Club'], ['Mala Fama', 'Club'],
   ['Arlo DC', 'Hotel'], ['Eaton Radio', 'Radio'], ['Rendez-Vous', 'Series'], ['Graffiti Museum', 'Culture'],
   ['Public Bar', 'Lounge'], ['Café Citron', 'Lounge'], ['12 After 12', 'Club'],
 ];
@@ -64,7 +64,7 @@ export default function PicottPage() {
           <a href="/picott/map.html" className={pill}>The map · D.C. → Cali</a>
         </div>
         <div className="grid grid-cols-3 gap-3 max-w-md mx-auto mt-10">
-          {[['COL', 'Base · Santander'], ['10+', 'Venues trusted'], ['4', 'Backyard volumes']].map(([n, t]) => (
+          {[['COL', 'Base · Santander'], ['12+', 'Venues trusted'], ['4', 'Backyard volumes']].map(([n, t]) => (
             <div key={t} className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">{n}</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1">{t}</div></div>
           ))}
         </div>
@@ -88,7 +88,7 @@ export default function PicottPage() {
           </p>
           <p className="font-crimson text-silver/80 leading-relaxed mt-4">
             As part of the <em>Sunday at Backyard</em> series with the Connectribe collective, he helped shape the party culture in D.C. In September 2026 he played the
-            Concept Vibes stage at Aura Fest&apos;s second anniversary in Cali, Colombia, a slot won as one of the winners of the Concept Academy DJ Contest, out of 40+ sets.
+            Concept Vibes stage at Aura Fest&apos;s second anniversary in Cali, Colombia, a slot won as one of the winners of the Concept Academy DJ Contest, out of 40+ sets. Back home in Santander he has played BKR 48 in Bucaramanga.
           </p>
         </div>
         <div className="card-border p-7">
@@ -100,7 +100,7 @@ export default function PicottPage() {
           </p>
           <p className="font-crimson text-silver/80 leading-relaxed mt-4">
             Como parte de la serie <em>Sunday at Backyard</em> con el colectivo Connectribe ayudó a dar forma a la cultura de fiesta de D.C. En septiembre de 2026 tocó en el
-            escenario Concept Vibes del segundo aniversario de Aura Fest en Cali, un cupo ganado como uno de los ganadores del Concept Academy DJ Contest entre más de 40 sets.
+            escenario Concept Vibes del segundo aniversario de Aura Fest en Cali, un cupo ganado como uno de los ganadores del Concept Academy DJ Contest entre más de 40 sets. De vuelta en Santander ha tocado en BKR 48, Bucaramanga.
           </p>
         </div>
       </section>
