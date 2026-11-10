@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Shared header */}
           <header className="text-center pt-12 pb-8">
             <div className="font-cinzel text-[10px] tracking-[7px] text-gold opacity-65 uppercase mb-3">
-              🍯 The Honey Chronicles · Merch
+              🍯 πcott · The Honey Chronicles
             </div>
             <a href="/" className="block">
               <h1
@@ -52,12 +52,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <div className="rule" />
             {/* Back to RPG */}
-            <a
-              href="/game.html"
-              className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 hover:opacity-70 transition-opacity uppercase"
-            >
-              ← Back to RPG
-            </a>
+            <nav className="flex gap-5 justify-center">
+              <a href="/game.html" className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 hover:opacity-70 transition-opacity uppercase">Play</a>
+              <a href="/" className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 hover:opacity-70 transition-opacity uppercase">Merch</a>
+              <a href="/picott" className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 hover:opacity-70 transition-opacity uppercase">πcott · EPK</a>
+            </nav>
           </header>
 
           {children}
