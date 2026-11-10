@@ -6,7 +6,8 @@ Reportes y conversación con Juan en español; todo lo que ve un cliente (tienda
 ## Qué es esto
 
 - `merch/` — app Next.js 14 desplegada en Vercel (raíz del proyecto en Vercel = `merch/`). Producción: https://www.okaycubs.space (alias https://okaycubs-rpg.vercel.app).
-  - Tienda de merch print-on-demand: el holder conecta su wallet Solana, elige su Cub y lo ve en hoodie / joggers / gorra con mockups reales de Printful. Paga con Stripe o con SOL. El pedido se crea en Printful.
+  - Tienda de merch print-on-demand **"OkayCubs by πcott"**: la colección son los ~50 Cubs que posee Juan (`COLLECTOR_WALLET`); cualquiera puede comprarlos en hoodie / crewneck / joggers / tee / beanie / gorra con mockups reales de Printful. Un holder puede conectar Phantom y vestir sus propios Cubs. Paga con Stripe (live) o con SOL. El pedido se crea en Printful.
+  - **Propiedad intelectual**: Juan no es el creador de OkayCubs. Solo se venden Cubs que él posee (o que posee la wallet conectada). Nunca ofrecer Cubs de terceros ni usar "OkayCubs" como marca propia; la tienda se presenta como colección independiente de un coleccionista, con aviso de no afiliación. Pendiente: confirmar la licencia de la colección / hablar con los creadores.
   - Juego "OkayCubs: The Honey Chronicles" en `merch/public/` (game.html, hunt.html, honey-road.html) con motor compartido `engine.js` y progreso firmado en servidor (Upstash Redis, Sign-In with Solana).
 - Archivos HTML en la raíz del repo (index, about, blog…) son páginas antiguas; los que sirven están en `merch/public/`.
 

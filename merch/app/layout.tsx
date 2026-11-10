@@ -3,11 +3,11 @@ import Script from 'next/script';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'OkayCubs Merch — The Honey Chronicles',
-  description: 'Official OkayCubs merch store. Print-on-demand hoodies, joggers and caps. Pay with SOL or card.',
+  title: 'OkayCubs by πcott — The Honey Chronicles Merch',
+  description: 'The πcott collection: 50 OkayCubs on hoodies, crewnecks, joggers, tees, beanies and caps. Independent merch by a collector. Pay with SOL or card.',
   openGraph: {
-    title: 'OkayCubs Merch',
-    description: 'Wear your Cub. Pay with SOL or card.',
+    title: 'OkayCubs by πcott',
+    description: 'Wear a Cub from the πcott collection. Pay with SOL or card.',
     siteName: 'OkayCubs',
   },
 };
@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </h1>
             </a>
             <div className="font-cinzel text-[11px] tracking-[4px] text-silver opacity-50 mt-2">
-              Wear Your Cub
+              by πcott · Wear a Cub
             </div>
             <div className="rule" />
             {/* Back to RPG */}

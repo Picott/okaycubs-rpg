@@ -1,5 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCubsForWallet, getAllOkayCubs, FEATURED_CUBS } from '@/lib/cubs';
+import { getCubsForWallet } from '@/lib/cubs';
+import { kv, kvConfigured } from '@/lib/kv';
+
+// The store sells the πcott collection: the Cubs held by COLLECTOR_WALLET. Visitors browse those;
+// a connected holder sees their own Cubs instead. Nothing outside those two sets is offered.
+const COLLECTOR_WALLET = (process.env.COLLECTOR_WALLET || '').trim();
+const CATALOG_TTL = 3600;
+
+async function collectorCubs() {
+  if (!COLLECTOR_WALLET) return [];
+  const key = `catalog:${COLLECTOR_WALLET}`;
+  if (kvConfigured) {
+    const hit = await kv.get<Awaited<ReturnType<typeof getCubsForWallet>>>(key).catch(() => null);
+    if (hit && hit.length) return hit;
+  }
+  const cubs = await getCubsForWallet(COLLECTOR_WALLET);
+  if (cubs.length && kvConfigured) await kv.set(key, cubs, CATALOG_TTL).catch(() => {});
+  return cubs;
+}
 
 export async function GET(req: NextRequest) {
   const wallet = req.nextUrl.searchParams.get('wallet');
@@ -11,14 +29,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    let cubs = wallet
-      ? await getCubsForWallet(wallet)
-      : await getAllOkayCubs();
-
-    // When no wallet and collection returns nothing, fall back to featured cubs
-    if (!wallet && cubs.length === 0) {
-      cubs = FEATURED_CUBS;
-    }
+    const cubs = wallet ? await getCubsForWallet(wallet) : await collectorCubs();
 
     // Proxy every image through our server so the browser never hits nftstorage.link
     // directly (CORS) and Printful always gets a fast reachable URL.

@@ -78,7 +78,7 @@ export default function HomePage() {
       const res  = await fetch('/api/cubs');
       const data = await res.json() as Cub[];
       setCubs(data);
-      if (data.length > 0) setStatus(`✦ ${data.length} OkayCubs available ✦`);
+      setStatus(data.length > 0 ? `✦ ${data.length} Cubs in the πcott collection ✦` : 'The collection is loading — come back in a minute.');
     } catch {
       setCubs([]);
     } finally {
@@ -158,7 +158,7 @@ export default function HomePage() {
       {/* CUBS GALLERY */}
       <section>
         <div className="font-cinzel text-[11px] tracking-[5px] text-gold opacity-55 uppercase text-center mb-5">
-          {wallet ? '✦ Your Cubs ✦' : '✦ Browse Cubs ✦'}
+          {wallet ? '✦ Your Cubs ✦' : '✦ The πcott Collection ✦'}
         </div>
 
         {loading ? (
@@ -215,17 +215,17 @@ export default function HomePage() {
           <div className="text-center py-12 card-border space-y-4">
             <div className="text-4xl">🐻</div>
             <div className="font-cinzel text-[11px] tracking-[3px] text-gold opacity-60 uppercase">
-              Don&apos;t own an OkayCub yet?
+              The collection is loading
             </div>
             <div className="font-crimson text-[14px] text-silver opacity-50 italic">
-              Connect your Phantom wallet above to use your own Cubs,<br />
-              or pick any featured Cub from our collection below.
+              πcott&apos;s 50 Cubs are being read from the chain.<br />
+              Holders can also connect Phantom above to wear their own Cubs.
             </div>
             <button
               onClick={loadAllCubs}
               className="font-cinzel text-[10px] tracking-[3px] uppercase px-7 py-2.5 border border-gold/50 text-gold/70 hover:border-gold hover:text-gold transition-all"
             >
-              ✦ Browse Featured Cubs ✦
+              ✦ Reload the collection ✦
             </button>
           </div>
         ) : (
@@ -239,6 +239,13 @@ export default function HomePage() {
             </div>
           </div>
         )}
+      </section>
+      {/* Who is behind this — honest about the relationship with the collection */}
+      <section className="text-center mt-6 mb-4 px-4">
+        <div className="font-crimson text-[12px] text-silver opacity-40 italic leading-relaxed max-w-xl mx-auto">
+          An independent merch collection by πcott, DJ, producer and OkayCubs collector: every Cub here is one he holds.
+          Not affiliated with the OkayCubs team. Music on the player is his.
+        </div>
       </section>
     </main>
   );
