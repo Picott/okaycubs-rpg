@@ -56,6 +56,8 @@ export const PRODUCTS: Record<ProductType, Product> = {
       ...run(SIZES_5, 'Black',            '#080808', [10779, 10780, 10781, 10782, 10783]),
       ...run(SIZES_5, 'Navy Blazer',      '#171f2c', [11491, 11492, 11493, 11494, 11495]),
       ...run(SIZES_5, 'Charcoal Heather', '#463e3d', [11481, 11482, 11483, 11484, 11485]),
+      ...run(SIZES_5, 'Bone',             '#f5e8ce', [20284, 20285, 20286, 20287, 20288]),
+      ...run(SIZES_5, 'Carbon Grey',      '#c7c3be', [10784, 10785, 10786, 10787, 10788]),
     ],
   },
 
@@ -74,6 +76,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
       ...run(SIZES_5, 'Black',            '#101010', [11254, 11255, 11256, 11257, 11258]),
       ...run(SIZES_5, 'Navy Blazer',      '#171f2c', [13252, 13253, 13254, 13255, 13256]),
       ...run(SIZES_5, 'Charcoal Heather', '#3a3a38', [11259, 11260, 11261, 11262, 11263]),
+      ...run(SIZES_5, 'Bone',             '#f5e8ce', [20357, 20356, 20355, 20354, 20353]),
     ],
   },
 
@@ -90,7 +93,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
     printPosition: { area_width: 525, area_height: 2175, width: 400, height: 400, top: 0, left: 60 },
     variants: [
       ...run(SIZES_5, 'Black',       '#141414', [11266, 11267, 11268, 11269, 11270]),
-      ...run(SIZES_5, 'Carbon Grey', '#3a3a3a', [11278, 11279, 11280, 11281, 11282]),
+      ...run(SIZES_5, 'Carbon Grey', '#d2cec6', [11278, 11279, 11280, 11281, 11282]),   // a light heather, not a dark grey
       ...run(SIZES_5, 'Navy Blazer', '#171f2c', [13852, 13853, 13854, 13855, 13856]),
     ],
   },
@@ -110,6 +113,9 @@ export const PRODUCTS: Record<ProductType, Product> = {
       ...run(SIZES_5, 'Black',             '#0c0c0c', [4016, 4017, 4018, 4019, 4020]),
       ...run(SIZES_5, 'White',             '#ffffff', [4011, 4012, 4013, 4014, 4015]),
       ...run(SIZES_5, 'Dark Grey Heather', '#3e3c3d', [8460, 8461, 8462, 8463, 8464]),
+      ...run(SIZES_5, 'Silver',            '#e3e3dd', [4146, 4147, 4148, 4149, 4150]),
+      ...run(SIZES_5, 'Soft Cream',        '#e7d4c0', [4151, 4152, 4153, 4154, 4155]),
+      ...run(SIZES_5, 'Athletic Heather',  '#cececc', [6948, 6949, 6950, 6951, 6952]),
     ],
   },
 
@@ -128,6 +134,7 @@ export const PRODUCTS: Record<ProductType, Product> = {
       { color: 'Black',        colorHex: '#0c0c0c', printfulVariantId: 8936 },
       { color: 'Heather Grey', colorHex: '#a19f9b', printfulVariantId: 8937 },
       { color: 'Navy',         colorHex: '#141323', printfulVariantId: 8940 },
+      { color: 'Baby Pink',    colorHex: '#ffc6cd', printfulVariantId: 17494 },
     ],
   },
 
