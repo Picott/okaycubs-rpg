@@ -40,13 +40,15 @@ const HIGHLIGHTS = [
 
 // Latest release — links confirmed by Juan; cover, date and tracklist pending (not invented)
 const EP = {
-  title: 'Signals EP',
+  title: 'Signals',
   // artwork: the first official visualizer's frame until Juan sends the cover file
   cover: 'https://i.ytimg.com/vi/GBLDiVPLHfg/maxresdefault.jpg',
   hasCover: true,
   playlist: 'PLV8Pcy9byc7A',
-  // official visualizers, in playlist order; titles pending from Juan
+  released: '30 Oct 2026',
+  // official visualizers in playlist order (ids as Juan sent them; titles from the playlist)
   videos: ['GBLDiVPLHfg', 'aq23GqsMO5I', '2gPGaFAiUco', 'm3hcujTs_oA', 'dRc89rDwKag'],
+  tracks: ['Você Vai', 'Voicemail', 'Deep', 'Feel So Good', 'Breath'],
   links: [
     { label: 'Spotify',     href: 'https://open.spotify.com/album/5nljTvEAjgdaGALJTaNfYs' },
     { label: 'Apple Music', href: 'https://music.apple.com/us/album/signals-ep/6828800477' },
@@ -98,9 +100,12 @@ export default function PicottPage() {
           )}
         </div>
         <div className="text-center sm:text-left">
-          <div className={label}>Latest release · EP</div>
+          <div className={label}>Latest release · Debut EP</div>
           <div className="gold-text font-cinzel-deco text-3xl mt-2">{EP.title}</div>
-          <p className="font-crimson italic text-silver/65 mt-2">πcott · Tech House · Latin House</p>
+          <p className="font-crimson italic text-silver/65 mt-2">Released {EP.released} · ℗ πcott, self-released · 5 tracks</p>
+          <ol className="font-cinzel text-[11px] tracking-[1px] text-silver/80 mt-3 space-y-1">
+            {EP.tracks.map((t, i) => <li key={t}><span className="text-gold/60 mr-2">{String(i + 1).padStart(2, '0')}</span>{t}</li>)}
+          </ol>
           <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-5">
             {EP.links.map(l => <a key={l.href} href={l.href} target="_blank" rel="noopener" className={pill}>{l.label}</a>)}
           </div>
@@ -114,8 +119,8 @@ export default function PicottPage() {
             {EP.videos.map((id, i) => (
               <a key={id} href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noopener" className="group block overflow-hidden border border-gold/15">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt={`Visualizer ${i + 1}`} loading="lazy" className="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-[1.05]" />
-                <div className="font-cinzel text-[8px] tracking-[2px] uppercase text-gold/60 text-center py-1">{String(i + 1).padStart(2, '0')}</div>
+                <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt={`${EP.tracks[i]} — official visualizer`} loading="lazy" className="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-[1.05]" />
+                <div className="font-cinzel text-[8px] tracking-[1px] uppercase text-gold/70 text-center py-1 truncate px-1">{EP.tracks[i]}</div>
               </a>
             ))}
           </div>
