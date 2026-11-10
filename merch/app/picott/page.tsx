@@ -37,6 +37,19 @@ const HIGHLIGHTS = [
   { k: 'Live · Privé DC',               t: 'Rooftop · Live Set',       img: '/picott/prive-dc.jpg',        href: 'https://www.instagram.com/reel/DWbtWMdkb1t/', cta: 'Watch' },
 ];
 
+// Latest release — links confirmed by Juan; cover, date and tracklist pending (not invented)
+const EP = {
+  title: 'Signals EP',
+  cover: '/picott/signals.jpg',   // artwork pending from Juan; until then the card shows typography
+  hasCover: false,
+  links: [
+    { label: 'Spotify',     href: 'https://open.spotify.com/album/5nljTvEAjgdaGALJTaNfYs' },
+    { label: 'Apple Music', href: 'https://music.apple.com/us/album/signals-ep/6828800477' },
+    { label: 'YT Music',    href: 'https://music.youtube.com/playlist?list=PLV8Pcy9byc7A' },
+    { label: 'Deezer',      href: 'https://www.deezer.com/us/album/1134600801' },
+  ],
+};
+
 const TRACKS = [
   { n: '01', title: 'Paella',            href: 'https://music.youtube.com/watch?v=24z0-0wNnIU' },
   { n: '02', title: 'Top Of The Ladder', href: 'https://music.youtube.com/watch?v=RwprPfURwZA' },
@@ -67,6 +80,25 @@ export default function PicottPage() {
           {[['COL', 'Base · Santander'], ['12+', 'Venues trusted'], ['4', 'Backyard volumes']].map(([n, t]) => (
             <div key={t} className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">{n}</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1">{t}</div></div>
           ))}
+        </div>
+      </section>
+
+      {/* Latest release */}
+      <section className="card-border p-6 sm:p-8 grid sm:grid-cols-[200px_1fr] gap-7 items-center">
+        <div className="relative aspect-square w-full max-w-[200px] mx-auto overflow-hidden bg-black/40 border border-gold/20 flex items-center justify-center">
+          <div className="gold-text font-cinzel-deco font-black text-2xl tracking-[4px] text-center px-2">SIGNALS</div>
+          {EP.hasCover && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={EP.cover} alt={`${EP.title} cover`} className="absolute inset-0 w-full h-full object-cover" />
+          )}
+        </div>
+        <div className="text-center sm:text-left">
+          <div className={label}>Latest release · EP</div>
+          <div className="gold-text font-cinzel-deco text-3xl mt-2">{EP.title}</div>
+          <p className="font-crimson italic text-silver/65 mt-2">πcott · Tech House · Latin House</p>
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-5">
+            {EP.links.map(l => <a key={l.href} href={l.href} target="_blank" rel="noopener" className={pill}>{l.label}</a>)}
+          </div>
         </div>
       </section>
 
