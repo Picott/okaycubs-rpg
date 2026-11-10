@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0a0908" />
+<title>πcott — Across D.C. → Cali</title>
+<meta name="description" content="πcott — an interactive map of where I've played — Washington D.C. to Cali. Move with the arrow keys." />
+<meta property="og:title" content="πcott — Across D.C. → Cali" />
+<meta property="og:description" content="Move across the city. Every room played a little different." />
+<meta property="og:image" content="/Logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0a0908;
+    --bone:#f4f1ea;
+    --bone-dim:#9b968c;
+    --orange:#ff5c1a;
+    --line:#1d1a17;
+    --line-2:#2a2622;
+    --panel:#100e0c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--bone);
+    font-family:'JetBrains Mono',monospace;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+
+  /* ---------- Layout ---------- */
+  .stage{position:fixed;inset:0;display:flex;flex-direction:column}
+  header.bar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;border-bottom:1px solid var(--line);
+    z-index:30;background:linear-gradient(180deg,rgba(10,9,8,.95),rgba(10,9,8,.6));
+  }
+  .brand{display:block;line-height:0}
+  .brand img{height:26px;width:auto;display:block;filter:invert(1) brightness(1.08)}
+  .kicker{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-dim)}
+  .bar-right{display:flex;gap:18px;align-items:center}
+  .bar-right a{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--bone-dim);text-decoration:none;transition:color .2s}
+  .bar-right a:hover{color:var(--orange)}
+  .bar-right a{white-space:nowrap}
+  .lang{display:inline-flex;border:1px solid var(--line-2);border-radius:2px}
+  .lang button{background:none;border:none;color:var(--bone-dim);font-family:inherit;font-size:10px;
+    letter-spacing:.16em;padding:5px 8px;cursor:pointer}
+  .lang button[aria-pressed="true"]{background:var(--orange);color:#0a0908}
+  /* two views: D.C. and Colombia */
+  .view{position:absolute;inset:0;width:100%;height:100%;display:block;
+    transition:opacity .6s ease, transform .8s cubic-bezier(.2,.8,.2,1)}
+  #geo[data-view="dc"] .comap{opacity:0;transform:scale(.86) translateY(4%);pointer-events:none}
+  #geo[data-view="co"] .dcmap{opacity:0;transform:scale(1.18);pointer-events:none}
+  .node.away{opacity:0;pointer-events:none;transform:translate(-50%,-50%) scale(.4)}
+  .node{transition:opacity .45s ease, transform .45s ease}
+  .co-nb{fill:#0d0b0a;stroke:#1f1c19;stroke-width:.25;stroke-linejoin:round}
+  .co-land{fill:#100d0b;stroke:var(--line-2);stroke-width:.45;stroke-linejoin:round}
+  .co-grid{stroke:var(--line-2);stroke-width:.12;opacity:.6}
+  .co-sea{fill:#3b362f;font:600 2.3px 'JetBrains Mono',monospace;letter-spacing:.3em}
+  .co-city{fill:#5a534a;font:600 2px 'JetBrains Mono',monospace;letter-spacing:.14em}
+  .co-cdot{fill:#5a534a}
+  .co-home{fill:none;stroke:var(--bone-dim);stroke-width:.3}
+  .co-cali{fill:var(--orange);font:700 2.8px 'JetBrains Mono',monospace;letter-spacing:.2em}
+  .co-route{fill:none;stroke:rgba(255,92,26,.45);stroke-width:.35;stroke-dasharray:1 1.1}
+  .regions{position:absolute;top:16px;left:20px;z-index:16;display:flex;border:1px solid var(--line-2);
+    border-radius:2px;background:rgba(16,14,12,.8)}
+  .regions button{background:none;border:none;color:var(--bone-dim);font-family:inherit;font-size:10px;
+    letter-spacing:.2em;text-transform:uppercase;padding:8px 12px;cursor:pointer;transition:color .2s,background .2s}
+  .regions button:hover{color:var(--bone)}
+  .regions button[aria-pressed="true"]{background:var(--orange);color:#0a0908}
+  .regions .n{opacity:.7;margin-left:6px}
+
+  .body{flex:1;display:flex;min-height:0}
+
+  /* ---------- Map ---------- */
+  .mapwrap{position:relative;flex:1;overflow:hidden}
+  .map{position:absolute;inset:0;background:
+      radial-gradient(circle at 50% 50%, rgba(255,92,26,.05), transparent 62%), var(--bg);}
+  /* square map area so the DC sketch keeps its shape and the pins stay aligned */
+  /* square sized from viewport units (no reliance on aspect-ratio, which some mobile browsers drop) */
+  .geo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(92vw,84vh);height:min(92vw,84vh)}
+  .dcmap{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .dc-land{fill:#100d0b}
+  .dc-outline{fill:none;stroke:var(--line-2);stroke-width:.55;stroke-linejoin:round}
+  .dc-streets{stroke:var(--line-2);stroke-width:.16;fill:none}
+  .dc-ave{stroke:var(--line-2);stroke-width:.28;opacity:.85}
+  .dc-mall{stroke:rgba(244,241,234,.13);stroke-width:1.8;stroke-linecap:round}
+  .dc-river-glow{fill:none;stroke:rgba(255,92,26,.10);stroke-linecap:round}
+  .dc-river{fill:none;stroke:rgba(255,92,26,.34);stroke-linecap:round}
+  .dc-label{fill:#3b362f;font:600 2.6px 'JetBrains Mono',monospace;letter-spacing:.16em}
+  .dc-capitol{fill:#5a534a}
+
+  /* venue nodes */
+  .node{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:10}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--bone-dim);
+    transition:all .25s;position:relative}
+  .node:hover .dot,.node.near .dot{background:var(--orange);box-shadow:0 0 0 6px rgba(255,92,26,.18),0 0 18px rgba(255,92,26,.5)}
+  .node.active .dot{background:var(--orange);box-shadow:0 0 0 8px rgba(255,92,26,.22),0 0 24px rgba(255,92,26,.7)}
+  /* labels stay hidden until hover/active so names never overprint each other */
+  .node .tag{position:absolute;left:15px;top:50%;transform:translateY(-50%);
+    white-space:nowrap;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--bone);opacity:0;transition:opacity .2s;pointer-events:none;
+    background:rgba(10,9,8,.82);padding:3px 7px;border-radius:2px}
+  .node:hover .tag,.node.active .tag{opacity:1}
+  .node:hover{z-index:14}
+  .node .pulse{position:absolute;inset:0;border-radius:50%;border:1px solid var(--orange);
+    opacity:0}
+  .node.near .pulse{animation:pulse 1.6s ease-out infinite}
+  @keyframes pulse{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(3.2)}}
+
+  /* player marker */
+  .player{position:absolute;transform:translate(-50%,-50%);z-index:20;transition:left .55s cubic-bezier(.4,0,.2,1),top .55s cubic-bezier(.4,0,.2,1)}
+  .player .ring{width:26px;height:26px;border:1.5px solid var(--orange);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;position:relative;
+    box-shadow:0 0 18px rgba(255,92,26,.45)}
+  .player .core{width:7px;height:7px;border-radius:50%;background:var(--orange)}
+  .player .ping{position:absolute;inset:-1px;border:1px solid var(--orange);border-radius:50%;animation:pulse 2s ease-out infinite}
+
+  /* hint */
+  .hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
+    display:flex;gap:14px;align-items:center;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--bone-dim);z-index:15;
+    background:rgba(16,14,12,.7);border:1px solid var(--line);padding:8px 16px;border-radius:2px}
+  .keys{display:inline-flex;gap:3px}
+  .key{display:inline-flex;align-items:center;justify-content:center;
+    width:20px;height:20px;border:1px solid var(--line-2);border-radius:3px;font-size:11px;color:var(--bone)}
+
+  /* ---------- Venue panel ---------- */
+  .panel{position:absolute;top:0;right:0;height:100%;width:380px;max-width:86vw;
+    background:var(--panel);border-left:1px solid var(--line);
+    transform:translateX(100%);transition:transform .4s cubic-bezier(.2,.8,.2,1);
+    z-index:25;display:flex;flex-direction:column;overflow:hidden}
+  .panel.open{transform:translateX(0)}
+  .panel-scroll{overflow-y:auto;padding:84px 24px 32px;flex:1}
+  .panel-scroll::-webkit-scrollbar{width:6px}
+  .panel-scroll::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
+  .p-index{font-size:10px;letter-spacing:.3em;color:var(--orange);text-transform:uppercase}
+  .p-name{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:700;font-size:26px;line-height:1.1;letter-spacing:-.01em;margin:8px 0 4px}
+  .p-meta{font-size:11px;letter-spacing:.1em;color:var(--bone-dim);text-transform:uppercase;margin-bottom:18px}
+  .p-felt{font-size:14px;line-height:1.7;color:var(--bone);margin-bottom:18px}
+  .p-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+  .p-tags span{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim);
+    border:1px solid var(--line-2);padding:4px 8px;border-radius:2px}
+  .p-link{display:inline-block;text-decoration:none;color:var(--orange);
+    border:1px solid var(--orange);border-radius:2px;padding:11px 18px;
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;transition:all .2s}
+  .p-link:hover{background:var(--orange);color:#0a0908}
+  .p-close{position:absolute;top:62px;right:18px;z-index:2;background:none;border:none;color:var(--bone-dim);
+    font-size:22px;cursor:pointer;line-height:1;transition:color .2s}
+  .p-close:hover{color:var(--orange)}
+  .p-nav{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:14px 24px}
+  .p-nav button{background:none;border:none;color:var(--bone-dim);font-family:inherit;
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:color .2s}
+  .p-nav button:hover{color:var(--orange)}
+
+  /* mobile dpad */
+  .dpad{display:none;position:absolute;left:18px;bottom:18px;z-index:15;
+    grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:4px}
+  .dpad button{background:rgba(16,14,12,.85);border:1px solid var(--line-2);color:var(--bone);
+    border-radius:4px;font-size:16px;cursor:pointer}
+  .dpad .up{grid-column:2;grid-row:1}.dpad .left{grid-column:1;grid-row:2}
+  .dpad .right{grid-column:3;grid-row:2}.dpad .down{grid-column:2;grid-row:3}
+
+  .intro{position:absolute;inset:0;background:rgba(10,9,8,.92);z-index:40;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    transition:opacity .5s;padding:24px}
+  .intro h1{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:800;font-size:clamp(30px,6vw,52px);letter-spacing:-.02em}
+  .intro h1 em{font-style:normal;color:var(--orange)}
+  .intro p{color:var(--bone-dim);font-size:13px;letter-spacing:.06em;line-height:1.7;max-width:420px;margin:14px 0 26px}
+  .intro button{background:var(--orange);color:#0a0908;border:none;font-family:inherit;font-weight:500;
+    padding:12px 28px;letter-spacing:.16em;text-transform:uppercase;font-size:12px;cursor:pointer;border-radius:2px}
+  .intro.hide{opacity:0;pointer-events:none}
+
+  @media (max-width:760px){
+    .dpad{display:grid}
+    .hint{display:none}
+    .node .tag{display:none}
+    .panel{width:100%}
+    header.bar{padding:12px 16px}
+    .kicker{display:none}
+    .brand img{height:22px}
+    .bar-right{gap:13px}
+    .bar-right a{font-size:10px;letter-spacing:.1em}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header class="bar">
+    <div>
+      <a aria-label='πcott home' class='brand' href='/'><img src="Logo.png" alt="πcott"></a>
+      <div class="kicker" style="margin-top:8px" data-i18n="kicker">Where I've Played · D.C. → Cali</div>
+    </div>
+    <div class="bar-right">
+      <div class="lang" role="group" aria-label="Language / Idioma"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="es" aria-pressed="false">ES</button></div>
+      <a href='/picott' id="epklink">← EPK</a>
+      <a href="https://www.instagram.com/picot.tt/" target="_blank" rel="noopener">@picot.tt</a>
+      <a href="mailto:Juandabpicott@gmail.com" data-i18n="book">Book</a>
+    </div>
+  </header>
+
+  <div class="body">
+    <div class="mapwrap" id="mapwrap">
+      <div class="map"></div>
+      <div class="geo" id="geo" data-view="dc">
+        <svg class="view dcmap" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <clipPath id="dcclip">
+              <path d="M50,4 L95,49 L51,95 L40,84 L33,74 L26,66 L18,58 L12,52 Z"/>
+            </clipPath>
+            <pattern id="streets" width="4.6" height="4.6" patternUnits="userSpaceOnUse">
+              <path class="dc-streets" d="M4.6 0 V4.6 M0 4.6 H4.6"/>
+            </pattern>
+          </defs>
+          <!-- land -->
+          <path class="dc-land" d="M50,4 L95,49 L51,95 L40,84 L33,74 L26,66 L18,58 L12,52 Z"/>
+          <!-- street grid, clipped to the District -->
+          <rect x="0" y="0" width="100" height="100" fill="url(#streets)" clip-path="url(#dcclip)"/>
+          <!-- diagonal avenues radiating from Capitol + White House -->
+          <g class="dc-ave" clip-path="url(#dcclip)">
+            <line x1="56" y1="57" x2="28" y2="29"/>
+            <line x1="56" y1="57" x2="83" y2="35"/>
+            <line x1="56" y1="57" x2="38" y2="86"/>
+            <line x1="56" y1="57" x2="80" y2="62"/>
+            <line x1="46" y1="48" x2="24" y2="41"/>
+            <line x1="46" y1="48" x2="65" y2="33"/>
+            <line x1="46" y1="48" x2="49" y2="74"/>
+          </g>
+          <!-- National Mall -->
+          <line class="dc-mall" x1="56" y1="58" x2="29" y2="61"/>
+          <!-- rivers: Potomac (SW) + Anacostia (SE) -->
+          <path class="dc-river-glow" stroke-width="7"   d="M10,46 C14,52 18,58 26,66 C33,74 41,84 50,96"/>
+          <path class="dc-river-glow" stroke-width="5"   d="M50,95 C55,84 61,75 68,64 C72,58 76,53 80,49"/>
+          <path class="dc-river"      stroke-width="3.2" d="M10,46 C14,52 18,58 26,66 C33,74 41,84 50,96"/>
+          <path class="dc-river"      stroke-width="2.4" d="M50,95 C55,84 61,75 68,64 C72,58 76,53 80,49"/>
+          <!-- District boundary -->
+          <path class="dc-outline" d="M50,4 L95,49 L51,95 L40,84 L33,74 L26,66 L18,58 L12,52 Z"/>
+          <circle class="dc-capitol" cx="56" cy="57" r="0.95"/>
+          <text class="dc-label" x="29" y="24">NW</text>
+          <text class="dc-label" x="69" y="32">NE</text>
+          <text class="dc-label" x="41" y="80">SW</text>
+          <text class="dc-label" x="71" y="66">SE</text>
+        </svg>
+        <svg class="view comap" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs><clipPath id="coclip"><rect x="0" y="0" width="100" height="100"/></clipPath>
+            <radialGradient id="cofade" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse"><stop offset=".62" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+            <mask id="comask"><rect x="0" y="0" width="100" height="100" fill="url(#cofade)"/></mask></defs>
+          <g clip-path="url(#coclip)">
+            <g mask="url(#comask)"><path class="co-nb" d="M118.14,44.44L118.88,46.01L116.84,48.13L110.64,50.21L106.64,51.07L105.04,52.39L100.62,51.00L96.50,50.28L95.46,50.80L97.96,52.24L97.72,55.96L98.50,59.46L103.20,59.94L103.50,61.11L99.54,62.69L98.90,65.04L96.60,65.95L92.48,67.25L91.40,68.95L87.08,69.31L84.02,66.37L82.32,60.83L80.84,58.89L78.84,57.66L81.64,54.90L81.46,53.65L79.88,52.00L78.76,48.31L79.20,44.33L80.44,42.46L81.44,39.47L79.46,38.51L76.30,39.15L72.30,38.85L70.06,39.44L66.14,34.66L62.92,33.96L55.78,34.50L54.46,32.55L53.08,32.09L52.88,30.93L53.54,28.87L53.12,26.63L51.88,25.41L51.18,22.86L48.30,22.49L49.84,19.24L50.52,15.28L52.14,13.21L54.28,11.62L55.70,8.84L59.26,7.91L59.10,9.22L55.84,9.87L57.66,12.39L57.60,15.29L55.14,18.53L57.24,22.93L59.64,22.57L60.88,18.56L59.16,16.60L58.88,12.40L65.80,10.13L65.04,7.52L66.98,5.77L68.98,9.67L72.88,9.76L76.48,12.86L76.70,14.69L81.68,14.75L87.62,14.18L90.80,16.66L95.06,17.35L98.16,15.61L98.24,14.21L105.12,13.88L111.78,13.80L107.06,15.44L108.96,18.07L113.40,18.48L117.60,21.22L118.50,25.67L121.38,25.54L123.56,26.85L119.16,30.11L118.68,32.14L120.58,34.20L119.20,35.24L115.78,36.13L115.88,38.70L114.38,40.23L118.14,44.44ZM36.82,74.18L37.58,78.40L35.86,82.01L29.80,87.83L23.12,90.02L19.72,94.85L18.66,98.60L15.52,100.88L13.20,98.08L10.94,97.48L8.66,97.92L8.50,95.89L10.08,94.56L9.42,92.25L12.38,88.09L11.18,85.67L9.06,88.25L5.74,85.82L6.86,84.25L5.92,79.21L7.86,78.37L8.90,74.91L11.00,71.33L10.60,69.06L13.66,67.88L17.46,65.66L23.02,68.84L24.06,68.74L25.42,71.14L30.12,71.91L31.70,71.03L34.44,72.86L36.82,74.18ZM67.26,97.21L62.24,96.95L61.50,97.79L56.96,98.86L50.60,102.64L50.20,105.23L48.78,107.16L49.34,110.16L45.98,111.77L45.98,114.12L44.52,115.14L46.82,120.14L49.92,123.51L48.74,125.90L52.42,126.22L54.52,129.18L59.42,129.33L63.98,126.05L63.62,134.50L66.14,135.14L69.28,134.18L74.08,143.12L72.88,145.00L72.62,148.90L72.50,153.63L70.34,156.41L71.32,158.47L70.06,160.34L72.44,165.00L68.94,171.00L67.46,173.85L64.60,175.27L59.02,172.07L58.54,169.80L47.52,164.22L37.56,158.15L33.28,154.71L30.98,150.13L31.90,148.53L27.18,141.24L21.70,130.99L16.46,119.92L14.18,117.39L12.44,113.30L8.12,109.67L4.16,107.43L5.96,104.94L3.28,99.65L5.00,95.76L9.42,92.25L10.08,94.56L8.50,95.89L8.66,97.92L10.94,97.48L13.20,98.08L15.52,100.88L18.66,98.60L19.72,94.85L23.12,90.02L29.80,87.83L35.86,82.01L37.58,78.40L36.82,74.18L38.30,73.65L41.98,76.28L43.76,78.91L46.34,80.34L49.60,86.17L53.74,86.86L56.80,85.38L58.82,86.35L62.14,85.87L66.40,88.47L62.82,94.13L64.48,94.26L67.26,97.21ZM159.04,260.93L157.50,257.79L159.94,255.16L156.74,251.38L152.38,248.30L146.66,244.74L144.60,244.91L139.02,240.61L135.42,241.20L142.82,233.62L149.10,228.24L152.82,225.97L157.50,222.91L157.62,218.47L154.84,215.26L152.08,216.33L153.16,213.13L153.92,209.83L153.92,206.78L151.92,205.77L149.84,206.68L147.78,206.43L147.12,204.29L146.60,199.20L145.56,197.54L141.82,196.03L139.54,197.12L133.68,196.06L134.04,188.52L132.40,185.42L134.14,184.28L133.60,181.11L135.14,178.67L136.12,174.30L134.80,170.85L131.78,169.29L131.18,167.10L132.00,163.88L121.34,163.66L119.20,157.19L120.82,157.09L120.76,154.70L119.66,153.08L119.42,149.86L116.20,148.22L112.70,148.27L110.40,146.66L106.64,145.56L104.46,143.49L98.24,142.57L92.20,137.59L92.66,133.87L91.98,131.73L92.56,127.57L85.30,128.51L82.36,130.60L77.50,132.84L76.26,134.53L73.40,134.65L69.28,134.18L66.14,135.14L63.62,134.50L63.98,126.05L59.42,129.33L54.52,129.18L52.42,126.22L48.74,125.90L49.92,123.51L46.82,120.14L44.52,115.14L45.98,114.12L45.98,111.77L49.34,110.16L48.78,107.16L50.20,105.23L50.60,102.64L56.96,98.86L61.50,97.79L62.24,96.95L67.26,97.21L69.76,81.98L69.88,79.57L69.02,76.39L66.56,74.36L66.58,70.32L69.70,69.41L70.82,69.98L71.00,67.86L67.76,67.28L67.68,63.80L78.50,63.93L80.34,62.02L81.88,63.78L82.98,67.06L84.02,66.37L87.08,69.31L91.40,68.95L92.48,67.25L96.60,65.95L98.90,65.04L99.54,62.69L103.50,61.11L103.20,59.94L98.50,59.46L97.72,55.96L97.96,52.24L95.46,50.80L96.50,50.28L100.62,51.00L105.04,52.39L106.64,51.07L110.64,50.21L116.84,48.13L118.88,46.01L118.14,44.44L121.04,44.20L122.32,45.48L121.60,47.91L123.52,48.76L124.78,51.34L123.24,53.30L122.36,58.02L123.78,60.83L124.18,63.41L127.60,66.01L130.34,66.29L130.94,65.20L132.70,64.96L135.22,63.98L137.02,62.51L140.10,62.98L141.44,62.78L144.46,63.23L144.96,62.10L144.04,60.99L144.60,59.39L146.84,59.88L149.46,59.31L152.64,60.49L155.06,61.63L156.78,60.13L158.02,60.36L158.78,61.92L161.44,61.53L163.58,59.42L165.28,55.32L168.56,50.25L170.46,49.98L171.84,53.06L174.94,62.77L177.92,63.68L178.06,67.52L173.90,72.10L175.62,73.77L185.44,74.64L185.64,80.21L189.86,76.56L196.84,78.56L206.08,81.95L208.78,85.21L207.88,88.28L214.34,86.57L225.14,89.51L233.44,89.30L241.66,93.89L248.76,100.12L253.04,101.72L257.78,101.94L259.80,103.69L261.68,110.76L262.60,114.13L260.40,123.32L257.56,126.94L249.74,134.67L246.20,140.95L242.08,145.77L240.70,145.88L239.14,149.97L239.54,160.37L238.00,168.93L237.40,172.60L235.64,174.79L234.66,182.22L229.02,189.47L228.08,195.20L223.58,197.61L222.28,200.95L216.24,200.93L207.50,203.06L203.60,205.54L197.38,207.16L190.84,211.58L186.14,217.09L185.32,221.24L186.24,224.31L185.22,229.92L183.96,232.64L180.06,235.69L173.90,245.47L169.02,249.87L165.24,252.48L162.70,257.76L159.04,260.93ZM25.82,25.17L25.14,25.98L26.42,29.25L25.38,30.90L23.60,30.50L22.88,33.20L21.02,31.60L19.84,28.60L21.20,27.11L19.80,26.74L18.76,24.89L16.00,23.35L13.56,23.71L12.44,25.64L10.20,27.04L8.98,27.23L8.44,28.38L11.08,31.40L9.58,32.12L8.78,32.93L6.18,33.22L5.22,29.90L4.50,30.85L2.66,30.52L1.54,28.28L-0.74,27.91L-2.18,27.26L-4.56,27.27L-4.72,28.48L-5.36,27.64L-5.08,26.54L-4.62,25.41L-4.82,24.41L-4.00,23.75L-5.16,22.92L-5.18,20.68L-3.04,20.18L-1.04,22.18L-1.16,23.36L1.06,23.61L1.58,23.16L3.12,24.52L5.84,24.12L8.22,22.71L11.58,21.59L13.48,19.94L16.54,20.26L16.34,20.80L19.44,21.00L21.92,21.96L23.72,23.63L25.82,25.17Z"/>
+            <g class="co-grid">
+              <line x1="0" y1="25" x2="100" y2="25"/><line x1="0" y1="50" x2="100" y2="50"/><line x1="0" y1="75" x2="100" y2="75"/>
+              <line x1="25" y1="0" x2="25" y2="100"/><line x1="50" y1="0" x2="50" y2="100"/><line x1="75" y1="0" x2="75" y2="100"/>
+            </g></g>
+            <path class="co-land" d="M59.34,7.43L59.14,7.50L58.88,7.65L58.14,7.92L57.12,8.18L55.78,8.52L55.48,8.88L54.18,11.13L53.08,11.59L52.68,11.92L52.38,12.35L51.72,13.14L51.44,13.74L50.72,15.05L50.32,16.69L50.18,17.61L49.96,18.94L49.64,19.62L49.22,20.26L48.76,20.87L48.36,21.55L48.02,22.07L47.96,22.25L48.12,22.40L48.92,22.25L49.24,22.10L49.68,21.90L49.94,22.00L50.22,22.58L50.52,22.66L50.82,22.58L51.12,22.73L51.52,24.17L51.86,25.41L52.64,26.17L53.24,26.77L53.38,27.30L53.54,28.04L53.56,28.41L53.38,28.63L53.08,29.08L53.00,29.95L52.94,30.23L52.90,31.04L52.94,31.53L53.10,31.92L53.36,32.14L53.90,32.25L54.40,32.39L54.68,33.05L55.08,33.90L55.52,34.26L56.16,34.50L56.60,34.41L57.66,34.26L58.56,34.30L59.90,34.53L60.40,34.52L61.04,34.47L62.16,34.01L62.56,33.94L63.02,33.98L63.68,34.22L64.06,34.40L64.52,34.60L65.18,34.73L65.62,34.71L65.94,34.70L66.14,34.79L67.20,36.11L68.12,37.25L68.92,38.21L69.78,39.25L69.84,39.31L70.24,39.18L70.50,39.24L70.74,39.45L71.14,39.36L71.72,38.98L72.56,38.90L73.68,39.13L75.16,39.13L76.98,38.90L78.12,38.66L78.56,38.39L79.30,38.42L80.18,38.66L80.66,39.00L80.72,39.33L80.90,39.85L80.70,40.38L80.14,40.92L79.82,41.62L79.76,42.45L79.48,43.07L78.96,43.47L78.74,44.05L78.86,44.82L78.80,45.94L78.58,47.42L78.58,48.29L78.80,48.58L78.92,49.00L78.90,49.54L78.98,50.01L79.26,50.63L79.66,51.86L79.98,52.39L80.26,52.59L80.56,52.83L81.40,54.09L81.60,54.36L81.54,54.59L81.46,54.76L81.36,54.87L80.48,55.62L78.70,57.26L78.54,57.47L78.56,57.81L79.08,57.59L79.62,57.77L79.90,57.81L80.02,57.95L80.18,58.39L80.36,58.46L80.62,58.65L81.16,59.11L81.60,59.61L81.92,59.84L82.16,60.06L82.24,60.38L82.14,60.70L82.42,61.43L82.60,61.66L82.70,61.94L82.60,62.22L82.84,62.56L83.08,63.20L83.40,64.00L83.44,64.44L83.56,64.64L83.72,65.23L83.98,65.79L83.92,66.16L84.02,66.54L82.96,66.79L82.88,66.75L82.82,66.61L82.84,65.56L82.84,64.36L82.66,63.87L82.18,63.09L81.56,62.05L81.38,61.75L81.10,61.57L80.78,61.55L80.56,61.62L80.24,61.81L79.94,62.03L79.38,62.65L78.80,63.39L78.46,63.55L78.14,63.62L77.84,63.60L77.60,63.40L77.34,63.00L77.06,62.47L76.70,62.30L76.56,62.46L76.44,62.77L76.36,63.08L76.60,63.47L76.80,63.78L76.44,63.77L75.32,63.77L74.00,63.77L72.70,63.77L71.54,63.77L70.44,63.77L70.02,63.74L69.60,63.57L69.20,63.48L69.00,63.49L68.60,63.67L68.12,63.70L67.78,63.86L67.50,63.84L67.50,64.76L67.50,66.06L67.48,67.45L67.78,67.34L68.04,67.35L68.24,67.45L68.78,67.37L69.06,67.41L69.34,67.45L69.60,67.46L69.76,67.56L69.98,67.54L70.22,67.42L70.48,67.49L70.78,67.69L70.98,67.99L71.14,68.34L71.32,68.54L71.30,68.87L71.30,69.14L71.24,69.38L71.32,69.52L71.36,69.67L71.36,69.76L71.26,69.80L71.04,69.83L70.80,69.86L70.64,69.85L70.52,69.71L70.40,69.69L70.22,69.71L70.04,69.63L69.88,69.45L69.60,69.28L69.30,69.36L69.08,69.44L68.86,69.55L68.68,69.66L68.48,69.64L68.22,69.72L68.02,69.86L67.74,69.95L67.44,70.01L67.08,70.06L66.74,70.08L66.36,70.12L66.34,70.85L66.30,72.28L66.28,73.23L66.28,74.10L66.42,74.42L67.10,75.09L67.62,75.45L68.06,75.85L68.52,76.01L68.70,76.17L68.82,76.41L68.88,76.67L68.94,76.89L68.88,77.12L68.78,77.34L68.82,77.57L68.98,77.76L69.02,77.99L69.14,78.21L69.20,78.43L69.34,78.59L69.50,78.70L69.72,78.89L69.76,79.05L69.72,79.25L69.72,79.40L69.94,79.73L70.00,79.97L69.90,80.25L69.80,81.23L69.56,82.35L69.40,83.20L69.16,84.58L68.86,86.19L68.50,88.15L68.16,90.09L67.80,91.97L67.50,93.67L67.16,95.54L66.96,96.67L66.86,96.86L66.56,96.46L66.14,96.07L65.74,95.83L65.56,95.53L65.34,94.90L65.00,94.69L64.78,94.53L64.56,94.55L64.32,94.72L63.96,94.83L63.72,94.82L62.74,94.38L62.58,94.35L63.22,93.36L64.34,91.61L65.06,90.49L65.84,89.24L66.26,88.62L66.30,88.50L66.30,88.35L66.14,88.11L65.74,88.00L65.30,87.82L65.02,87.52L64.64,87.38L64.34,87.17L63.80,86.96L63.46,86.76L63.06,86.70L62.74,86.34L61.58,85.66L61.28,85.60L60.96,85.69L60.48,85.81L60.02,86.19L59.44,86.30L58.90,86.30L58.62,86.08L58.36,85.99L58.00,85.69L57.38,85.45L56.92,85.29L56.64,85.37L56.30,85.71L55.92,86.05L55.64,86.26L55.26,86.24L54.80,86.56L54.34,86.67L53.88,86.72L53.36,86.82L52.78,86.64L52.30,86.48L52.08,86.40L51.88,86.45L51.58,86.62L51.04,86.70L50.62,86.72L50.32,86.63L50.06,86.33L49.62,86.18L49.14,85.99L49.04,85.60L49.10,85.31L49.30,84.89L49.20,84.46L49.00,83.78L48.90,83.50L48.76,83.26L48.52,83.18L48.06,83.24L47.56,82.98L47.24,82.74L47.08,82.43L47.26,81.87L47.10,81.38L46.80,81.12L46.60,80.65L46.30,80.27L45.92,80.08L45.52,80.10L45.20,79.98L44.84,79.59L44.52,79.43L44.14,79.05L43.44,78.88L43.08,78.72L42.86,78.49L42.58,78.06L42.62,77.82L42.48,77.59L42.36,77.18L42.12,76.56L41.86,76.21L41.58,75.94L41.36,75.72L41.02,75.39L40.60,75.19L40.24,74.99L40.10,74.69L39.98,74.45L39.80,74.46L39.50,74.44L39.20,74.38L38.86,74.20L38.58,73.99L38.12,73.61L37.86,73.56L37.64,73.56L37.30,73.93L36.30,73.54L35.46,72.98L34.58,72.84L34.00,72.49L33.48,71.96L33.18,71.59L32.96,71.41L31.82,70.89L31.60,70.84L31.18,71.08L31.04,71.23L31.00,71.64L30.96,71.88L30.58,72.03L29.98,72.00L29.56,71.84L29.28,71.83L29.22,71.94L29.06,71.99L28.72,71.96L28.22,71.84L27.76,71.69L27.14,71.36L26.86,71.40L26.16,71.33L25.58,71.14L25.42,70.98L25.18,69.80L25.10,69.71L24.86,69.66L24.44,69.50L24.18,69.32L24.04,68.99L23.88,68.68L23.16,68.75L22.02,68.34L21.22,67.95L20.48,67.52L19.38,66.68L18.96,66.46L18.44,66.20L18.12,65.79L17.62,65.36L17.44,65.25L17.28,64.86L16.52,64.31L16.90,63.60L17.82,63.06L19.02,63.48L19.16,62.64L18.72,61.91L18.80,60.52L18.94,60.24L19.26,59.87L19.66,59.62L19.90,59.54L20.32,59.66L20.58,59.38L21.56,59.51L21.86,59.39L22.06,59.20L22.30,59.07L22.60,58.73L22.78,58.34L22.92,58.19L23.26,58.25L23.28,58.07L23.46,57.85L24.06,57.34L24.04,57.12L23.88,56.63L23.92,56.44L24.26,56.38L24.68,56.24L24.88,55.78L25.16,55.37L25.46,54.76L25.80,54.73L25.98,54.03L26.42,53.41L27.34,51.59L27.08,51.63L26.86,51.88L26.60,51.85L26.32,51.71L26.40,50.89L26.24,50.79L25.78,51.42L25.40,50.77L25.36,50.39L25.52,50.00L25.50,49.74L24.88,49.93L24.92,49.69L25.30,49.44L25.48,49.18L25.82,48.90L25.96,48.48L26.04,47.81L26.18,47.10L26.08,46.75L25.90,46.45L25.74,45.13L25.78,44.36L25.70,43.76L25.54,43.24L24.80,42.57L25.98,41.80L26.40,41.22L25.86,40.03L25.16,39.01L25.14,38.42L25.34,38.49L25.56,38.47L25.78,37.20L25.72,36.81L25.34,36.16L24.86,36.15L24.44,35.35L24.18,35.17L24.00,34.67L23.32,33.68L22.78,33.17L23.18,31.98L23.52,31.75L23.64,31.46L23.50,30.73L23.54,30.57L23.62,30.49L23.70,30.50L23.86,30.60L24.12,30.92L24.34,31.31L24.52,31.42L24.78,31.30L25.82,30.53L25.76,30.29L25.86,29.79L26.20,29.40L26.58,29.26L26.68,29.04L26.60,28.70L26.20,27.85L25.86,27.39L25.64,26.94L25.52,26.52L25.12,26.12L25.28,25.74L25.60,25.31L25.70,25.23L25.86,25.35L26.32,26.15L27.06,26.66L27.82,27.50L28.14,28.07L28.38,28.17L28.60,28.39L28.50,28.54L28.26,28.70L28.20,29.04L28.36,29.23L28.52,29.34L28.96,29.26L29.20,28.88L29.04,27.16L28.78,26.30L28.48,26.04L28.22,25.71L28.40,25.45L28.88,25.33L29.50,25.03L31.80,23.39L32.58,21.86L33.18,21.30L33.86,20.94L34.68,21.03L35.34,20.84L35.54,20.34L35.36,19.68L35.10,19.28L35.34,18.69L35.60,17.82L35.58,17.08L35.90,16.64L35.78,16.47L35.32,16.82L34.96,16.98L35.16,16.69L35.82,15.95L36.14,14.85L36.40,14.38L37.32,13.74L37.52,13.43L38.20,12.95L39.32,11.90L39.76,11.61L41.92,12.28L42.60,12.24L42.48,12.37L42.16,12.41L41.70,12.59L41.58,12.98L41.88,13.41L42.22,13.52L42.50,13.25L42.78,12.48L43.22,11.63L43.34,10.75L43.64,10.44L44.12,10.33L44.94,10.51L45.58,10.69L46.24,10.72L48.26,10.58L51.54,8.27L53.08,7.77L54.02,7.28L54.64,6.33L54.80,5.62L55.24,5.35L55.72,5.35L55.94,5.17L56.00,4.95L57.14,4.33L57.80,4.26L58.36,4.27L59.66,4.81L60.24,5.75L60.34,6.41L59.54,7.12L59.34,7.43ZM21.58,59.21L21.44,59.34L21.16,59.11L21.06,58.83L21.22,58.63L21.46,58.70L21.56,58.87L21.58,59.21Z"/>
+          </g>
+          <text class="co-sea" x="10" y="64" transform="rotate(-72 10 64)" data-i18n-svg="pacific">PACIFIC</text>
+          <text class="co-sea" x="33" y="9" data-i18n-svg="caribbean">CARIBBEAN</text>
+          <path class="co-route" d="M49.3,33.8 Q41.849999999999994,52.0 31.599999999999998,53.0"/>
+          <circle class="co-home" cx="49.3" cy="33.8" r="1.3"/><circle class="co-cdot" cx="49.3" cy="33.8" r=".45"/>
+          <text class="co-city" x="51.5" y="34.5" data-i18n-svg="home">BUCARAMANGA · HOME BASE</text>
+          <circle class="co-cdot" cx="44.1" cy="47.2" r=".45"/>
+          <text class="co-city" x="45.5" y="47.900000000000006">BOGOTÁ</text>
+          <circle class="co-cdot" cx="35.7" cy="38.7" r=".45"/>
+          <text class="co-city" x="22.200000000000003" y="39.400000000000006">MEDELLÍN</text>
+          <text class="co-cali" x="19.9" y="59.400000000000006">CALI</text>
+        </svg>
+      </div>
+      <!-- nodes + player injected into #geo -->
+      <div class="regions" role="group" aria-label="Map">
+        <button type="button" data-region="DC" aria-pressed="true">D.C.<span class="n">12</span></button>
+        <button type="button" data-region="CO" aria-pressed="false">Colombia<span class="n">1</span></button>
+      </div>
+      <div class="hint">
+        <span data-i18n="move">Move</span>
+        <span class="keys"><span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span></span>
+        <span data-i18n="hint">each press travels to the next gig that way</span>
+      </div>
+      <div class="dpad">
+        <button class="up" data-dir="up">↑</button>
+        <button class="left" data-dir="left">←</button>
+        <button class="right" data-dir="right">→</button>
+        <button class="down" data-dir="down">↓</button>
+      </div>
+    </div>
+
+    <aside class="panel" id="panel">
+      <button class="p-close" id="pclose" aria-label="close">×</button>
+      <div class="panel-scroll" id="pscroll"></div>
+      <div class="p-nav">
+        <button id="pprev" data-i18n="prev">← Prev room</button>
+        <button id="pnext" data-i18n="next">Next room →</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="intro" id="intro">
+    <h1 data-i18n="h1">Across <em>D.C.</em></h1>
+    <p data-i18n="intro">A different kind of EPK. This is the map of where I've played — every room, every quadrant, and one pin further south in Cali. Press an arrow key to travel to the next gig in that direction and see how the night felt.</p>
+    <button id="start" data-i18n="start">Enter the city</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   VENUES — edit freely. x/y are 0–100 (% of map; x: west→east, y: north→south).
+   "link" is any URL (Instagram post, reel, ticket page...) — opens in a new tab.
+   "felt" is YOUR note about the night — rewrite each one in your own words.
+   ===================================================================== */
+const VENUES = [
+  { name:"Sunday at Backyard", quad:"NW", x:40, y:20,
+    area:"Connectribe Summer Series · Rendez-Vous", area_es:"Serie de verano Connectribe · Rendez-Vous",
+    tags:["Summer Series","Connectribe","Collective"], tags_es:["Serie de verano","Connectribe","Colectivo"],
+    link:"https://www.instagram.com/p/DLFhRMixsD4/",
+    felt:"Sunday after Sunday. All about the music & the dancing. The best part was watching an idea become a real room — everyone bringing good vibes, showing how simple spaces can be transformed into spectacular gigs.",
+    felt_es:"Domingo tras domingo. Todo se trataba de la música y el baile. Lo mejor fue ver una idea convertirse en una pista de verdad — todos trayendo buena vibra, demostrando que un espacio sencillo se puede transformar en un evento espectacular." },
+
+  { name:"Public Bar", quad:"NW", x:44, y:34,
+    area:"Lounge · Dupont", area_es:"Lounge · Dupont",
+    tags:["Warm-Up","Thursday"], tags_es:["Warm-Up","Jueves"],
+    link:"https://www.instagram.com/p/DKkWn32JBwe/",
+    felt:"Thursday warm-up. Low ceilings, after-work crowd. Start at 120, keep it conversational, ride the groove.",
+    felt_es:"Warm-up de jueves. Techo bajo, público saliendo del trabajo. Arrancar en 120, mantenerlo conversado, dejarse llevar por el groove." },
+
+  { name:"Flash DC", quad:"NW", x:51, y:29,
+    area:"Club · Shaw", area_es:"Club · Shaw",
+    tags:["House","Chilled Bass","Debut"], tags_es:["House","Bajo relajado","Debut"],
+    link:"https://www.instagram.com/reel/DWbqna2Efxi/",
+    felt:"My debut in the underground room. House music, chilled bass, the bar vibe I wanted. I had time down there — room to play different sounds, blend them, work every channel the booth gave me. The upper floors are next.",
+    felt_es:"Mi debut en el cuarto underground. House, bajo relajado, la vibra de bar que quería. Tuve tiempo allá abajo — espacio para tocar sonidos distintos, mezclarlos y trabajar cada canal que me daba la cabina. Los pisos de arriba son lo siguiente." },
+
+  { name:"Arlo DC", quad:"NW", x:48, y:35,
+    area:"Hotel Rooftop · Shaw", area_es:"Rooftop de hotel · Shaw",
+    tags:["Rooftop","Latin House","Golden Hour"], tags_es:["Rooftop","Latin House","Hora dorada"],
+    link:"https://www.instagram.com/p/DQNROcEkSau/",
+    felt:"Golden hour over the rooftops. The set breathes here. Soft edges, glasses under the BPM. You read the room by the light.",
+    felt_es:"Hora dorada sobre los techos. Aquí el set respira. Bordes suaves, copas bajo el BPM. La pista se lee con la luz." },
+
+  { name:"Eaton Radio", quad:"NW", x:51, y:44,
+    area:"Broadcast · Downtown", area_es:"Transmisión · Downtown",
+    tags:["On Air","Deep","Stripped Back"], tags_es:["Al aire","Deep","Minimalista"],
+    link:"https://www.instagram.com/p/C_oiSDUplOD/",
+    felt:"On air, live to the broadcast. Just the selection and the mic light. Deep, stripped back, every choice out in the open.",
+    felt_es:"Al aire, en vivo para la transmisión. Solo la selección y la luz del micrófono. Deep, minimalista, cada decisión a la vista." },
+
+  { name:"Privé DC", quad:"SW", x:37, y:71,
+    area:"Boat Session · On the Water", area_es:"Sesión en barco · Sobre el agua",
+    tags:["Boat Session","On the Water"], tags_es:["Sesión en barco","Sobre el agua"],
+    link:"https://www.instagram.com/reel/DWbtWMdkb1t/",
+    felt:"A boat on the water. The city sliding past, open sky overhead. You play wider out here — keep it moving, let the skyline do the rest.",
+    felt_es:"Un barco sobre el agua. La ciudad pasando al lado, cielo abierto encima. Aquí se toca más amplio — mantenerlo en movimiento y dejar que el skyline haga el resto." },
+
+  { name:"Día de los Muertos", quad:"SW", x:44, y:58,
+    area:"Connectribe · The National Mall", area_es:"Connectribe · The National Mall",
+    tags:["Latin House","Global","Themed"], tags_es:["Latin House","Global","Temático"],
+    link:"https://www.instagram.com/stories/highlights/18081755245535530/",
+    felt:"Playing with the DC monument as the backdrop was one of the best experiences so far. People connected right away — it felt natural. When a set matters this much, you have to live in the present: that's how you enjoy it fully, and how you give the people dancing your best.",
+    felt_es:"Tocar con el monumento de D.C. de fondo ha sido de las mejores experiencias hasta ahora. La gente conectó de inmediato — se sintió natural. Cuando un set importa tanto, hay que vivir el presente: así se disfruta por completo y así le das lo mejor a la gente que baila." },
+
+  { name:"Graffiti Museum", quad:"NE", x:60, y:33,
+    area:"Art All Night · NE", area_es:"Art All Night · NE",
+    tags:["Culture","Global House","All Ages"], tags_es:["Cultura","Global House","Todas las edades"],
+    link:"https://www.instagram.com/p/DAd0mBuJcvM/",
+    felt:"There are spaces where art will remain and transmute forever. The art set the tone — global, colorful, unhurried.",
+    felt_es:"Hay espacios donde el arte permanece y se transforma para siempre. El arte marcó el tono — global, colorido, sin afán." },
+
+  { name:"Culture", quad:"NE", x:67, y:25,
+    area:"All Black Everything · 3881 Fenwick St NE", area_es:"All Black Everything · 3881 Fenwick St NE",
+    tags:["Latin House","Late","Loud"], tags_es:["Latin House","Tarde","Fuerte"],
+    link:"https://www.instagram.com/reel/DYsDUMdRBJG/",
+    date:"May 16, 2026", date_es:"16 de mayo, 2026",
+    felt:"It was spectacular sharing the booth with such talented artists from the scene. The vibe matched the quality of the room — I definitely recommend Culture.",
+    felt_es:"Fue espectacular compartir con artistas de la escena tan talentosos, las vibras se mantuvieron acorde con la calidad del sitio, definitivamente recomiendo Culture." },
+
+  { name:"The Artemis", quad:"SE", x:60, y:58,
+    area:"Club · Escape With Us", area_es:"Club · Escape With Us",
+    tags:["Throwback","Hands-Up"], tags_es:["Clásicos","Manos arriba"],
+    link:"https://www.instagram.com/p/C-qtNN9pRM_/?img_index=2",
+    felt:"Tighter room, hands-up energy. Throwback hooks folded into the groove — familiar enough to sing, deep enough to keep moving.",
+    felt_es:"Cuarto más cerrado, energía de manos arriba. Ganchos de clásicos metidos en el groove — lo bastante conocidos para cantarlos, lo bastante profundos para no dejar de moverse." },
+
+  { name:"Café Citron", quad:"NW", x:42, y:31,
+    area:"Lounge · Dupont", area_es:"Lounge · Dupont",
+    tags:["Latin","Lounge","Dupont"], tags_es:["Latino","Lounge","Dupont"],
+    link:"",
+    felt:"Dupont, Latin night. Bright room, glasses up, everyone close. A Latin spine running through it — warm, social, always moving.",
+    felt_es:"Dupont, noche latina. Cuarto iluminado, copas arriba, todos cerca. Una columna latina de principio a fin — cálida, social, siempre en movimiento." },
+
+  { name:"12 After 12", quad:"NW", x:46, y:41,
+    area:"Open-Air Club · Downtown", area_es:"Club al aire libre · Downtown",
+    tags:["Open-Air","Club"], tags_es:["Al aire libre","Club"],
+    link:"",
+    felt:"Nice event, a lot of dancing, an open-sky room. Everyone showed up and made it feel authentic for a while. If you happen to play here, you'll feel like you're stepping into a sacred DJ booth — full of symbols and energy.",
+    felt_es:"Buen evento, mucho baile, una pista a cielo abierto. Todos llegaron y por un rato lo hicieron sentir auténtico. Si te toca tocar aquí, vas a sentir que entras a una cabina sagrada — llena de símbolos y energía." },
+
+  { name:"Aura Fest", region:"CO", quad:"COL", x:30.4, y:54.2,
+    area:"Concept Vibes · 2nd Stage · Once-Once, Pance · Cali", area_es:"Concept Vibes · 2do stage · Once-Once, Pance · Cali",
+    tags:["Festival","DJ Contest Winner","2nd Anniversary"], tags_es:["Festival","Ganador DJ Contest","2do aniversario"],
+    link:"https://www.instagram.com/p/DdkZcMFEZFY/?img_index=9",
+    date:"Sep 26, 2026", date_es:"26 de septiembre, 2026",
+    felt:"Aura's second anniversary, on the Concept Vibes stage — a slot earned through the Concept Academy DJ Contest. New city, new crowd, same job: read the room and hold it.",
+    felt_es:"Segundo aniversario de Aura, en el stage Concept Vibes — un cupo ganado en el DJ Contest de Concept Academy. Ciudad nueva, público nuevo, el mismo trabajo: leer la pista y sostenerla." },
+];
+
+// ---------- language: shared with the EPK (EN/ES switch, ?lang=es, or saved choice) ----------
+const UI = {
+  en:{ kicker:"Where I've Played · D.C. → Cali", book:"Book", move:"Move",
+       hint:"each press travels to the next gig that way", prev:"← Prev room", next:"Next room →",
+       h1:"Across <em>D.C.</em>",
+       intro:"A different kind of EPK. This is the map of where I've played — every room, every quadrant, and one pin further south in Cali. Press an arrow key to travel to the next gig in that direction and see how the night felt.",
+       start:"Enter the city", room:"Room", ig:"See the night on Instagram ↗", link:"See the night ↗",
+       title:"πcott — Across D.C. → Cali", pacific:"PACIFIC", caribbean:"CARIBBEAN", home:"BUCARAMANGA · HOME BASE" },
+  es:{ kicker:"Donde he tocado · D.C. → Cali", book:"Contratar", move:"Muévete",
+       hint:"cada tecla te lleva al siguiente show en esa dirección", prev:"← Anterior", next:"Siguiente →",
+       h1:"Por <em>D.C.</em>",
+       intro:"Un EPK distinto. Este es el mapa de donde he tocado — cada pista, cada cuadrante, y un pin más al sur, en Cali. Usa las flechas para viajar al siguiente show en esa dirección y ver cómo se sintió la noche.",
+       start:"Entrar a la ciudad", room:"Sala", ig:"Ver la noche en Instagram ↗", link:"Ver la noche ↗",
+       title:"πcott — Por D.C. → Cali", pacific:"PACÍFICO", caribbean:"CARIBE", home:"BUCARAMANGA · BASE" }
+};
+let LANG = new URLSearchParams(location.search).get('lang');
+if(!LANG){ try{ LANG = localStorage.getItem('picott-lang'); }catch(e){} }
+if(!LANG) LANG = (navigator.language||'en').toLowerCase().startsWith('es') ? 'es' : 'en';
+LANG = LANG==='es' ? 'es' : 'en';
+const T = (v,k) => (LANG==='es' && v[k+'_es']) ? v[k+'_es'] : v[k];
+
+function setLang(lang){
+  LANG = lang==='es' ? 'es' : 'en';
+  document.documentElement.lang = LANG;
+  document.title = UI[LANG].title;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = UI[LANG][el.dataset.i18n]; });
+  document.querySelectorAll('[data-i18n-svg]').forEach(el => { el.textContent = UI[LANG][el.dataset.i18nSvg]; });
+  document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang===LANG));
+  const epk = document.getElementById('epklink'); if(epk) epk.href = '/?lang=' + LANG;
+  try{ localStorage.setItem('picott-lang', LANG); }catch(e){}
+  if(typeof activeIdx!=='undefined' && activeIdx >= 0) openVenue(activeIdx);
+}
+document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => {
+  setLang(b.dataset.lang);
+  try{ const u = new URL(location.href); u.searchParams.set('lang', LANG); history.replaceState(null,'',u); }catch(e){}
+}));
+
+/* ---------------- engine ---------------- */
+const mapwrap = document.getElementById('mapwrap');
+const geo = document.getElementById('geo');
+const REGION_START = { DC:{x:50,y:52}, CO:{x:49.3,y:33.8} };   // Capitol · Bucaramanga
+let region = 'DC';
+let player = { ...REGION_START.DC };
+const reg = v => v.region || 'DC';
+let activeIdx = -1;
+
+// build nodes
+const nodeEls = VENUES.map((v,i)=>{
+  const el = document.createElement('div');
+  el.className = 'node';
+  el.style.left = v.x + '%';
+  el.style.top  = v.y + '%';
+  if(reg(v)!=='DC') el.classList.add('away');
+  el.innerHTML = `<div class="pulse"></div><div class="dot"></div><div class="tag">${v.name}</div>`;
+  el.addEventListener('click',()=>openVenue(i));
+  geo.appendChild(el);
+  return el;
+});
+
+// player marker
+const playerEl = document.createElement('div');
+playerEl.className = 'player';
+playerEl.innerHTML = `<div class="ring"><div class="ping"></div><div class="core"></div></div>`;
+geo.appendChild(playerEl);
+
+function setRegion(r, keepPlayer){
+  if(r===region) return;
+  region = r;
+  geo.dataset.view = r==='CO' ? 'co' : 'dc';
+  nodeEls.forEach((el,i)=>el.classList.toggle('away', reg(VENUES[i])!==region));
+  document.querySelectorAll('.regions button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.region===region));
+  if(!keepPlayer){ player = { ...REGION_START[r] }; placePlayer(); }
+}
+document.querySelectorAll('.regions button').forEach(b=>b.addEventListener('click',()=>{
+  if(b.dataset.region===region) return;
+  closeVenue(); setRegion(b.dataset.region);
+}));
+
+function placePlayer(){
+  playerEl.style.left = player.x + '%';
+  playerEl.style.top  = player.y + '%';
+}
+
+// pick the nearest gig that lies in the pressed direction, from where we are now
+function pickInDirection(dir){
+  const cur = activeIdx >= 0 ? VENUES[activeIdx] : player;
+  let best = -1, bestScore = Infinity;
+  VENUES.forEach((v,i)=>{
+    if(i === activeIdx || reg(v) !== region) return;
+    const dx = v.x - cur.x, dy = v.y - cur.y;
+    let along, lateral;
+    if(dir==='right'){ along =  dx; lateral = Math.abs(dy); }
+    if(dir==='left' ){ along = -dx; lateral = Math.abs(dy); }
+    if(dir==='up'   ){ along = -dy; lateral = Math.abs(dx); }
+    if(dir==='down' ){ along =  dy; lateral = Math.abs(dx); }
+    if(along <= 0.5) return;                 // must actually be in that direction
+    const score = along + lateral * 2.2;     // favour straight-ahead over sideways
+    if(score < bestScore){ bestScore = score; best = i; }
+  });
+  return best;
+}
+
+function move(dir){
+  const n = pickInDirection(dir);
+  if(n >= 0) return openVenue(n);   // travel to it (marker animates) and step inside
+  // edge of the map: keep going south to Colombia, or back north to D.C.
+  if(region==='DC' && dir==='down'){ const c = VENUES.findIndex(v=>reg(v)==='CO'); if(c>=0) openVenue(c); }
+  else if(region==='CO' && dir==='up'){ closeVenue(); setRegion('DC'); }
+}
+
+const KEYMAP = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',
+                w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
+window.addEventListener('keydown',e=>{
+  if(KEYMAP[e.key]){ e.preventDefault(); move(KEYMAP[e.key]); }
+  if(e.key==='Escape') closeVenue();
+});
+document.querySelectorAll('.dpad button').forEach(b=>{
+  b.addEventListener('click',()=>move(b.dataset.dir));
+});
+
+/* ---------------- venue panel ---------------- */
+const panel  = document.getElementById('panel');
+const pscroll= document.getElementById('pscroll');
+
+function openVenue(i){
+  const v = VENUES[i];
+  setRegion(reg(v), true);
+  activeIdx = i;
+  nodeEls.forEach((el,j)=>el.classList.toggle('active', j===i));
+  // move the player to the room you entered
+  player.x = v.x; player.y = v.y; placePlayer();
+
+  const num = String(i+1).padStart(2,'0');
+  const linkLabel = v.link.includes('instagram') ? UI[LANG].ig : UI[LANG].link;
+  const tags = T(v,'tags');
+  pscroll.innerHTML = `
+    <div class="p-index">${UI[LANG].room} · ${num} / ${String(VENUES.length).padStart(2,'0')} · ${v.quad}</div>
+    <div class="p-name">${v.name}</div>
+    <div class="p-meta">${T(v,'area')}${v.date ? ' · ' + T(v,'date') : ''}</div>
+    <div class="p-felt">${T(v,'felt')}</div>
+    <div class="p-tags">${tags.map(t=>`<span>${t}</span>`).join('')}</div>
+    ${v.link ? `<a class="p-link" href="${v.link}" target="_blank" rel="noopener">${linkLabel}</a>` : ''}`;
+  panel.classList.add('open');
+}
+function closeVenue(){
+  panel.classList.remove('open');
+  nodeEls.forEach(el=>el.classList.remove('active'));
+  activeIdx = -1;
+}
+document.getElementById('pclose').addEventListener('click',closeVenue);
+document.getElementById('pprev').addEventListener('click',()=>openVenue((activeIdx-1+VENUES.length)%VENUES.length));
+document.getElementById('pnext').addEventListener('click',()=>openVenue((activeIdx+1)%VENUES.length));
+
+/* ---------------- intro overlay ---------------- */
+const intro=document.getElementById('intro');
+document.getElementById('start').addEventListener('click',()=>{ intro.classList.add('hide'); });
+
+placePlayer();
+setLang(LANG);
+</script>
+</body>
+</html>
