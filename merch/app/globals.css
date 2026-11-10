@@ -127,3 +127,8 @@ body {
   margin: 18px auto;
   opacity: .4;
 }
+
+/* πcott EPK: both languages are in the DOM, the <html data-picott-lang> attribute shows one (default English) */
+.lang-es { display: none; }
+html[data-picott-lang="es"] .lang-es { display: revert; }
+html[data-picott-lang="es"] .lang-en { display: none; }
