@@ -1,5 +1,5 @@
 import type Stripe from 'stripe';
-import { createOrder, PrintfulError } from './printful';
+import { createOrder, externalIdFor, PrintfulError } from './printful';
 import { PRODUCTS, ProductType } from './products';
 import { printReadyImageUrl } from './images';
 import { kv, kvConfigured } from './kv';
@@ -56,7 +56,7 @@ export async function fulfillStripeSession(session: Stripe.Checkout.Session): Pr
         name, address1: addr.line1, address2: addr.line2 ?? undefined, city: addr.city,
         state_code: addr.state ?? '', country_code: addr.country, zip: addr.postal_code ?? '', email, phone,
       },
-      `${orderId}-${cubId.slice(0, 12)}`,
+      externalIdFor(orderId),
     );
     const order: OrderRecord = { ...base, printfulOrderId: result.id, printfulStatus: result.status };
     await recordOrder(order);

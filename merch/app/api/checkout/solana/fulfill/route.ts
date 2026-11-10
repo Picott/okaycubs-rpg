@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySolanaPayment } from '@/lib/solana';
-import { createOrder, PrintfulError } from '@/lib/printful';
+import { createOrder, externalIdFor, PrintfulError } from '@/lib/printful';
 import { PRODUCTS } from '@/lib/products';
 import { printReadyImageUrl } from '@/lib/images';
 import { kv, kvConfigured } from '@/lib/kv';
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         state_code: intent.shipping.state, country_code: intent.shipping.country, zip: intent.shipping.zip,
         email: intent.shipping.email, phone: intent.shipping.phone,
       },
-      `${orderId}-${intent.cubId.slice(0, 12)}`,
+      externalIdFor(orderId),
     );
     await recordOrder({ ...base, printfulOrderId: result.id, printfulStatus: result.status });
     await kv.del(intentKey(reference)).catch(() => {});

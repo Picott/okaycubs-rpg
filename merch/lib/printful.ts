@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import type { PrintPosition } from './products';
 
 const PRINTFUL_API = 'https://api.printful.com';
@@ -45,6 +46,11 @@ export interface ShippingAddress {
   zip: string;
   email?: string;
   phone?: string;
+}
+
+/** Printful's external_id is limited to 32 characters: derive a stable short id from our order id. */
+export function externalIdFor(orderId: string): string {
+  return 'okc-' + createHash('sha1').update(orderId).digest('hex').slice(0, 24);
 }
 
 export class PrintfulError extends Error {
