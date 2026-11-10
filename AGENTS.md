@@ -51,6 +51,8 @@ Pendiente urgente antes de vender en serio (ver `ops/README.md`):
 
 Backlog del juego: ranking semanal de tiempos (roads y jefes), perfil público de hunter, osos como agentes (idea, sin prioridad).
 
+10. **Marca πcott en las prendas (10 nov 2026)**: todo lo impreso (hoodie, crewneck, joggers, tee) lleva el wordmark πcott pequeño bajo el retrato (blanco en prendas oscuras, negro en claras), compuesto en `lib/images.ts` y usado tanto en mockups como en pedidos. Bordados sin marca. EPK publicado en `/picott` con selector EN/ES y mapa en `/picott/map.html`.
+
 ## Dónde está cada cosa
 
 - Productos y variantes: `merch/lib/products.ts`. Checkout: `merch/lib/stripe.ts`, `merch/app/api/checkout/*`. Fulfillment: `merch/app/api/webhook/stripe/route.ts`, `merch/app/api/checkout/solana/fulfill/route.ts`, `merch/lib/printful.ts`. Mockups: `merch/app/api/printful/mockup/route.ts`.
