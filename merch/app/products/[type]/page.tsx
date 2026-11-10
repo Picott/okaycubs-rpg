@@ -377,11 +377,13 @@ function ProductPageInner() {
                 <div className="font-cinzel text-[10px] tracking-[3px] text-gold uppercase">Select a color to preview</div>
               </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="text-5xl mb-4">
-                  {product.icon}
+              <div className="relative text-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/merch/${type}.jpg`} alt="" className="w-full object-contain opacity-35" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-5xl mb-4 drop-shadow">{product.icon}</div>
+                  <div className="font-cinzel text-[10px] tracking-[3px] text-gold opacity-80 uppercase">Select your Cub below</div>
                 </div>
-                <div className="font-cinzel text-[10px] tracking-[3px] text-gold opacity-50 uppercase">Select your Cub below</div>
               </div>
             )}
           </div>

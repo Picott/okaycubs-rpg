@@ -98,9 +98,14 @@ export default function HomePage() {
             <Link
               key={p.type}
               href={`/products/${p.type}${wallet ? `?wallet=${wallet}` : ''}`}
-              className="card-border p-6 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
+              className="card-border p-4 sm:p-5 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
             >
-              <div className="text-4xl mb-3">{p.icon}</div>
+              <div className="relative mb-4 aspect-square overflow-hidden rounded-sm bg-black/30">
+                {/* real Printful mockup of a Cub on this item; the emoji stays as a fallback behind it */}
+                <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-40">{p.icon}</div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/merch/${p.type}.jpg`} alt={`${p.name} preview`} loading="lazy" className="relative w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" onError={e => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }} />
+              </div>
               <div className="font-cinzel text-[13px] font-semibold text-quartz mb-1 group-hover:text-gold transition-colors">
                 {p.name.replace('OkayCubs ', '')}
               </div>
