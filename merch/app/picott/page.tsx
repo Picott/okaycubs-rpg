@@ -54,7 +54,7 @@ const HIGHLIGHTS = [
   { k: { en: 'Hotel · Sunset at Arlo', es: 'Hotel · Sunset at Arlo' },               t: 'Fuego Vibes × Myto',              img: '/picott/arlo-dc.jpg',         href: 'https://www.instagram.com/p/DQNROcEkSau/', cta: 'View' },
   { k: { en: 'Broadcast · Eaton Radio', es: 'Radio · Eaton Radio' },                 t: 'Long Live GoGo',                  img: '/picott/eaton-radio.jpg',     href: 'https://www.instagram.com/p/C_oiSDUplOD/', cta: 'View' },
   { k: { en: 'Lounge · Public Bar', es: 'Lounge · Public Bar' },                     t: 'Good Music Thursdays',            img: '/picott/public-bar.jpg',      href: 'https://www.instagram.com/p/DKkWn32JBwe/', cta: 'View' },
-  { k: { en: 'Live · Privé DC', es: 'En vivo · Privé DC' },                          t: 'Rooftop · Live Set',              img: '/picott/prive-dc.jpg',        href: 'https://www.instagram.com/reel/DWbtWMdkb1t/', cta: 'Watch' },
+  { k: { en: 'Live · Privé DC', es: 'En vivo · Privé DC' },                          t: 'Boat Party · Live Set',              img: '/picott/prive-dc.jpg',        href: 'https://www.instagram.com/reel/DWbtWMdkb1t/', cta: 'Watch' },
 ];
 
 const TRACKS = [
