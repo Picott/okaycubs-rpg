@@ -27,8 +27,10 @@ export async function fulfillStripeSession(session: Stripe.Checkout.Session): Pr
   if (!product || !variantId || !meta.cubImage || !product.variants.some(v => v.printfulVariantId === variantId)) {
     return { status: 'invalid', reason: 'missing or invalid order metadata' };
   }
-  const addr  = session.shipping_details?.address;
-  const name  = session.shipping_details?.name ?? session.customer_details?.name ?? 'OkayCubs Customer';
+  // Newer Stripe API versions put the shipping address under collected_information instead of shipping_details
+  const collected = (session as unknown as { collected_information?: { shipping_details?: { name?: string | null; address?: Stripe.Address | null } | null } | null }).collected_information?.shipping_details;
+  const addr  = session.shipping_details?.address ?? collected?.address;
+  const name  = session.shipping_details?.name ?? collected?.name ?? session.customer_details?.name ?? 'OkayCubs Customer';
   const email = session.customer_details?.email ?? undefined;
   const phone = session.customer_details?.phone ?? undefined;
   if (!addr?.line1 || !addr.city || !addr.country) return { status: 'invalid', reason: 'no shipping address on session' };
