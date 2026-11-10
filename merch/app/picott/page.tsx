@@ -40,8 +40,12 @@ const HIGHLIGHTS = [
 // Latest release — links confirmed by Juan; cover, date and tracklist pending (not invented)
 const EP = {
   title: 'Signals EP',
-  cover: '/picott/signals.jpg',   // artwork pending from Juan; until then the card shows typography
-  hasCover: false,
+  // artwork: the first official visualizer's frame until Juan sends the cover file
+  cover: 'https://i.ytimg.com/vi/GBLDiVPLHfg/maxresdefault.jpg',
+  hasCover: true,
+  playlist: 'PLV8Pcy9byc7A',
+  // official visualizers, in playlist order; titles pending from Juan
+  videos: ['GBLDiVPLHfg', 'aq23GqsMO5I', '2gPGaFAiUco', 'm3hcujTs_oA', 'dRc89rDwKag'],
   links: [
     { label: 'Spotify',     href: 'https://open.spotify.com/album/5nljTvEAjgdaGALJTaNfYs' },
     { label: 'Apple Music', href: 'https://music.apple.com/us/album/signals-ep/6828800477' },
@@ -98,6 +102,21 @@ export default function PicottPage() {
           <p className="font-crimson italic text-silver/65 mt-2">πcott · Tech House · Latin House</p>
           <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-5">
             {EP.links.map(l => <a key={l.href} href={l.href} target="_blank" rel="noopener" className={pill}>{l.label}</a>)}
+          </div>
+        </div>
+        {/* official visualizers: the playlist embed plus one thumbnail per track */}
+        <div className="sm:col-span-2 mt-2">
+          <div className="aspect-video w-full overflow-hidden border border-gold/20 bg-black/40">
+            <iframe title={`${EP.title} — official visualizers`} width="100%" height="100%" src={`https://www.youtube-nocookie.com/embed/videoseries?list=${EP.playlist}&rel=0`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          </div>
+          <div className="grid grid-cols-5 gap-2 mt-2">
+            {EP.videos.map((id, i) => (
+              <a key={id} href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noopener" className="group block overflow-hidden border border-gold/15">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt={`Visualizer ${i + 1}`} loading="lazy" className="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-[1.05]" />
+                <div className="font-cinzel text-[8px] tracking-[2px] uppercase text-gold/60 text-center py-1">{String(i + 1).padStart(2, '0')}</div>
+              </a>
+            ))}
           </div>
         </div>
       </section>
