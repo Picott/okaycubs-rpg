@@ -1,6 +1,7 @@
 import sharp from 'sharp';
 import type { Product } from './products';
 import type { PrintfulOrderItem } from './printful';
+import { brandedPrintUrl, brandedPosition } from './images';
 
 // Printful's embroidery thread palette (the exact values its API accepts for thread_colors).
 const THREADS = ['#FFFFFF', '#000000', '#96A1A8', '#A67843', '#FFCC00', '#E25C27', '#CC3366', '#CC3333', '#660000', '#333366', '#005397', '#3399FF', '#6B5294', '#01784E', '#7BA35A'];
@@ -42,11 +43,18 @@ export async function threadColorsFor(imageUrl: string): Promise<string[]> {
 
 /** Builds the Printful order item for a product variant and a print-ready image, with embroidery options when needed. */
 export async function buildOrderItem(product: Product, variantId: number, imageUrl: string): Promise<PrintfulOrderItem> {
+  const embroidered = product.printPlacement.startsWith('embroidery');
+  const variant = product.variants.find(v => v.printfulVariantId === variantId);
+  let fileUrl = imageUrl, position = product.printPosition;
+  if (!embroidered) {
+    const b = await brandedPrintUrl(imageUrl, variant?.colorHex || '#000000');
+    if (b.branded) { fileUrl = b.url; position = position ? brandedPosition(position) : undefined; }
+  }
   const item: PrintfulOrderItem = {
     variantId, quantity: 1,
-    files: [{ url: imageUrl, placement: product.printPlacement, position: product.printPosition }],
+    files: [{ url: fileUrl, placement: product.printPlacement, position }],
   };
-  if (product.printPlacement.startsWith('embroidery')) {
+  if (embroidered) {
     item.options = [
       { id: 'embroidery_type', value: 'flat' },
       { id: 'thread_colors', value: await threadColorsFor(imageUrl) },

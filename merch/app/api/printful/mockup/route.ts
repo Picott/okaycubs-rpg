@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { reHostImage } from '@/lib/images';
+import { reHostImage, brandedPrintUrl, brandedPosition } from '@/lib/images';
 import { PRODUCTS, ProductType } from '@/lib/products';
 
 const PRINTFUL_API = 'https://api.printful.com';
@@ -99,16 +99,23 @@ export async function POST(req: NextRequest) {
       originalUrl: originalImageUrl,
     }, { status: 502 });
   }
-  const printfulImageUrl = reHostResult.url;
-  console.log('[Printful] image re-hosted for Printful:', printfulImageUrl);
+  let printfulImageUrl = reHostResult.url;
+  let position = product.printPosition;
+  // printed items carry the πcott mark under the portrait; embroidered ones stay plain
+  if (!product.printPlacement.startsWith('embroidery')) {
+    const variant = product.variants.find(v => v.printfulVariantId === variantId);
+    const b = await brandedPrintUrl(printfulImageUrl, variant?.colorHex || '#000000');
+    if (b.branded) { printfulImageUrl = b.url; if (position) position = brandedPosition(position); }
+  }
+  console.log('[Printful] print file for mockup:', printfulImageUrl);
 
   // Build file entry
   const fileEntry: Record<string, unknown> = {
     placement: product.printPlacement,
     image_url: printfulImageUrl,
   };
-  if (product.printPosition) {
-    fileEntry.position = product.printPosition;
+  if (position) {
+    fileEntry.position = position;
   }
 
   // Cache check
