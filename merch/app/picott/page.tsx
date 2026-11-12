@@ -144,15 +144,13 @@ export default function PicottPage() {
         <div className="lang-en">
           <p className="font-crimson text-silver/85 leading-relaxed text-[17px]">
             <strong className="text-quartz">πcott</strong> makes tech house with a Latin pulse: layered, intentional, built to hold a room.
-            Raised between Colombia and Washington D.C., he plays for the moment when the underground and the dancefloor stop being two different places.
-            His debut EP, <em>Signals</em>, is out now.
+            Raised between Colombia and Washington D.C. Debut EP <em>Signals</em>, out now.
           </p>
         </div>
         <div className="lang-es">
           <p className="font-crimson text-silver/85 leading-relaxed text-[17px]">
             <strong className="text-quartz">πcott</strong> hace tech house con pulso latino: por capas, con intención, hecho para sostener una pista.
-            Criado entre Colombia y Washington D.C., toca para el momento en que el underground y la pista dejan de ser dos lugares distintos.
-            Su EP debut, <em>Signals</em>, ya está disponible.
+            Criado entre Colombia y Washington D.C. EP debut <em>Signals</em>, ya disponible.
           </p>
         </div>
       </section>
