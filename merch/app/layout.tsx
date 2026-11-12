@@ -39,6 +39,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteHeader />
 
           {children}
+
+          <footer className="text-center pt-14 pb-24 font-cinzel text-[8px] tracking-[3px] uppercase opacity-30">sounds by πcott</footer>
         </div>
 
         {/* πcott on SoundCloud — same music bar as the game and the Honey Roads */}

@@ -19,9 +19,12 @@ export default function SiteHeader() {
       {onEpk ? (
         <div className="font-cinzel text-[10px] tracking-[5px] text-silver opacity-55 uppercase mt-4">DJ · Producer · Tech House · Latin House</div>
       ) : (
-        <div className="mt-4">
-          <a href="/" className="font-cinzel text-[12px] tracking-[5px] text-quartz uppercase hover:text-gold transition-colors">OkayCubs × πcott</a>
-          <div className="font-cinzel text-[9px] tracking-[3px] text-silver opacity-45 uppercase mt-1">Partnership merch · 50 Cubs · The Honey Chronicles</div>
+        <div className="mt-6 max-w-md mx-auto">
+          <div className="font-cinzel text-[9px] tracking-[4px] text-gold opacity-70 uppercase mb-2">New single · Out now</div>
+          <div className="gold-text font-cinzel-deco text-3xl mb-3">Kiss</div>
+          <iframe title="πcott — Kiss" width="100%" height="166" scrolling="no" frameBorder="no" allow="autoplay"
+            src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fjuan-b-picott%2Fkiss-pcott&color=%23d4af37&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false" />
+          <div className="font-cinzel text-[9px] tracking-[3px] text-silver opacity-45 uppercase mt-3">OkayCubs × πcott · Partnership merch</div>
         </div>
       )}
       <div className="rule" />
