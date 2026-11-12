@@ -142,27 +142,17 @@ export default function PicottPage() {
       <section className="card-border p-7 max-w-3xl mx-auto">
         <div className={label + ' mb-4'}><L en="About" es="Biografía" /></div>
         <div className="lang-en">
-          <p className="font-crimson text-silver/80 leading-relaxed">
-            <strong className="text-quartz">πcott</strong> is a DJ and producer based in Santander, Colombia, shaped by years in the Washington D.C. scene. Known for seamless
-            transitions and an ability to read diverse crowds, he bridges the gap between underground electronic beats and high-energy dancefloors, from high-end hotel lounges
-            like Arlo and Eaton to high-volume clubs.
-          </p>
-          <p className="font-crimson text-silver/80 leading-relaxed mt-4">
-            As part of the <em>Sunday at Backyard</em> series with the Connectribe collective, he helped shape the party culture in D.C. In September 2026 he played the
-            Concept Vibes stage at Aura Fest&apos;s second anniversary in Cali, Colombia, a slot won as one of the winners of the Concept Academy DJ Contest, out of 40+ sets.
-            Back home in Santander he opened November 2026 at BKR 48 in Bucaramanga with <em>Back in the House</em>. His debut EP <em>Signals</em> is out now.
+          <p className="font-crimson text-silver/85 leading-relaxed text-[17px]">
+            <strong className="text-quartz">πcott</strong> makes tech house with a Latin pulse: layered, intentional, built to hold a room.
+            Raised between Colombia and Washington D.C., he plays for the moment when the underground and the dancefloor stop being two different places.
+            His debut EP, <em>Signals</em>, is out now.
           </p>
         </div>
         <div className="lang-es">
-          <p className="font-crimson text-silver/80 leading-relaxed">
-            <strong className="text-quartz">πcott</strong> es DJ y productor radicado en Santander, Colombia, formado durante años en la escena de Washington D.C. Reconocido por
-            sus transiciones impecables y su lectura de públicos diversos, une el beat electrónico underground con pistas de alta energía: de lounges de hotel como Arlo y Eaton
-            a clubes de gran aforo.
-          </p>
-          <p className="font-crimson text-silver/80 leading-relaxed mt-4">
-            Como parte de la serie <em>Sunday at Backyard</em> con el colectivo Connectribe ayudó a dar forma a la cultura de fiesta de D.C. En septiembre de 2026 tocó en el
-            escenario Concept Vibes del segundo aniversario de Aura Fest en Cali, un cupo ganado como uno de los ganadores del Concept Academy DJ Contest entre más de 40 sets.
-            De vuelta en Santander abrió noviembre de 2026 en BKR 48, Bucaramanga, con <em>Back in the House</em>. Su EP debut, <em>Signals</em>, ya está disponible.
+          <p className="font-crimson text-silver/85 leading-relaxed text-[17px]">
+            <strong className="text-quartz">πcott</strong> hace tech house con pulso latino: por capas, con intención, hecho para sostener una pista.
+            Criado entre Colombia y Washington D.C., toca para el momento en que el underground y la pista dejan de ser dos lugares distintos.
+            Su EP debut, <em>Signals</em>, ya está disponible.
           </p>
         </div>
       </section>
