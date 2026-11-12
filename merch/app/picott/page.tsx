@@ -237,7 +237,6 @@ export default function PicottPage() {
         </div>
         <div className="flex md:flex-col gap-3 justify-center">
           <Link href="/" className="btn-gold"><L en="Shop the collection" es="Ver la colección" /></Link>
-          <a href="/game.html" className={pill + ' text-center'}><L en="Play the game" es="Jugar" /></a>
         </div>
       </section>
 
