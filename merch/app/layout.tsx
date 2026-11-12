@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import SiteHeader from './SiteHeader';
 import './globals.css';
 
@@ -44,7 +43,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         {/* πcott on SoundCloud — same music bar as the game and the Honey Roads */}
-        <Script src="/music.js" strategy="afterInteractive" />
       </body>
     </html>
   );
