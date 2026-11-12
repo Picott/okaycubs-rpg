@@ -1,3 +1,4 @@
+import Script from 'next/script';
 import type { Metadata } from 'next';
 import SiteHeader from './SiteHeader';
 import './globals.css';
@@ -43,6 +44,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         {/* πcott on SoundCloud — same music bar as the game and the Honey Roads */}
+        {/* πcott on SoundCloud — floating music button in the corner, same on every page */}
+        <Script src="/music.js" strategy="afterInteractive" />
       </body>
     </html>
   );

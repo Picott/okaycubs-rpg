@@ -57,8 +57,6 @@ const HIGHLIGHTS = [
   { k: { en: 'Live · Privé DC', es: 'En vivo · Privé DC' },                          t: 'Boat Party · Live Set',              img: '/picott/prive-dc.jpg',        href: 'https://www.instagram.com/reel/DWbtWMdkb1t/', cta: 'Watch' },
 ];
 
-// Newest single on SoundCloud: shown first in Listen with its own player
-const NEW_TRACK = { title: 'Kiss', url: 'https://soundcloud.com/juan-b-picott/kiss-pcott', date: { en: 'Out 12 Nov 2026', es: 'Salió el 12 nov 2026' } };
 
 const TRACKS = [
   { n: '01', title: 'Paella',            href: 'https://music.youtube.com/watch?v=24z0-0wNnIU' },
@@ -69,8 +67,6 @@ const label = 'font-cinzel text-[10px] tracking-[5px] text-gold opacity-55 upper
 const pill  = 'font-cinzel text-[10px] tracking-[3px] uppercase px-5 py-2 border border-gold/40 text-gold/80 hover:border-gold hover:text-gold transition-all';
 
 export default function PicottPage() {
-  const player = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent('https://soundcloud.com/juan-b-picott/tracks')
-    + '&color=%23d4af37&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false';
   return (
     <main className="animate-fade-up space-y-16">
       {/* Hero */}
@@ -156,9 +152,6 @@ export default function PicottPage() {
       {/* Listen */}
       <section>
         <div className={label + ' text-center mb-5'}>✦ <L en="Listen" es="Escucha" /> ✦</div>
-        <div className="card-border p-2">
-          <iframe title="πcott on SoundCloud" width="100%" height="360" scrolling="no" frameBorder="no" allow="autoplay" src={player} />
-        </div>
         <div className="grid sm:grid-cols-2 gap-4 mt-4">
           {TRACKS.map(t => (
             <a key={t.n} href={t.href} target="_blank" rel="noopener" className="card-border p-5 flex items-center justify-between group">
