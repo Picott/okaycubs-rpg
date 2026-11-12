@@ -86,40 +86,6 @@ export default function PicottPage() {
         <div className="mt-6 font-cinzel text-[9px] tracking-[3px] uppercase text-silver opacity-45"><span className="text-gold opacity-80">12+</span> <L en="venues played" es="venues tocados" /></div>
       </section>
 
-      {/* Latest release */}
-      <section className="card-border p-6 sm:p-8 grid sm:grid-cols-[200px_1fr] gap-7 items-center">
-        <div className="relative aspect-square w-full max-w-[200px] mx-auto overflow-hidden bg-black/40 border border-gold/20 flex items-center justify-center">
-          <div className="gold-text font-cinzel-deco font-black text-2xl tracking-[4px] text-center px-2">SIGNALS</div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={EP.cover} alt={`${EP.title} cover`} className="absolute inset-0 w-full h-full object-cover" />
-        </div>
-        <div className="text-center sm:text-left">
-          <div className={label}><L en="Latest release · Debut EP" es="Último lanzamiento · EP debut" /></div>
-          <div className="gold-text font-cinzel-deco text-3xl mt-2">{EP.title}</div>
-          <p className="font-crimson italic text-silver/65 mt-2"><L en={EP.released.en} es={EP.released.es} /> · ℗ πcott · <L en="self-released · 5 tracks" es="independiente · 5 pistas" /></p>
-          <ol className="font-cinzel text-[11px] tracking-[1px] text-silver/80 mt-3 space-y-1">
-            {EP.tracks.map((t, i) => <li key={t}><span className="text-gold/60 mr-2">{String(i + 1).padStart(2, '0')}</span>{t}</li>)}
-          </ol>
-          <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-5">
-            {EP.links.map(l => <a key={l.href} href={l.href} target="_blank" rel="noopener" className={pill}>{l.label}</a>)}
-          </div>
-        </div>
-        <div className="sm:col-span-2 mt-2">
-          <div className="aspect-video w-full overflow-hidden border border-gold/20 bg-black/40">
-            <iframe title={`${EP.title} — official visualizers`} width="100%" height="100%" src={`https://www.youtube-nocookie.com/embed/videoseries?list=${EP.playlist}&rel=0`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-          </div>
-          <div className="grid grid-cols-5 gap-2 mt-2">
-            {EP.videos.map((id, i) => (
-              <a key={id} href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noopener" className="group block overflow-hidden border border-gold/15">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt={`${EP.tracks[i]} — official visualizer`} loading="lazy" className="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-[1.05]" />
-                <div className="font-cinzel text-[8px] tracking-[1px] uppercase text-gold/70 text-center py-1 truncate px-1">{EP.tracks[i]}</div>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Next up */}
       <section className="card-border p-7 grid sm:grid-cols-3 gap-6 items-center text-center sm:text-left">
         <div><div className={label}><L en="Next up · 2026" es="Próximo · 2026" /></div><div className="font-cinzel-deco text-xl text-quartz mt-2"><L en="Open dates · Q4 → 2027" es="Fechas abiertas · Q4 → 2027" /></div></div>
@@ -148,15 +114,47 @@ export default function PicottPage() {
       </section>
 
       {/* Listen */}
-      <section>
-        <div className={label + ' text-center mb-5'}>✦ <L en="Listen" es="Escucha" /> ✦</div>
-        <div className="grid sm:grid-cols-2 gap-4 mt-4">
-          {TRACKS.map(t => (
-            <a key={t.n} href={t.href} target="_blank" rel="noopener" className="card-border p-5 flex items-center justify-between group">
-              <div><div className={label}>Track · {t.n}</div><div className="font-cinzel-deco text-lg text-quartz group-hover:text-gold transition-colors">{t.title}</div></div>
-              <div className="font-cinzel text-[9px] tracking-[2px] uppercase text-gold/70">▸ YT Music</div>
+      <section className="space-y-5">
+        <div className={label + ' text-center'}>✦ <L en="Listen" es="Escucha" /> ✦</div>
+
+        {/* Signals EP */}
+        <div className="card-border p-6 grid sm:grid-cols-[120px_1fr] gap-6 items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={EP.cover} alt={`${EP.title} cover`} className="w-[120px] h-[120px] object-cover mx-auto border border-gold/20" />
+          <div className="text-center sm:text-left">
+            <div className={label}><L en="Debut EP" es="EP debut" /> · <L en={EP.released.en} es={EP.released.es} /></div>
+            <div className="gold-text font-cinzel-deco text-2xl mt-1">{EP.title}</div>
+            <div className="font-cinzel text-[10px] tracking-[1px] text-silver/70 mt-2">
+              {EP.tracks.map((t, i) => (
+                <a key={t} href={`https://www.youtube.com/watch?v=${EP.videos[i]}`} target="_blank" rel="noopener" className="hover:text-gold transition-colors">
+                  {t}{i < EP.tracks.length - 1 ? ' · ' : ''}
+                </a>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-4">
+              {EP.links.map(l => <a key={l.href} href={l.href} target="_blank" rel="noopener" className={pill}>{l.label}</a>)}
+            </div>
+          </div>
+        </div>
+
+        {/* Singles */}
+        <div className="card-border p-6">
+          <div className={label + ' mb-4 text-center sm:text-left'}><L en="Singles" es="Sencillos" /></div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <a href="https://soundcloud.com/juan-b-picott/kiss-pcott" target="_blank" rel="noopener" className="border border-gold/20 p-4 flex items-center justify-between group hover:border-gold/60 transition-colors">
+              <div className="font-cinzel-deco text-lg text-quartz group-hover:text-gold transition-colors">Kiss</div>
+              <div className="font-cinzel text-[9px] tracking-[2px] uppercase text-gold/70">▸ SoundCloud</div>
             </a>
-          ))}
+            {TRACKS.map(t => (
+              <a key={t.n} href={t.href} target="_blank" rel="noopener" className="border border-gold/20 p-4 flex items-center justify-between group hover:border-gold/60 transition-colors">
+                <div className="font-cinzel-deco text-lg text-quartz group-hover:text-gold transition-colors">{t.title}</div>
+                <div className="font-cinzel text-[9px] tracking-[2px] uppercase text-gold/70">▸ YT Music</div>
+              </a>
+            ))}
+          </div>
+          <div className="text-center sm:text-left mt-4">
+            <a href="https://soundcloud.com/juan-b-picott/tracks" target="_blank" rel="noopener" className={pill}><L en="All tracks on SoundCloud" es="Todas las pistas en SoundCloud" /></a>
+          </div>
         </div>
       </section>
 
