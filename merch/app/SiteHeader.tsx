@@ -14,7 +14,7 @@ export default function SiteHeader() {
     <header className="text-center pt-10 pb-8">
       <a href="/picott" className="inline-block" aria-label="πcott">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/picott/logo.png" alt="πcott" className="mx-auto h-12 sm:h-16 w-auto invert sepia saturate-[3] hue-rotate-[5deg] brightness-110 drop-shadow-[0_0_16px_rgba(212,175,55,.3)]" />
+        <img src="/picott/logo.png" alt="πcott" className={`mx-auto ${onEpk ? 'h-12 sm:h-16' : 'h-6 sm:h-7'} w-auto invert sepia saturate-[3] hue-rotate-[5deg] brightness-110 drop-shadow-[0_0_16px_rgba(212,175,55,.3)]`} />
       </a>
       {onEpk ? (
         <div className="font-cinzel text-[10px] tracking-[5px] text-silver opacity-55 uppercase mt-4">DJ · Producer · Tech House · Latin House</div>
