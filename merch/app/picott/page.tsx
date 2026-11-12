@@ -59,7 +59,7 @@ const HIGHLIGHTS = [
 
 
 const TRACKS = [
-  { n: '01', title: 'Tu Cuerpo es Instrumento', href: 'https://soundcloud.com/juan-b-picott/tracks', via: 'SoundCloud' },   // TODO: exact track link from Juan
+  { n: '01', title: 'Tu Cuerpo es Instrumento', href: 'https://on.soundcloud.com/BgXcXLOf3GrSFRITO5', via: 'SoundCloud' },
   { n: '02', title: 'Top Of The Ladder', href: 'https://music.youtube.com/watch?v=RwprPfURwZA', via: 'YT Music' },
 ];
 
