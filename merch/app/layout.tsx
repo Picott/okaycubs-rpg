@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import SiteHeader from './SiteHeader';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -35,29 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <div className="relative z-10 max-w-5xl mx-auto px-5 pb-20">
           {/* Shared header */}
-          <header className="text-center pt-12 pb-8">
-            <div className="font-cinzel text-[10px] tracking-[7px] text-gold opacity-65 uppercase mb-3">
-              🍯 πcott · The Honey Chronicles
-            </div>
-            <a href="/" className="block">
-              <h1
-                className="gold-text font-cinzel-deco font-black"
-                style={{ fontSize: 'clamp(26px, 6vw, 48px)', lineHeight: 1.1 }}
-              >
-                OkayCubs
-              </h1>
-            </a>
-            <div className="font-cinzel text-[11px] tracking-[4px] text-silver opacity-50 mt-2">
-              by πcott · Wear a Cub
-            </div>
-            <div className="rule" />
-            {/* Back to RPG */}
-            <nav className="flex gap-5 justify-center">
-              <a href="/game.html" className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 hover:opacity-70 transition-opacity uppercase">Play</a>
-              <a href="/" className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 hover:opacity-70 transition-opacity uppercase">Merch</a>
-              <a href="/picott" className="font-cinzel text-[9px] tracking-[3px] text-gold opacity-40 hover:opacity-70 transition-opacity uppercase">πcott · EPK</a>
-            </nav>
-          </header>
+          <SiteHeader />
 
           {children}
         </div>
