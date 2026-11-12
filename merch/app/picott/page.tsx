@@ -59,8 +59,8 @@ const HIGHLIGHTS = [
 
 
 const TRACKS = [
-  { n: '01', title: 'Paella',            href: 'https://music.youtube.com/watch?v=24z0-0wNnIU' },
-  { n: '02', title: 'Top Of The Ladder', href: 'https://music.youtube.com/watch?v=RwprPfURwZA' },
+  { n: '01', title: 'Tu Cuerpo es Instrumento', href: 'https://soundcloud.com/juan-b-picott/tracks', via: 'SoundCloud' },   // TODO: exact track link from Juan
+  { n: '02', title: 'Top Of The Ladder', href: 'https://music.youtube.com/watch?v=RwprPfURwZA', via: 'YT Music' },
 ];
 
 const label = 'font-cinzel text-[10px] tracking-[5px] text-gold opacity-55 uppercase';
@@ -148,7 +148,7 @@ export default function PicottPage() {
             {TRACKS.map(t => (
               <a key={t.n} href={t.href} target="_blank" rel="noopener" className="border border-gold/20 p-4 flex items-center justify-between group hover:border-gold/60 transition-colors">
                 <div className="font-cinzel-deco text-lg text-quartz group-hover:text-gold transition-colors">{t.title}</div>
-                <div className="font-cinzel text-[9px] tracking-[2px] uppercase text-gold/70">▸ YT Music</div>
+                <div className="font-cinzel text-[9px] tracking-[2px] uppercase text-gold/70">▸ {t.via}</div>
               </a>
             ))}
           </div>

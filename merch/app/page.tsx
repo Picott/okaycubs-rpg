@@ -92,7 +92,6 @@ export default function HomePage() {
       <section>
         <div className="text-center mb-6">
           <h1 className="gold-text font-cinzel-deco font-black" style={{ fontSize: 'clamp(22px, 4.5vw, 36px)', lineHeight: 1.1 }}>Wear a Cub</h1>
-          <div className="font-crimson italic text-silver/60 text-[15px] mt-2">50 OkayCubs from πcott&apos;s own collection, printed on demand. Pick an item, then your Cub.</div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-16">
           {PRODUCT_ORDER.map(k => PRODUCTS[k]).map(p => (
