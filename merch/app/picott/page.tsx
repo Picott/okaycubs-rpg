@@ -231,8 +231,8 @@ export default function PicottPage() {
           <div className={label + ' mb-2'}><L en="Partnership merch" es="Merch en colaboración" /></div>
           <div className="font-cinzel-deco text-2xl text-quartz">OkayCubs × πcott</div>
           <p className="font-crimson text-silver/65 italic max-w-xl mt-3">
-            <L en="A print-on-demand line built on the 50 OkayCubs he holds: hoodies, crewnecks, joggers, tees, beanies and caps, each carrying the πcott mark. The Cubs also star in The Honey Chronicles, his browser action game."
-               es="Una línea print-on-demand construida sobre los 50 OkayCubs que posee: hoodies, crewnecks, joggers, camisetas, beanies y gorras, cada una con la marca πcott. Los Cubs también protagonizan The Honey Chronicles, su juego de acción en el navegador." />
+            <L en="Hoodies, crewnecks, joggers, tees, beanies and caps."
+               es="Hoodies, crewnecks, joggers, camisetas, beanies y gorras." />
           </p>
         </div>
         <div className="flex md:flex-col gap-3 justify-center">
