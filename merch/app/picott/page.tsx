@@ -57,6 +57,9 @@ const HIGHLIGHTS = [
   { k: { en: 'Live · Privé DC', es: 'En vivo · Privé DC' },                          t: 'Boat Party · Live Set',              img: '/picott/prive-dc.jpg',        href: 'https://www.instagram.com/reel/DWbtWMdkb1t/', cta: 'Watch' },
 ];
 
+// Newest single on SoundCloud: shown first in Listen with its own player
+const NEW_TRACK = { title: 'Kiss', url: 'https://soundcloud.com/juan-b-picott/kiss-pcott', date: { en: 'Out 12 Nov 2026', es: 'Salió el 12 nov 2026' } };
+
 const TRACKS = [
   { n: '01', title: 'Paella',            href: 'https://music.youtube.com/watch?v=24z0-0wNnIU' },
   { n: '02', title: 'Top Of The Ladder', href: 'https://music.youtube.com/watch?v=RwprPfURwZA' },
@@ -169,6 +172,15 @@ export default function PicottPage() {
       {/* Listen */}
       <section>
         <div className={label + ' text-center mb-5'}>✦ <L en="Listen" es="Escucha" /> ✦</div>
+        <div className="card-border p-5 mb-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+            <div><span className={label}><L en="New single" es="Nuevo sencillo" /></span> <span className="gold-text font-cinzel-deco text-2xl ml-3">{NEW_TRACK.title}</span></div>
+            <div className="font-crimson italic text-silver/60"><L en={NEW_TRACK.date.en} es={NEW_TRACK.date.es} /></div>
+          </div>
+          <iframe title={`πcott — ${NEW_TRACK.title}`} width="100%" height="166" scrolling="no" frameBorder="no" allow="autoplay"
+            src={'https://w.soundcloud.com/player/?url=' + encodeURIComponent(NEW_TRACK.url) + '&color=%23d4af37&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=false'} />
+          <a href={NEW_TRACK.url} target="_blank" rel="noopener" className={pill + ' inline-block mt-3'}><L en="Open on SoundCloud" es="Abrir en SoundCloud" /></a>
+        </div>
         <div className="card-border p-2">
           <iframe title="πcott on SoundCloud" width="100%" height="360" scrolling="no" frameBorder="no" allow="autoplay" src={player} />
         </div>
