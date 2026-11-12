@@ -83,9 +83,7 @@ export default function PicottPage() {
           <a href="https://soundcloud.com/juan-b-picott" target="_blank" rel="noopener" className={pill}>SoundCloud</a>
           <a id="picott-map-link" href="/picott/map.html" className={pill}><L en="The map · D.C. → Cali" es="El mapa · D.C. → Cali" /></a>
         </div>
-        <div className="max-w-xs mx-auto mt-10">
-          <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">12+</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Venues played" es="Venues tocados" /></div></div>
-        </div>
+        <div className="mt-6 font-cinzel text-[9px] tracking-[3px] uppercase text-silver opacity-45"><span className="text-gold opacity-80">12+</span> <L en="venues played" es="venues tocados" /></div>
       </section>
 
       {/* Latest release */}
