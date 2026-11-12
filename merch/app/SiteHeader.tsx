@@ -17,11 +17,11 @@ export default function SiteHeader() {
         <img src="/picott/logo.png" alt="πcott" className="mx-auto h-12 sm:h-16 w-auto invert sepia saturate-[3] hue-rotate-[5deg] brightness-110 drop-shadow-[0_0_16px_rgba(212,175,55,.3)]" />
       </a>
       {onEpk ? (
-        <div className="font-cinzel text-[10px] tracking-[5px] text-silver opacity-55 uppercase mt-4">DJ · Producer · Santander, Colombia</div>
+        <div className="font-cinzel text-[10px] tracking-[5px] text-silver opacity-55 uppercase mt-4">DJ · Producer · Tech House · Latin House</div>
       ) : (
         <div className="mt-4">
-          <a href="/" className="font-cinzel text-[12px] tracking-[5px] text-quartz uppercase hover:text-gold transition-colors">OkayCubs merch</a>
-          <div className="font-cinzel text-[9px] tracking-[3px] text-silver opacity-45 uppercase mt-1">The πcott collection · 50 Cubs · The Honey Chronicles</div>
+          <a href="/" className="font-cinzel text-[12px] tracking-[5px] text-quartz uppercase hover:text-gold transition-colors">OkayCubs × πcott</a>
+          <div className="font-cinzel text-[9px] tracking-[3px] text-silver opacity-45 uppercase mt-1">Partnership merch · 50 Cubs · The Honey Chronicles</div>
         </div>
       )}
       <div className="rule" />

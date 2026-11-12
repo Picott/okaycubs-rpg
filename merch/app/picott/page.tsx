@@ -2,9 +2,9 @@ import Link from 'next/link';
 import LangToggle from './LangToggle';
 
 export const metadata = {
-  title: 'πcott — DJ / Producer · Santander, Colombia',
-  description: 'πcott — DJ and producer based in Santander, Colombia. Tech House. Latin House. Debut EP Signals out now. Shaped in the Washington D.C. scene with the Sunday at Backyard series.',
-  openGraph: { title: 'πcott — DJ EPK', description: 'Tech House. Latin House. Global Sounds. Based in Santander, Colombia.', images: ['/picott/logo.png'] },
+  title: 'πcott — DJ / Producer',
+  description: 'πcott — DJ and producer. Tech House. Latin House. Debut EP Signals out now. Shaped in the Washington D.C. scene with the Sunday at Backyard series; based in Colombia.',
+  openGraph: { title: 'πcott — DJ EPK', description: 'Tech House. Latin House. Global Sounds.', images: ['/picott/logo.png'] },
 };
 
 // Electronic press kit, ported from picott.netlify.app into okaycubs.space so the artist, the game and
@@ -76,7 +76,7 @@ export default function PicottPage() {
       {/* Hero */}
       <section className="text-center">
         <div className="flex justify-center mb-5"><LangToggle /></div>
-        <div className={label + ' mb-3'}><L en="Now booking — 2026 · Santander · Colombia" es="Reservas abiertas — 2026 · Santander · Colombia" /></div>
+        <div className={label + ' mb-3'}><L en="Now booking — 2026 · Worldwide" es="Reservas abiertas — 2026 · Todo el mundo" /></div>
         <p className="font-cinzel text-[12px] tracking-[4px] text-silver/70 uppercase mt-2">Tech House · Latin House · Global Sounds</p>
         <p className="font-crimson italic text-silver/70 text-lg mt-3 max-w-xl mx-auto">
           <L en="Layered, intentional, built to hold a room. Est. since the cold rooms of D.C." es="Por capas, con intención, hecho para sostener una pista. Forjado en los cuartos fríos de D.C." />
@@ -88,7 +88,7 @@ export default function PicottPage() {
           <a id="picott-map-link" href="/picott/map.html" className={pill}><L en="The map · D.C. → Cali" es="El mapa · D.C. → Cali" /></a>
         </div>
         <div className="grid grid-cols-3 gap-3 max-w-md mx-auto mt-10">
-          <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">COL</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Base · Santander" es="Base · Santander" /></div></div>
+          <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">D.C. → COL</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Two scenes, one sound" es="Dos escenas, un sonido" /></div></div>
           <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">12+</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Venues trusted" es="Venues que confían" /></div></div>
           <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">4</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Backyard volumes" es="Volúmenes Backyard" /></div></div>
         </div>
@@ -237,17 +237,19 @@ export default function PicottPage() {
         </div>
       </section>
 
-      {/* Also by πcott */}
-      <section className="card-border p-8 text-center">
-        <div className={label + ' mb-3'}><L en="Also by πcott" es="También de πcott" /></div>
-        <div className="font-cinzel-deco text-xl text-quartz mb-2">The Honey Chronicles</div>
-        <p className="font-crimson text-silver/60 italic max-w-lg mx-auto mb-5">
-          <L en="A browser action game across six geological eras with its own synthesized soundtrack, and a merch collection of the 50 OkayCubs he holds."
-             es="Un juego de acción en el navegador a través de seis eras geológicas con su propia banda sonora sintetizada, y una colección de merch con los 50 OkayCubs que posee." />
-        </p>
-        <div className="flex gap-3 justify-center flex-wrap">
-          <a href="/game.html" className={pill}><L en="Play" es="Jugar" /></a>
-          <Link href="/" className={pill}>Merch</Link>
+      {/* Partnership merch */}
+      <section className="card-border p-8 grid md:grid-cols-[1fr_auto] gap-6 items-center">
+        <div className="text-center md:text-left">
+          <div className={label + ' mb-2'}><L en="Partnership merch" es="Merch en colaboración" /></div>
+          <div className="font-cinzel-deco text-2xl text-quartz">OkayCubs × πcott</div>
+          <p className="font-crimson text-silver/65 italic max-w-xl mt-3">
+            <L en="A print-on-demand line built on the 50 OkayCubs he holds: hoodies, crewnecks, joggers, tees, beanies and caps, each carrying the πcott mark. The Cubs also star in The Honey Chronicles, his browser action game."
+               es="Una línea print-on-demand construida sobre los 50 OkayCubs que posee: hoodies, crewnecks, joggers, camisetas, beanies y gorras, cada una con la marca πcott. Los Cubs también protagonizan The Honey Chronicles, su juego de acción en el navegador." />
+          </p>
+        </div>
+        <div className="flex md:flex-col gap-3 justify-center">
+          <Link href="/" className="btn-gold"><L en="Shop the collection" es="Ver la colección" /></Link>
+          <a href="/game.html" className={pill + ' text-center'}><L en="Play the game" es="Jugar" /></a>
         </div>
       </section>
 
@@ -259,7 +261,7 @@ export default function PicottPage() {
           <a href={`mailto:${EMAIL}`} className={pill}>{EMAIL}</a>
           <a href={IG} target="_blank" rel="noopener" className={pill}>@picot.tt</a>
         </div>
-        <div className="font-cinzel text-[8px] tracking-[3px] uppercase opacity-35 mt-8">© 2026 πcott · Santander · Colombia</div>
+        <div className="font-cinzel text-[8px] tracking-[3px] uppercase opacity-35 mt-8">© 2026 πcott</div>
       </section>
     </main>
   );
