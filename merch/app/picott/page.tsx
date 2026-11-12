@@ -150,7 +150,7 @@ export default function PicottPage() {
         <div className="lang-es">
           <p className="font-crimson text-silver/85 leading-relaxed text-[17px]">
             <strong className="text-quartz">πcott</strong> hace tech house con pulso latino: por capas, con intención, hecho para sostener una pista.
-            Criado entre Colombia y Washington D.C. EP debut <em>Signals</em>, ya disponible.
+            Colombia y Washington D.C. son sus escenas. EP debut <em>Signals</em>, ya disponible.
           </p>
         </div>
       </section>
