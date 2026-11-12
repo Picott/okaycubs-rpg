@@ -87,10 +87,8 @@ export default function PicottPage() {
           <a href="https://soundcloud.com/juan-b-picott" target="_blank" rel="noopener" className={pill}>SoundCloud</a>
           <a id="picott-map-link" href="/picott/map.html" className={pill}><L en="The map · D.C. → Cali" es="El mapa · D.C. → Cali" /></a>
         </div>
-        <div className="grid grid-cols-3 gap-3 max-w-md mx-auto mt-10">
-          <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">D.C. → COL</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Two scenes, one sound" es="Dos escenas, un sonido" /></div></div>
-          <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">12+</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Venues trusted" es="Venues que confían" /></div></div>
-          <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">4</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Backyard volumes" es="Volúmenes Backyard" /></div></div>
+        <div className="max-w-xs mx-auto mt-10">
+          <div className="card-border p-4"><div className="font-cinzel-deco text-gold text-2xl">12+</div><div className="font-cinzel text-[8px] tracking-[2px] uppercase opacity-50 mt-1"><L en="Venues played" es="Venues tocados" /></div></div>
         </div>
       </section>
 
