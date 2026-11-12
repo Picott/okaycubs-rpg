@@ -91,7 +91,13 @@ export default function HomePage() {
       {/* PRODUCT TYPES */}
       <section>
         <div className="text-center mb-6">
-          <h1 className="gold-text font-cinzel-deco font-black" style={{ fontSize: 'clamp(22px, 4.5vw, 36px)', lineHeight: 1.1 }}>Wear a Cub</h1>
+          <h1 className="flex items-end justify-center gap-3">
+            <a href="/picott" aria-label="πcott" className="shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/picott/logo.png" alt="πcott" className="h-5 sm:h-6 w-auto invert sepia saturate-[3] hue-rotate-[5deg] brightness-110 mb-[6px]" />
+            </a>
+            <span className="gold-text font-cinzel-deco font-black" style={{ fontSize: 'clamp(22px, 4.5vw, 36px)', lineHeight: 1.1 }}>Wear a Cub</span>
+          </h1>
           <div className="font-crimson italic text-silver/60 text-[15px] mt-2">50 OkayCubs from πcott&apos;s own collection, printed on demand. Pick an item, then your Cub.</div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-16">
