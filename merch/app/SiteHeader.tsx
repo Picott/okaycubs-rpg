@@ -19,6 +19,7 @@ export default function SiteHeader() {
       {onEpk ? (
         <div className="font-cinzel text-[10px] tracking-[5px] text-silver opacity-55 uppercase mt-4">DJ · Producer · Tech House · Latin House</div>
       ) : (
+        <div className="mt-6" />
       )}
       <div className="rule" />
       <nav className="flex gap-6 justify-center">
