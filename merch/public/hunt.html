@@ -82,7 +82,7 @@
   <div class="row"><button class="primary" id="startBtn" onclick="startHunt()">Face the guardian</button><a href="/game.html"><button>Back to the den</button></a></div>
   <div class="keys">← → move · space jump (again in the air to double-jump) · X hit · Z dash · C / Shift / ↓ hold to block · Esc pause</div>
 </div></div>
-<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><p style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px">MUSIC <input type="range" min="0" max="100" id="volMusic" oninput="GameMusic.setMusic(this.value/100)"> &nbsp; SFX <input type="range" min="0" max="100" id="volSfx" oninput="GameMusic.setSfx(this.value/100)"></p><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button onclick="this.textContent = GameMusic.toggleMute() ? 'Unmute' : 'Mute'">Mute</button><button class="danger" onclick="flee()">Flee the den</button></div></div></div>
+<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><p style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px">MUSIC <input type="range" min="0" max="100" id="volMusic" oninput="GameMusic.setMusic(this.value/100)"> &nbsp; SFX <input type="range" min="0" max="100" id="volSfx" oninput="GameMusic.setSfx(this.value/100)"></p><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button onclick="this.textContent = GameMusic.toggleMute() ? 'Unmute' : 'Mute'">Mute</button><button onclick="toggleGfx()" id="gfxBtn">Graphics: 3D</button><button class="danger" onclick="flee()">Flee the den</button></div></div></div>
 <div class="overlay hidden" id="result"><div class="card">
   <div class="guardian" id="resultEmoji">🍯</div>
   <h1 id="resultTitle">Guardian defeated!</h1>
@@ -146,6 +146,12 @@ function hud() {
 setInterval(() => { if (road && road.started && !road.paused && !road.finished) document.getElementById('hudTime').textContent = fmt(road.time * 1000); }, 100);
 
 // ---- setup: profile → open battle (the server spawns the guardian) → arena ----
+// 3D world (Three.js) on top of the same simulation; falls back to the 2D canvas if WebGL is missing or fails
+const GFX_3D = !new URLSearchParams(location.search).has('2d') && (() => { try { return localStorage.getItem('okaycubs_gfx') !== '2d'; } catch (e) { return true; } })();
+function attach3D() { if (!GFX_3D || !road) return; import('/road3d.js').then(m => { window.road3d = m.attach(road, cv, { onFail: () => {} }); }).catch(e => console.warn('[3d] unavailable, staying in 2D', e)); }
+addEventListener('DOMContentLoaded', () => { const b = document.getElementById('gfxBtn'); if (b) b.textContent = GFX_3D ? 'Switch to 2D' : 'Switch to 3D'; });
+function toggleGfx() { try { localStorage.setItem('okaycubs_gfx', GFX_3D ? '2d' : '3d'); } catch (e) {} location.reload(); }
+
 async function init() {
   try { await sprite.load(CUB.image); } catch (e) { await sprite.load('/cubs/35.png'); }
   let state;
@@ -178,6 +184,7 @@ async function init() {
     onPhase: (g, ph) => { GameMusic.setIntensity(ph + 1); GameMusic.duck(900, 0.15); phaseBanner(`Phase ${ph + 1}`, `${g.moveName} — ${g.moveTip}`); hud(); },
   });
   road.paused = true; road.started = false; road.start();
+  attach3D();
   if (b.burst > 0) { road.p.burst = Math.min(HoneyEngine.MAX_BURST, b.burst); road.float(road.p.x, road.p.y - 120, `✦ inherited Burst${b.burst > 1 ? ' ×' + b.burst : ''}`, '#ffe27a'); }
   document.getElementById('cubName').textContent = `${CUB.name} · Lv ${lvl}`;
   const pw = HoneyEngine.powerOf(CUB.class);

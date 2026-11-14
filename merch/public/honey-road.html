@@ -73,7 +73,7 @@
     <div class="keys">← → run · space jump (press again in the air to double-jump) · X hit · Z dash · every 5 drops charge a Honey Burst: dash to prime, hit to release · stomp Ember Sentinels, hit Golems twice</div>
   </div>
 </div>
-<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><p style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px">MUSIC <input type="range" min="0" max="100" id="volMusic" oninput="GameMusic.setMusic(this.value/100)"> &nbsp; SFX <input type="range" min="0" max="100" id="volSfx" oninput="GameMusic.setSfx(this.value/100)"></p><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button onclick="this.textContent = GameMusic.toggleMute() ? 'Unmute' : 'Mute'">Mute</button><button onclick="restart()">Restart</button><a href="/game.html"><button>Leave</button></a></div></div></div>
+<div class="overlay hidden" id="pause"><div class="card"><h1>Paused</h1><p style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px">MUSIC <input type="range" min="0" max="100" id="volMusic" oninput="GameMusic.setMusic(this.value/100)"> &nbsp; SFX <input type="range" min="0" max="100" id="volSfx" oninput="GameMusic.setSfx(this.value/100)"></p><div class="row"><button class="primary" onclick="togglePause()">Resume</button><button onclick="this.textContent = GameMusic.toggleMute() ? 'Unmute' : 'Mute'">Mute</button><button onclick="toggleGfx()" id="gfxBtn">Graphics: 3D</button><button onclick="restart()">Restart</button><a href="/game.html"><button>Leave</button></a></div></div></div>
 <div class="overlay hidden" id="result">
   <div class="card">
     <h1 id="resultTitle">🍯 Road complete!</h1>
@@ -108,6 +108,12 @@ function hud() {
 }
 setInterval(() => { if (road && road.started && !road.paused && !road.finished) document.getElementById('hudTime').textContent = fmt(road.time * 1000); }, 100);
 
+// 3D world (Three.js) on top of the same simulation; falls back to the 2D canvas if WebGL is missing or fails
+const GFX_3D = !new URLSearchParams(location.search).has('2d') && (() => { try { return localStorage.getItem('okaycubs_gfx') !== '2d'; } catch (e) { return true; } })();
+function attach3D() { if (!GFX_3D || !road) return; import('/road3d.js').then(m => { window.road3d = m.attach(road, cv, { onFail: () => {} }); }).catch(e => console.warn('[3d] unavailable, staying in 2D', e)); }
+addEventListener('DOMContentLoaded', () => { const b = document.getElementById('gfxBtn'); if (b) b.textContent = GFX_3D ? 'Switch to 2D' : 'Switch to 3D'; });
+function toggleGfx() { try { localStorage.setItem('okaycubs_gfx', GFX_3D ? '2d' : '3d'); } catch (e) {} location.reload(); }
+
 async function init() {
   document.getElementById('hudTitle').textContent = L.title;
   document.getElementById('introTitle').textContent = `${L.title} · ${CUB.name}`;
@@ -135,6 +141,7 @@ async function init() {
     onFinish: r => showResult(r),
   });
   road.start();
+  attach3D();
   GameMusic.setEra(ERA);
   hud();
 }
