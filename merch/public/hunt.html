@@ -60,7 +60,8 @@
     #phaseBanner.show { animation:bannerIn 2.4s ease forwards; }
     @keyframes bannerIn { 0% { opacity:0; transform:scale(.8); } 12% { opacity:1; transform:scale(1.05); } 20% { transform:scale(1); } 80% { opacity:1; } 100% { opacity:0; } }
     .t-block { right:calc(22px + env(safe-area-inset-right)); bottom:calc(106px + env(safe-area-inset-bottom)); width:60px; height:60px; font-size:14px; border-color:rgba(245,224,110,.7); }
-  </style>
+  body.cine .plate, body.cine .right { opacity: 0; transition: opacity .4s; }
+</style>
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -148,7 +149,16 @@ setInterval(() => { if (road && road.started && !road.paused && !road.finished) 
 // ---- setup: profile → open battle (the server spawns the guardian) → arena ----
 // 3D world (Three.js) on top of the same simulation; falls back to the 2D canvas if WebGL is missing or fails
 const GFX_3D = !new URLSearchParams(location.search).has('2d') && (() => { try { return localStorage.getItem('okaycubs_gfx') !== '2d'; } catch (e) { return true; } })();
-function attach3D() { if (!GFX_3D || !road) return; import('/road3d.js').then(m => { window.road3d = m.attach(road, cv, { onFail: () => {} }); }).catch(e => console.warn('[3d] unavailable, staying in 2D', e)); }
+// Desktop gets the full hall (arena3d.js): modelled guardian, cinematic camera, intro. Phones keep the lighter side view.
+const DESKTOP_3D = GFX_3D && !new URLSearchParams(location.search).has('lite') && matchMedia('(pointer:fine)').matches && innerWidth >= 900;
+let arena = null;
+function attach3D() {
+  if (!GFX_3D || !road) return;
+  const lite = () => import('/road3d.js').then(m => { window.road3d = m.attach(road, cv, { onFail: () => {} }); });
+  if (!DESKTOP_3D) return lite().catch(e => console.warn('[3d] unavailable, staying in 2D', e));
+  import('/arena3d.js').then(m => { arena = window.arena3d = m.attach(road, cv, { onFail: () => { arena = null; lite().catch(() => {}); } }); })
+    .catch(e => { console.warn('[3d] full arena unavailable, using the lite view', e); lite().catch(() => {}); });
+}
 addEventListener('DOMContentLoaded', () => { const b = document.getElementById('gfxBtn'); if (b) b.textContent = GFX_3D ? 'Switch to 2D' : 'Switch to 3D'; });
 function toggleGfx() { try { localStorage.setItem('okaycubs_gfx', GFX_3D ? '2d' : '3d'); } catch (e) {} location.reload(); }
 
@@ -217,7 +227,12 @@ function fail(e) {
   document.getElementById('introText').textContent = msg;
   document.getElementById('startBtn').style.display = 'none';
 }
-function startHunt() { document.getElementById('intro').classList.add('hidden'); road.paused = false; road.started = true; road.time = 0; document.activeElement?.blur(); GameMusic.start();
+let starting = false;
+async function startHunt() {
+  if (starting) return; starting = true;
+  document.getElementById('intro').classList.add('hidden'); document.activeElement?.blur(); GameMusic.start();
+  if (arena && arena.playIntro) { document.body.classList.add('cine'); try { await arena.playIntro(enemy.name, BOSS ? `${cap(ERA)} Era Boss · ${enemy.cls}` : enemy.cls); } catch (e) {} document.body.classList.remove('cine'); }
+  road.paused = false; road.started = true; road.time = 0;
   if (matchMedia('(pointer:coarse)').matches) { const el = document.documentElement; (el.requestFullscreen?.() || Promise.resolve()).then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); } }
 function togglePause() { if (!road || !road.started || road.finished) return; road.paused = !road.paused; document.getElementById('pause').classList.toggle('hidden', !road.paused); document.getElementById('volMusic').value = GameMusic.settings.music * 100; document.getElementById('volSfx').value = GameMusic.settings.sfx * 100; }
 function phaseBanner(big, small) { const el = document.getElementById('phaseBanner'); el.innerHTML = `${big}<small>${small}</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
