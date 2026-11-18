@@ -4,7 +4,8 @@ import LangToggle from './LangToggle';
 export const metadata = {
   title: 'πcott — DJ / Producer',
   description: 'πcott — DJ and producer. Tech House. Latin House. Debut EP Signals out now. Shaped in the Washington D.C. scene with the Sunday at Backyard series; based in Colombia.',
-  openGraph: { title: 'πcott — DJ EPK', description: 'Tech House. Latin House. Global Sounds.', images: ['/picott/logo.png'] },
+  openGraph: { title: 'πcott — DJ / Producer', description: 'Tech House. Latin House. Debut EP Signals out now.', url: '/picott', images: [{ url: '/og/epk.jpg', width: 1200, height: 630, alt: 'πcott' }] },
+  twitter: { card: 'summary_large_image', images: ['/og/epk.jpg'] },
 };
 
 // Electronic press kit, ported from picott.netlify.app into okaycubs.space so the artist, the game and

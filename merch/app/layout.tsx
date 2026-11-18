@@ -4,13 +4,18 @@ import SiteHeader from './SiteHeader';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'OkayCubs by πcott — The Honey Chronicles Merch',
-  description: 'The πcott collection: 50 OkayCubs on hoodies, crewnecks, joggers, tees, beanies and caps. Independent merch by a collector. Pay with SOL or card.',
+  metadataBase: new URL('https://www.okaycubs.space'),
+  title: 'Wear a Cub — OkayCubs × πcott',
+  description: 'Hoodies, crewnecks, joggers, tees, beanies and caps from the πcott collection. Independent merch by a collector.',
   openGraph: {
-    title: 'OkayCubs by πcott',
-    description: 'Wear a Cub from the πcott collection. Pay with SOL or card.',
-    siteName: 'OkayCubs',
+    title: 'Wear a Cub — OkayCubs × πcott',
+    description: 'Hoodies, crewnecks, joggers, tees, beanies and caps.',
+    siteName: 'OkayCubs × πcott',
+    type: 'website',
+    url: '/',
+    images: [{ url: '/og/store.jpg', width: 1200, height: 630, alt: 'Wear a Cub' }],
   },
+  twitter: { card: 'summary_large_image', images: ['/og/store.jpg'] },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
